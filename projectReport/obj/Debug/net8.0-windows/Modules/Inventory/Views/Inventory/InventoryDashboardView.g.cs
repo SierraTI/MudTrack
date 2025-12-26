@@ -51,8 +51,8 @@ namespace ProjectReport.Views.Inventory {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;V1.0.0.0;component/modules/inventory/views/inventory/inventorydash" +
-                    "boardview.xaml"), System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/inventory/views/inventory/inventorydashboardview" +
+                    ".xaml"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Inventory\Views\Inventory\InventoryDashboardView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

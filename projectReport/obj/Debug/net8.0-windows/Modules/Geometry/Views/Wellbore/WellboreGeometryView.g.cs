@@ -52,8 +52,8 @@ namespace ProjectReport.Views.Geometry.Wellbore {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;V1.0.0.0;component/modules/geometry/views/wellbore/wellboregeometr" +
-                    "yview.xaml"), System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/geometry/views/wellbore/wellboregeometryview.xam" +
+                    "l"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Geometry\Views\Wellbore\WellboreGeometryView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

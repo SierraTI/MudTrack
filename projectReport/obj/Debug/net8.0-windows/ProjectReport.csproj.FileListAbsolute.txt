@@ -335,7 +335,6 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Th
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\ToolJointConfigWindow.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryDashboardView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryHistoryView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketConsumedView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReceivedView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\PersonnelPage.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\ReportDetailsPage.baml
@@ -358,7 +357,6 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\We
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Home\Views\HomeView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryDashboardView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryHistoryView.g.cs
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketConsumedView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReceivedView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\PersonnelPage.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\ReportDetailsPage.g.cs
@@ -392,3 +390,5 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
 >>>>>>> ea3cb986f849b4626de2c3b9a62bbf41f581be68
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReturnedView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReturnedView.g.cs

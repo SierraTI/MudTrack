@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using ProjectReport.Models.Inventory;
@@ -6,7 +6,7 @@ using ProjectReport.Services.Inventory;
 
 namespace ProjectReport.ViewModels.Inventory
 {
-    public class TicketConsumedViewModel : BaseViewModel
+    public class TicketReturnedViewModel : BaseViewModel
     {
         private readonly InventoryService _service;
 
@@ -26,11 +26,18 @@ namespace ProjectReport.ViewModels.Inventory
             set => SetProperty(ref _quantity, value);
         }
 
-        private string _useContext = "";
-        public string UseContext
+        private string _origin = "";
+        public string Origin
         {
-            get => _useContext;
-            set => SetProperty(ref _useContext, value);
+            get => _origin;
+            set => SetProperty(ref _origin, value);
+        }
+
+        private double _unitPrice;
+        public double UnitPrice
+        {
+            get => _unitPrice;
+            set => SetProperty(ref _unitPrice, value);
         }
 
         private string _observations = "";
@@ -58,7 +65,7 @@ namespace ProjectReport.ViewModels.Inventory
         public RelayCommand CancelCommand { get; }
         public event Action? RequestClose;
 
-        public TicketConsumedViewModel(InventoryService service)
+        public TicketReturnedViewModel(InventoryService service)
         {
             _service = service;
             Products = new ObservableCollection<Product>(_service.GetProducts().Where(p => p.Status == ProductStatus.Active));
@@ -74,18 +81,11 @@ namespace ProjectReport.ViewModels.Inventory
             if (SelectedProduct == null) { Error = "Select a product."; return; }
             if (Quantity <= 0) { Error = "Quantity must be > 0."; return; }
 
-            // Validación “alerta roja”
-            if (SelectedProduct.StockQty < Quantity)
-            {
-                Error = $"INSUFFICIENT STOCK. Available: {SelectedProduct.StockQty}, required: {Quantity}";
-                return;
-            }
-
             try
             {
                 var ticket = new Ticket
                 {
-                    Type = TicketType.Consumed,
+                    Type = TicketType.Returned,
                     Date = DateTime.Now,
                     User = User,
                     Observations = Observations,
@@ -93,12 +93,12 @@ namespace ProjectReport.ViewModels.Inventory
                     {
                         ProductCode = SelectedProduct.Code,
                         Quantity = Quantity,
-                        UnitPrice = 0,
-                        Context = UseContext
+                        UnitPrice = UnitPrice,
+                        Context = Origin
                     }
                 };
 
-                _service.CreateTicketConsumed(ticket);
+                _service.CreateTicketReturned(ticket);
                 RequestClose?.Invoke();
             }
             catch (Exception ex)

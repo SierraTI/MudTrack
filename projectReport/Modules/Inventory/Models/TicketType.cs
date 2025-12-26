@@ -3,6 +3,6 @@
     public enum TicketType
     {
         Received = 1,   // entra
-        Consumed = 2    // sale
+        Returned = 3    // retorna
     }
 }

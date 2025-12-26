@@ -185,18 +185,20 @@ namespace ProjectReport.Views
                 vm.RequestOpenReceived += () =>
                 {
                     var view = new TicketReceivedView();
-                    view.DataContext = new TicketReceivedViewModel(_inventoryService);
+                    var vmr = new TicketReceivedViewModel(_inventoryService);
+                    view.DataContext = vmr;
+
+                    // Cuando cierren (después de guardar) volvemos al dashboard y refrescamos
+                    vmr.RequestClose += () =>
+                    {
+                        ContentTitle.Text = "Inventory";
+                        ContentArea.Content = _inventoryDashboardView;
+
+                        if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                            dvm.LoadForDate(dvm.SelectedDate);
+                    };
 
                     ContentTitle.Text = "Inventory - Ticket Received";
-                    ContentArea.Content = view;
-                };
-
-                vm.RequestOpenConsumed += () =>
-                {
-                    var view = new TicketConsumedView();
-                    view.DataContext = new TicketConsumedViewModel(_inventoryService);
-
-                    ContentTitle.Text = "Inventory - Ticket Consumed";
                     ContentArea.Content = view;
                 };
 
@@ -206,6 +208,25 @@ namespace ProjectReport.Views
                     view.DataContext = new InventoryHistoryViewModel(_inventoryService);
 
                     ContentTitle.Text = "Inventory - History";
+                    ContentArea.Content = view;
+                };
+
+                vm.RequestOpenReturned += () =>
+                {
+                    var view = new TicketReturnedView();
+                    var vmr = new TicketReturnedViewModel(_inventoryService);
+                    view.DataContext = vmr;
+
+                    vmr.RequestClose += () =>
+                    {
+                        ContentTitle.Text = "Inventory";
+                        ContentArea.Content = _inventoryDashboardView;
+
+                        if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                            dvm.LoadForDate(dvm.SelectedDate);
+                    };
+
+                    ContentTitle.Text = "Inventory - Ticket Returned";
                     ContentArea.Content = view;
                 };
 

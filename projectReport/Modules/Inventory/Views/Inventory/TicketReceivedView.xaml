@@ -31,11 +31,22 @@
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Product:" VerticalAlignment="Center" Margin="0,0,10,8"/>
-            <ComboBox Grid.Row="0" Grid.Column="1"
-                      ItemsSource="{Binding Products}"
-                      SelectedItem="{Binding SelectedProduct}"
-                      DisplayMemberPath="Name"
-                      Margin="0,0,0,8"/>
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical">
+                <TextBox Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6"/>
+
+                <ComboBox ItemsSource="{Binding FilteredProducts}"
+                          SelectedItem="{Binding SelectedProduct}"
+                          DisplayMemberPath="Name"
+                          IsEditable="False"
+                          MaxHeight="200"
+                          Margin="0,0,0,6"/>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Width="180" Text="{Binding ProductCode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,6,0"/>
+                    <TextBox Width="200" Text="{Binding ProductName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                </StackPanel>
+            </StackPanel>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Origin:" VerticalAlignment="Center" Margin="0,0,10,8"/>
             <TextBox Grid.Row="1" Grid.Column="1"

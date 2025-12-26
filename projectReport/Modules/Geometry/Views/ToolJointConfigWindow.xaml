@@ -68,6 +68,18 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ComboBox estable y centrado -->
+        <Style x:Key="CenteredComboBox" TargetType="ComboBox">
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="BorderBrush" Value="{StaticResource TableBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource WhiteBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource BlackBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="26">
@@ -116,10 +128,33 @@
                         </StackPanel>
 
                         <StackPanel Margin="0,0,0,14"
-                                    Visibility="{Binding ShowIDLength, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{Binding ShowToolIDLength, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="Joint Length (ft)" Style="{StaticResource FieldLabel}"/>
                             <TextBox Style="{StaticResource CenteredTextBox}"
                                      Text="{Binding TJ_ID_Length_String, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='', FallbackValue=''}"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Pipe Grade (API)" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource CenteredComboBox}"
+                                      ItemsSource="{Binding AvailableGrades}"
+                                      SelectedItem="{Binding Grade, Mode=TwoWay}"
+                                      Height="40"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,0,0">
+                            <CheckBox Content="Has Float Sub"
+                                      IsChecked="{Binding HasFloatSub, Mode=TwoWay}"
+                                      FontSize="14"
+                                      FontWeight="SemiBold"
+                                      Foreground="{DynamicResource AppSecondaryText}"
+                                      VerticalContentAlignment="Center"
+                                      Margin="0,4,0,0"/>
+                            <TextBlock Text="Float subs prevent backflow and reduce surge pressure"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource AppSecondaryText}"
+                                       Margin="24,4,0,0"
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>

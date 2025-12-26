@@ -7,15 +7,16 @@ namespace ProjectReport.Models.Geometry.Survey
     {
         private string _section = string.Empty;
         private double _md;
-        private double _tvd;
+        private double _tvd; // Auto-calculated
         private double _holeAngle;
         private double _azimuth;
-        private double _doglegSeverity;
-        private double _buildRate;
-        private double _turnRate;
-        private double _northing;
-        private double _easting;
-        private double _verticalSection;
+        private double _doglegSeverity; // Auto-calculated
+        private double _buildRate; // Auto-calculated
+        private double _turnRate; // Auto-calculated
+        private double _northing; // Auto-calculated
+        private double _easting; // Auto-calculated
+        private double _verticalSection; // Auto-calculated
+        private bool _isTieInPoint; // First survey point flag
 
         public string Section
         {
@@ -35,10 +36,14 @@ namespace ProjectReport.Models.Geometry.Survey
             }
         }
 
+        /// <summary>
+        /// True Vertical Depth - Auto-calculated from MD, Inc, Az using Minimum Curvature Method.
+        /// This is a READ-ONLY calculated field.
+        /// </summary>
         public double TVD
         {
             get => _tvd;
-            set
+            private set
             {
                 if (SetProperty(ref _tvd, value))
                 {
@@ -95,30 +100,43 @@ namespace ProjectReport.Models.Geometry.Survey
 
         public bool IsHighDogleg => DoglegSeverity > 3.0;
 
+        /// <summary>
+        /// North coordinate - Auto-calculated from trajectory.
+        /// This is a READ-ONLY calculated field.
+        /// </summary>
         public double Northing
         {
             get => _northing;
-            set
-            {
-                SetProperty(ref _northing, value);
-                OnPropertyChanged(nameof(VerticalSection));
-            }
+            private set => SetProperty(ref _northing, value);
         }
 
+        /// <summary>
+        /// East coordinate - Auto-calculated from trajectory.
+        /// This is a READ-ONLY calculated field.
+        /// </summary>
         public double Easting
         {
             get => _easting;
-            set
-            {
-                SetProperty(ref _easting, value);
-                OnPropertyChanged(nameof(VerticalSection));
-            }
+            private set => SetProperty(ref _easting, value);
         }
 
+        /// <summary>
+        /// Horizontal displacement from origin - Auto-calculated.
+        /// This is a READ-ONLY calculated field.
+        /// </summary>
         public double VerticalSection
         {
             get => _verticalSection;
-            set => SetProperty(ref _verticalSection, value);
+            private set => SetProperty(ref _verticalSection, value);
+        }
+
+        /// <summary>
+        /// Indicates if this is the tie-in point (first survey station).
+        /// </summary>
+        public bool IsTieInPoint
+        {
+            get => _isTieInPoint;
+            set => SetProperty(ref _isTieInPoint, value);
         }
 
         #region Validation
@@ -198,6 +216,32 @@ namespace ProjectReport.Models.Geometry.Survey
                 }
                 return string.Empty;
             }
+        }
+
+        #endregion
+
+        #region Calculated Values Update
+
+        /// <summary>
+        /// Internal method used by SurveyCalculationService to update calculated values.
+        /// This bypasses the public read-only restriction.
+        /// </summary>
+        internal void SetCalculatedValues(
+            double tvd,
+            double northing,
+            double easting,
+            double verticalSection,
+            double doglegSeverity,
+            double buildRate,
+            double turnRate)
+        {
+            TVD = tvd;
+            Northing = northing;
+            Easting = easting;
+            VerticalSection = verticalSection;
+            DoglegSeverity = doglegSeverity;
+            BuildRate = buildRate;
+            TurnRate = turnRate;
         }
 
         #endregion

@@ -109,7 +109,7 @@ namespace ProjectReport.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/modules/shell/views/mainwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ProjectReport;V1.0.0.0;component/modules/shell/views/mainwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Modules\Shell\Views\MainWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

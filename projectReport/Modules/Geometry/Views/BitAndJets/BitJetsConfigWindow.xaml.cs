@@ -1,17 +1,17 @@
 using System.Windows;
-using ProjectReport.Models.Geometry;
+using ProjectReport.Models.Geometry.BitAndJets;
 using ProjectReport.ViewModels.Geometry.BitAndJets;
 
 namespace ProjectReport.Views.Geometry.BitAndJets
 {
     public partial class BitJetsConfigWindow : Window
     {
-        public BitJetsConfig Config => ((BitJetsConfigViewModel)DataContext).Model;
+        public MultiBitJetsConfig Config => ((MultiBitJetsConfigViewModel)DataContext).Model;
 
-        public BitJetsConfigWindow(BitJetsConfig? model)
+        public BitJetsConfigWindow(MultiBitJetsConfig? model)
         {
             InitializeComponent();
-            var vm = new BitJetsConfigViewModel(model ?? new BitJetsConfig());
+            var vm = new MultiBitJetsConfigViewModel(model ?? new MultiBitJetsConfig());
             vm.RequestClose += result =>
             {
                 DialogResult = result;

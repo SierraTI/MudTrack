@@ -1,0 +1,6 @@
+C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0\projectReport.Tests.csproj.AssemblyReference.cache
+C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0\projectReport.Tests.GeneratedMSBuildEditorConfig.editorconfig
+C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0\projectReport.Tests.AssemblyInfoInputs.cache
+C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0\projectReport.Tests.AssemblyInfo.cs
+C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0\projectReport.Tests.csproj.CoreCompileInputs.cache
+C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0\projectReport.Tests.sourcelink.json

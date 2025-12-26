@@ -2281,11 +2281,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Dev\\projectReport\\ProjectReport\\ProjectReport.csproj",
+      "projectUniqueName": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj",
       "projectName": "ProjectReport",
-      "projectPath": "C:\\Dev\\projectReport\\ProjectReport\\ProjectReport.csproj",
+      "projectPath": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj",
       "packagesPath": "C:\\Users\\GSA_PC_049\\.nuget\\packages\\",
-      "outputPath": "C:\\Dev\\projectReport\\ProjectReport\\obj\\",
+      "outputPath": "C:\\Dev\\MudTrack\\ProjectReport\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -2372,7 +2372,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

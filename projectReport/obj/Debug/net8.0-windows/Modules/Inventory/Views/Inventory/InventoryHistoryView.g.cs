@@ -45,14 +45,14 @@ namespace ProjectReport.Views.Inventory {
         /// InitializeComponent
         /// </summary>
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "10.0.0.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "10.0.1.0")]
         public void InitializeComponent() {
             if (_contentLoaded) {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;V1.0.0.0;component/modules/inventory/views/inventory/inventoryhist" +
-                    "oryview.xaml"), System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/inventory/views/inventory/inventoryhistoryview.x" +
+                    "aml"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Inventory\Views\Inventory\InventoryHistoryView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
@@ -62,7 +62,7 @@ namespace ProjectReport.Views.Inventory {
         }
         
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "10.0.0.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "10.0.1.0")]
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Design", "CA1033:InterfaceMethodsShouldBeCallableByChildTypes")]
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]

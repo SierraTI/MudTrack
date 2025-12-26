@@ -13,6 +13,9 @@ namespace ProjectReport.Models.Geometry.ThermalGradient
         private double _temperature;
         private bool _hasValidationWarning;
         private string _validationMessage = string.Empty;
+        private string _label = string.Empty;
+        private double? _calculatedGradient;
+        private bool _isAnomalous;
 
         /// <summary>
         /// Auto-incrementing unique identifier (read-only)
@@ -69,6 +72,33 @@ namespace ProjectReport.Models.Geometry.ThermalGradient
         {
             get => _validationMessage;
             set => SetProperty(ref _validationMessage, value);
+        }
+
+        /// <summary>
+        /// Label for this thermal point (e.g., "Surface", "Mudline", "BHT")
+        /// </summary>
+        public string Label
+        {
+            get => _label;
+            set => SetProperty(ref _label, value);
+        }
+
+        /// <summary>
+        /// Calculated gradient to the next point in °F/100ft (read-only, auto-calculated)
+        /// </summary>
+        public double? CalculatedGradient
+        {
+            get => _calculatedGradient;
+            internal set => SetProperty(ref _calculatedGradient, value);
+        }
+
+        /// <summary>
+        /// Indicates if this point has an anomalous gradient (differs significantly from average)
+        /// </summary>
+        public bool IsAnomalous
+        {
+            get => _isAnomalous;
+            internal set => SetProperty(ref _isAnomalous, value);
         }
 
         /// <summary>

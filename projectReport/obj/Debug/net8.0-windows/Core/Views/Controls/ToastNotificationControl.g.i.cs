@@ -54,7 +54,8 @@ namespace ProjectReport.Views.Controls {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/core/views/controls/toastnotificationcontrol.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ProjectReport;V1.0.0.0;component/core/views/controls/toastnotificationcontrol.xa" +
+                    "ml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Core\Views\Controls\ToastNotificationControl.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

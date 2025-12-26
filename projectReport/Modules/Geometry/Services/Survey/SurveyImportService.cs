@@ -10,10 +10,15 @@ namespace ProjectReport.Services.Survey
 {
     public class SurveyImportService
     {
+        private readonly SurveyCalculationService _calculationService;
+
+        public SurveyImportService()
+        {
+            _calculationService = new SurveyCalculationService();
+        }
+
         public class ImportResult
         {
-
-
             public bool Success { get; set; }
             public List<SurveyPoint> SurveyPoints { get; set; } = new();
             public string ErrorMessage { get; set; } = string.Empty;
@@ -24,7 +29,7 @@ namespace ProjectReport.Services.Survey
 
         /// <summary>
         /// Import survey data from CSV file
-        /// Expected columns: MD, TVD, Hole Angle, Azimuth, Horizontal Displacement
+        /// Expected columns: MD, Hole Angle, Azimuth (TVD, Northing, Easting are auto-calculated)
         /// </summary>
         public ImportResult ImportFromCsv(string filePath)
         {
@@ -71,6 +76,12 @@ namespace ProjectReport.Services.Survey
                     }
                 }
 
+                // Auto-calculate trajectories for all imported points
+                if (result.SurveyPoints.Count > 0)
+                {
+                    _calculationService.RecalculateAllTrajectories(result.SurveyPoints);
+                }
+
                 result.Success = result.ImportedCount > 0;
                 if (!result.Success && result.ErrorCount > 0)
                 {
@@ -88,38 +99,38 @@ namespace ProjectReport.Services.Survey
 
         /// <summary>
         /// Parse a single CSV line into a SurveyPoint object.
-        /// Expected format: MD,TVD,HoleAngle,Azimuth,HorizontalDisplacement
+        /// Expected format: MD,HoleAngle,Azimuth (TVD, Northing, Easting are auto-calculated)
         /// </summary>
         private SurveyPoint? ParseCsvLine(string line)
         {
             if (string.IsNullOrWhiteSpace(line)) return null;
 
             var parts = line.Split(',');
-            if (parts.Length < 2) return null;
+            if (parts.Length < 3) return null; // Need at least MD, Inc, Az
 
             var surveyPoint = new SurveyPoint();
 
             try
             {
+                // Required: MD
                 if (double.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out var md))
                     surveyPoint.MD = md;
                 else
                     return null;
 
-                if (double.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out var tvd))
-                    surveyPoint.TVD = tvd;
+                // Required: Hole Angle (Inclination)
+                if (double.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out var holeAngle))
+                    surveyPoint.HoleAngle = holeAngle;
                 else
                     return null;
 
-                // Optional fields
-                if (parts.Length > 2 && double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out var holeAngle))
-                    surveyPoint.HoleAngle = holeAngle;
-
-                if (parts.Length > 3 && double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out var azimuth))
+                // Required: Azimuth
+                if (double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out var azimuth))
                     surveyPoint.Azimuth = azimuth;
+                else
+                    return null;
 
-                if (parts.Length > 4 && double.TryParse(parts[4], NumberStyles.Any, CultureInfo.InvariantCulture, out var horizontalDisplacement))
-                    surveyPoint.Northing = horizontalDisplacement;
+                // TVD, Northing, Easting, VerticalSection will be auto-calculated by the service
 
                 return surveyPoint;
             }
@@ -131,7 +142,7 @@ namespace ProjectReport.Services.Survey
 
         /// <summary>
         /// Import survey data from Excel file (.xlsx)
-        /// Expected columns: MD, TVD, Hole Angle, Azimuth, Horizontal Displacement
+        /// Expected columns: MD, Hole Angle, Azimuth (TVD, Northing, Easting are auto-calculated)
         /// </summary>
         public ImportResult ImportFromExcel(string filePath)
         {
@@ -168,33 +179,33 @@ namespace ProjectReport.Services.Survey
                         {
                             var surveyPoint = new SurveyPoint();
 
+                            // Required: MD
                             if (row.Cell(1).TryGetValue(out double md))
                                 surveyPoint.MD = md;
                             else
                                 continue;
 
-                            if (row.Cell(2).TryGetValue(out double tvd))
-                                surveyPoint.TVD = tvd;
+                            // Required: Hole Angle
+                            if (row.Cell(2).TryGetValue(out double holeAngle))
+                                surveyPoint.HoleAngle = holeAngle;
                             else
                                 continue;
 
-                            if (surveyPoint.MD < surveyPoint.TVD)
-                                throw new InvalidOperationException($"MD ({surveyPoint.MD:F2}) must be >= TVD ({surveyPoint.TVD:F2})");
+                            // Validate hole angle range
+                            if (surveyPoint.HoleAngle > 93 || surveyPoint.HoleAngle < 0)
+                                throw new InvalidOperationException($"Hole Angle ({surveyPoint.HoleAngle:F2}°) must be between 0° and 93°");
 
-                            if (row.Cell(3).TryGetValue(out double holeAngle))
-                                surveyPoint.HoleAngle = holeAngle;
-
-                            if (surveyPoint.HoleAngle > 93)
-                                throw new InvalidOperationException($"Hole Angle ({surveyPoint.HoleAngle:F2}°) cannot exceed 93°");
-
-                            if (row.Cell(4).TryGetValue(out double azimuth))
+                            // Required: Azimuth
+                            if (row.Cell(3).TryGetValue(out double azimuth))
                                 surveyPoint.Azimuth = azimuth;
+                            else
+                                continue;
 
-                            if (surveyPoint.Azimuth > 360)
-                                throw new InvalidOperationException($"Azimuth ({surveyPoint.Azimuth:F2}°) cannot exceed 360°");
+                            // Validate azimuth range
+                            if (surveyPoint.Azimuth > 360 || surveyPoint.Azimuth < 0)
+                                throw new InvalidOperationException($"Azimuth ({surveyPoint.Azimuth:F2}°) must be between 0° and 360°");
 
-                            if (row.Cell(5).TryGetValue(out double northing))
-                                surveyPoint.Northing = northing;
+                            // TVD, Northing, Easting, VerticalSection will be auto-calculated
 
                             result.SurveyPoints.Add(surveyPoint);
                             result.ImportedCount++;
@@ -204,6 +215,12 @@ namespace ProjectReport.Services.Survey
                             result.ErrorCount++;
                             result.DetailedErrors.Add($"Row {row.RowNumber()}: {ex.Message}");
                         }
+                    }
+
+                    // Auto-calculate trajectories for all imported points
+                    if (result.SurveyPoints.Count > 0)
+                    {
+                        _calculationService.RecalculateAllTrajectories(result.SurveyPoints);
                     }
 
                     result.Success = result.ImportedCount > 0;

@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Configure Jets"
-        Height="440"
-        Width="460"
+        Height="600"
+        Width="700"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         Background="{DynamicResource AppBackground}"
         FocusManager.IsFocusScope="True">
 
@@ -90,65 +90,165 @@
 
         <!-- Body -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+            <StackPanel Margin="0,0,0,14">
 
-                <!-- Form Card -->
-                <Border Style="{StaticResource Card}">
+                <!-- Header: TFA Total -->
+                <Border Background="{DynamicResource AppCardBackground}"
+                        CornerRadius="12"
+                        Padding="16"
+                        BorderBrush="{StaticResource TableBorderBrush}"
+                        BorderThickness="1"
+                        Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Total Flow Area (TFA)"
+                                       Foreground="{DynamicResource AppSecondaryText}"
+                                       FontSize="14"/>
+                            <TextBlock Text="{Binding TfaTotal, StringFormat='{}{0:F3} in²'}"
+                                       FontSize="28"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AppAccent}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" 
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Right"
+                                   Margin="20,0,0,0">
+                            <Button Content="Add Jet Set"
+                                   Command="{Binding AddSetCommand}"
+                                   Width="140" Height="38"
+                                   Style="{StaticResource PrimaryButton}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Jet Sets List -->
+                <Border Background="{DynamicResource AppCardBackground}"
+                        CornerRadius="12"
+                        Padding="0"
+                        BorderBrush="{StaticResource TableBorderBrush}"
+                        BorderThickness="1">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Number of Jets -->
-                        <StackPanel Grid.Row="0" Margin="0,0,0,14">
-                            <TextBlock Text="Number of Jets" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource CenteredTextBox}"
-                                     Text="{Binding NumberOfJets, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='', FallbackValue=''}"/>
-                        </StackPanel>
-
-                        <!-- Jet Diameter -->
-                        <StackPanel Grid.Row="1" Margin="0,0,0,14">
-                            <TextBlock Text="Jet Diameter (32nds of an inch)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource CenteredTextBox}"
-                                     Text="{Binding DiameterIn32nds, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='', FallbackValue=''}"/>
-                        </StackPanel>
-
-                        <!-- TFA editable -->
-                        <StackPanel Grid.Row="2" Margin="0,0,0,6">
-                            <TextBlock Text="Total Flow Area (TFA) (in²)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource CenteredTextBox}"
-                                     Text="{Binding TFA_String, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='', FallbackValue=''}"/>
-                        </StackPanel>
-
-                        <!-- TFA summary -->
-                        <Border Grid.Row="3"
+                        <!-- Column Headers -->
+                        <Border Grid.Row="0"
                                 Background="#0D000000"
-                                CornerRadius="10"
-                                Padding="12"
-                                Margin="0,10,0,0">
+                                Padding="16,12"
+                                BorderBrush="{StaticResource TableBorderBrush}"
+                                BorderThickness="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="TFA (calculated)"
-                                           Foreground="{DynamicResource AppSecondaryText}"
-                                           FontWeight="SemiBold"
-                                           VerticalAlignment="Center"/>
-
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding TFA, StringFormat='{}{0:F3} in²'}"
-                                           FontSize="16"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource AppAccent}"
-                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Set#" 
+                                          FontWeight="SemiBold"
+                                          Foreground="{DynamicResource AppSecondaryText}"/>
+                                <TextBlock Grid.Column="1" Text="Jet Count" 
+                                          FontWeight="SemiBold"
+                                          Foreground="{DynamicResource AppSecondaryText}"/>
+                                <TextBlock Grid.Column="2" Text="Diameter (32nds)" 
+                                          FontWeight="SemiBold"
+                                          Foreground="{DynamicResource AppSecondaryText}"/>
+                                <TextBlock Grid.Column="3" Text="TFA (in²)" 
+                                          FontWeight="SemiBold"
+                                          Foreground="{DynamicResource AppSecondaryText}"/>
+                                <TextBlock Grid.Column="4"/>
                             </Grid>
                         </Border>
 
+                        <!-- Jet Sets Rows -->
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding JetSets}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="16,12"
+                                           BorderBrush="{StaticResource TableBorderBrush}"
+                                           BorderThickness="0,0,0,1">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="180"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="50"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Set ID (read-only) -->
+                                            <TextBlock Text="{Binding Id}"
+                                                      VerticalAlignment="Center"
+                                                      FontWeight="SemiBold"/>
+
+                                            <!-- Jet Count Input -->
+                                            <TextBox Grid.Column="1"
+                                                    Text="{Binding NumberOfJets, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='', FallbackValue=''}"
+                                                    Padding="8,4"
+                                                    Style="{StaticResource CenteredTextBox}"/>
+
+                                            <!-- Diameter Input -->
+                                            <TextBox Grid.Column="2"
+                                                    Text="{Binding JetDiameter32nds, Mode=TwoWay, UpdateSourceTrigger=LostFocus, TargetNullValue='', FallbackValue=''}"
+                                                    Padding="8,4"
+                                                    Style="{StaticResource CenteredTextBox}"/>
+
+                                            <!-- TFA (calculated, read-only) -->
+                                            <TextBlock Grid.Column="3"
+                                                      Text="{Binding TFACalculated, StringFormat='{}{0:F3}'}"
+                                                      VerticalAlignment="Center"
+                                                      Foreground="{DynamicResource AppAccent}"
+                                                      FontWeight="Bold"/>
+
+                                            <!-- Delete Button -->
+                                            <Button Grid.Column="4"
+                                                   Content="✕"
+                                                   Width="32" Height="32"
+                                                   Command="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext.RemoveSetCommand}"
+                                                   CommandParameter="{Binding}"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center"
+                                                   Padding="0"
+                                                   FontSize="16"
+                                                   Foreground="Red"
+                                                   Style="{StaticResource DefaultButton}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Empty State -->
+                        <TextBlock Grid.Row="1"
+                                  Text="No jet sets configured. Click 'Add Jet Set' to begin."
+                                  Padding="16,40"
+                                  Foreground="{DynamicResource AppSecondaryText}"
+                                  TextAlignment="Center"
+                                  FontStyle="Italic">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding JetSets.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding JetSets.Count}" Value="-1">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </Grid>
                 </Border>
 

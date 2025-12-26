@@ -18,6 +18,7 @@ using ProjectReport.Models.Geometry.Survey;
 using ProjectReport.Models.Geometry.WellTest;
 using ProjectReport.Services;
 using ProjectReport.Services.Wellbore;
+using ProjectReport.Services.Survey;
 using ProjectReport.Views.Geometry;
 using ProjectReport.Services.DrillString;
 
@@ -29,6 +30,7 @@ namespace ProjectReport.ViewModels.Geometry
         private readonly GeometryValidationService _validationService; // validation service
         private readonly DataPersistenceService _dataService;
         private readonly ThermalGradientService _thermalService;
+        private readonly SurveyCalculationService _surveyCalculationService; // Survey trajectory calculations
         private const double DepthTolerance = 0.01;
         private Well? _currentWell; // Reference to the current well being edited
         private string _wellName = string.Empty;
@@ -55,6 +57,7 @@ namespace ProjectReport.ViewModels.Geometry
             _validationService = new GeometryValidationService(); // new instance
             _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
             _thermalService = thermalService ?? throw new ArgumentNullException(nameof(thermalService));
+            _surveyCalculationService = new SurveyCalculationService(); // Initialize survey calculation service
 
             // Initialize Sub-ViewModels
             ThermalGradientViewModel = new ThermalGradientViewModel(_thermalService);
@@ -332,16 +335,51 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void OnSurveyPointChanged(object? sender, PropertyChangedEventArgs e)
         {
+            // Only trigger recalculation when input fields change (MD, HoleAngle, Azimuth)
+            // TVD, Northing, Easting, VerticalSection are auto-calculated and should not trigger recalc
             if (e.PropertyName == nameof(SurveyPoint.MD) || 
-                e.PropertyName == nameof(SurveyPoint.TVD) ||
                 e.PropertyName == nameof(SurveyPoint.HoleAngle) ||
                 e.PropertyName == nameof(SurveyPoint.Azimuth))
             {
                 if (sender is SurveyPoint point)
                 {
+                    // Recalculate trajectory for this point and all subsequent points
+                    RecalculateSurveyTrajectory(point);
                     ValidateSurveyPoint(point);
                 }
             }
+        }
+
+        /// <summary>
+        /// Recalculates trajectory for a survey point and all subsequent points.
+        /// Called when MD, HoleAngle, or Azimuth changes.
+        /// </summary>
+        private void RecalculateSurveyTrajectory(SurveyPoint changedPoint)
+        {
+            if (changedPoint == null) return;
+            
+            var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
+            int index = sorted.IndexOf(changedPoint);
+            
+            if (index < 0) return;
+            
+            // Recalculate from this point forward
+            for (int i = index; i < sorted.Count; i++)
+            {
+                var current = sorted[i];
+                var previous = i > 0 ? sorted[i - 1] : null;
+                _surveyCalculationService.CalculateTrajectory(current, previous);
+            }
+        }
+
+        /// <summary>
+        /// Recalculates trajectory for all survey points.
+        /// Useful after loading data or bulk changes.
+        /// </summary>
+        private void RecalculateAllSurveyTrajectories()
+        {
+            var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
+            _surveyCalculationService.RecalculateAllTrajectories(sorted);
         }
 
         /// <summary>
@@ -419,53 +457,21 @@ namespace ProjectReport.ViewModels.Geometry
             var sorted = WellboreComponents.OrderBy(c => c.TopMD).ToList();
             var lastSection = sorted.LastOrDefault();
             
+            // Create completely empty section - user must fill all fields
             var newSection = new WellboreComponent
             {
                 Id = GetNextWellboreId(),
-                Name = string.Empty,
-                SectionType = WellboreSectionType.Casing,
-                TopMD = 0,
-                BottomMD = 0,
-                OD = null,
-                ID = null,
-                Washout = null
+                Name = string.Empty,          // Empty name - user must enter
+                SectionType = default,        // null - user must select from dropdown
+                TopMD = null,                 // Empty - user must enter
+                BottomMD = null,              // Empty - user must enter
+                OD = null,                    // Empty - user must enter
+                ID = null,                    // Empty - user must enter
+                Washout = null                // Empty - optional for OpenHole
             };
 
-            // Smart Defaults based on previous
-            if (lastSection != null)
-            {
-                 // Check logic: if last was Casing, maybe next is Liner or smaller Casing?
-                 if (lastSection.SectionType == WellboreSectionType.Casing)
-                 {
-                     // Suggest OD smaller than previous ID if known, or just smaller OD
-                     if (lastSection.ID != null && lastSection.ID > 0)
-                     {
-                         // No specific OD prediction logic in spec, just "OD < Previous OD"
-                         // We leave it null for user input to avoid bad suggestions, but could suggest specific sizes if we had a catalog.
-                     }
-                 }
-                 else if (lastSection.SectionType == WellboreSectionType.OpenHole)
-                 {
-                     // If OpenHole, maybe next is deeper OpenHole or we just finished?
-                     // Usually OpenHole is last.
-                     newSection.SectionType = WellboreSectionType.OpenHole;
-                 }
-            }
-            else
-            {
-                // First section - keep fields blank to force user input
-                newSection.Name = string.Empty;
-                newSection.SectionType = WellboreSectionType.Casing;
-                newSection.OD = null;
-                newSection.ID = null;
-                newSection.TopMD = 0;
-                newSection.BottomMD = 0;
-            }
-
-            // check for overwrite opportunity if we were passed specific params (not applicable for generic Add button click)
-            // But real overwrite happens when USER edits the values. 
-            // However, the rules say: "Si se agrega un nuevo Casing Y: ... SOBRESCRIBIR"
-            // This implies if we had a dialog. But with direct grid, it's edit-based.
+            // Do NOT set TopMD/BottomMD to 0 - keep them null for empty form
+            // Do NOT set SectionType to Casing - keep it null (unselected in dropdown)
             
             WellboreComponents.Add(newSection);
             newSection.PropertyChanged += OnWellboreComponentChanged;
@@ -671,6 +677,9 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 ValidateWellboreComponent(component);
             }
+            
+            // Recalculate volumes for all sections on data load
+            RecalculateAllWellboreVolumes();
 
             // Load Drill String Components
             DrillStringComponents.Clear();
@@ -686,6 +695,9 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 SurveyPoints.Add(point);
             }
+            
+            // Recalculate all survey trajectories after loading
+            RecalculateAllSurveyTrajectories();
 
             // Load Well Tests
             WellTests.Clear();
@@ -1527,6 +1539,26 @@ namespace ProjectReport.ViewModels.Geometry
             else if (delta < -DepthTolerance)
             {
                 ShowDepthOverrunError();
+            }
+        }
+
+        /// <summary>
+        /// Recalculates volumes for all wellbore sections after data load.
+        /// Ensures sections with complete data (OD, ID, TopMD, BottomMD) show proper volumes.
+        /// </summary>
+        private void RecalculateAllWellboreVolumes()
+        {
+            if (WellboreComponents.Count == 0) return;
+            
+            var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                var current = sorted[i];
+                var previous = i > 0 ? sorted[i - 1] : null;
+                
+                // Calculate volume for this section with context of previous section
+                _geometryService.CalculateWellboreComponentVolume(current, "Imperial", previous);
             }
         }
 

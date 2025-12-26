@@ -790,11 +790,97 @@
 
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60" IsReadOnly="True"/>
 
-                                <DataGridTextColumn Header="MD (ft)" Binding="{Binding MD, StringFormat=F2}" Width="130"/>
-                                <DataGridTextColumn Header="TVD (ft)" Binding="{Binding TVD, StringFormat=F2}" Width="130"/>
-                                <DataGridTextColumn Header="Hole Angle (deg)" Binding="{Binding HoleAngle, StringFormat=F2}" Width="160"/>
-                                <DataGridTextColumn Header="Azimuth (deg)" Binding="{Binding Azimuth, StringFormat=F2}" Width="140"/>
-                                <DataGridTextColumn Header="Horizontal Displacement (ft)" Binding="{Binding Northing, StringFormat=F2}" Width="220"/>
+                                <DataGridTextColumn Header="MD (ft)" Binding="{Binding MD, StringFormat=F2, TargetNullValue=''}" Width="130">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="Measured Depth along wellbore (INPUT)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                </DataGridTextColumn>
+
+                                <!-- TVD - READ-ONLY CALCULATED -->
+                                <DataGridTextColumn Header="TVD (ft)" Binding="{Binding TVD, StringFormat=F2}" Width="130" IsReadOnly="True">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="True Vertical Depth (AUTO-CALCULATED)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Background" Value="#FFF3F4F6"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                            <Setter Property="FontStyle" Value="Italic"/>
+                                            <Setter Property="Padding" Value="10,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Hole Angle (°)" Binding="{Binding HoleAngle, StringFormat=F4, TargetNullValue=''}" Width="160">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="Inclination from vertical, 0-93° (INPUT)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Azimuth (°)" Binding="{Binding Azimuth, StringFormat=F4, TargetNullValue=''}" Width="140">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="Direction from North, 0-360° (INPUT)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Northing - READ-ONLY CALCULATED -->
+                                <DataGridTextColumn Header="Northing (ft)" Binding="{Binding Northing, StringFormat=F2}" Width="140" IsReadOnly="True">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="North coordinate (AUTO-CALCULATED)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Background" Value="#FFF3F4F6"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                            <Setter Property="FontStyle" Value="Italic"/>
+                                            <Setter Property="Padding" Value="10,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Easting - READ-ONLY CALCULATED -->
+                                <DataGridTextColumn Header="Easting (ft)" Binding="{Binding Easting, StringFormat=F2}" Width="140" IsReadOnly="True">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="East coordinate (AUTO-CALCULATED)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Background" Value="#FFF3F4F6"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                            <Setter Property="FontStyle" Value="Italic"/>
+                                            <Setter Property="Padding" Value="10,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <!-- Vertical Section - READ-ONLY CALCULATED -->
+                                <DataGridTextColumn Header="Horiz. Disp. (ft)" Binding="{Binding VerticalSection, StringFormat=F2}" Width="160" IsReadOnly="True">
+                                    <DataGridTextColumn.HeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="ToolTip" Value="Horizontal Displacement from origin (AUTO-CALCULATED)"/>
+                                        </Style>
+                                    </DataGridTextColumn.HeaderStyle>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Background" Value="#FFF3F4F6"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                            <Setter Property="FontStyle" Value="Italic"/>
+                                            <Setter Property="Padding" Value="10,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
 
                                 <DataGridTemplateColumn Header="Actions" Width="160">
                                     <DataGridTemplateColumn.CellTemplate>

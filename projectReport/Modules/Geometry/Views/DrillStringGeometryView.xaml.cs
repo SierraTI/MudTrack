@@ -69,10 +69,10 @@ namespace ProjectReport.Views.Geometry
                         break;
 
                     case ComponentType.Bit:
-                        var bitJetsWindow = new BitJetsConfigWindow(component.BitJetsConfig ?? null);
+                        var bitJetsWindow = new ProjectReport.Views.Geometry.BitAndJets.BitJetsConfigWindow(component.MultiBitJetsConfig ?? new ProjectReport.Models.Geometry.BitAndJets.MultiBitJetsConfig());
                         if (bitJetsWindow.ShowDialog() == true)
                         {
-                            component.BitJetsConfig = bitJetsWindow.Config;
+                            component.MultiBitJetsConfig = bitJetsWindow.Config;
                             component.IsTfaConfigured = true;
                         }
                         break;

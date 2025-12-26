@@ -318,5 +318,90 @@ namespace ProjectReport.Services
 
             return points.OrderBy(p => p.TVD).ToList();
         }
+
+        /// <summary>
+        /// Detects gradient anomalies where the gradient differs significantly from the average.
+        /// Returns list of point IDs that have anomalous gradients.
+        /// </summary>
+        /// <param name="points">Thermal gradient points (should be sorted by TVD)</param>
+        /// <param name="threshold">Threshold as a fraction (default 0.5 = 50% difference from average)</param>
+        /// <returns>List of point IDs with anomalous gradients</returns>
+        public List<int> DetectGradientAnomalies(List<ThermalGradientPoint> points, double threshold = 0.5)
+        {
+            var anomalousIds = new List<int>();
+
+            if (points == null || points.Count < 3)
+                return anomalousIds; // Need at least 3 points to detect anomalies
+
+            var sortedPoints = points.OrderBy(p => p.TVD).ToList();
+            double avgGradient = CalculateAverageGradient(sortedPoints);
+
+            if (Math.Abs(avgGradient) < 0.01)
+                return anomalousIds; // No meaningful gradient
+
+            // Check each segment
+            for (int i = 0; i < sortedPoints.Count - 1; i++)
+            {
+                var p1 = sortedPoints[i];
+                var p2 = sortedPoints[i + 1];
+
+                double segmentGradient = CalculateGradient(p1.TVD, p1.Temperature, p2.TVD, p2.Temperature);
+                double difference = Math.Abs(segmentGradient - avgGradient);
+                double percentDifference = difference / Math.Abs(avgGradient);
+
+                // If this segment's gradient differs by more than threshold from average, flag it
+                if (percentDifference > threshold)
+                {
+                    // Flag the second point as anomalous (the one causing the change)
+                    if (!anomalousIds.Contains(p2.Id))
+                        anomalousIds.Add(p2.Id);
+                }
+            }
+
+            return anomalousIds;
+        }
+
+        /// <summary>
+        /// Gets the temperature zone classification for a given temperature.
+        /// </summary>
+        /// <param name="temperature">Temperature in °F</param>
+        /// <returns>Zone name: "Cool", "Moderate", "Hot", or "Very Hot"</returns>
+        public string GetTemperatureZone(double temperature)
+        {
+            if (temperature < 150)
+                return "Cool";
+            else if (temperature < 250)
+                return "Moderate";
+            else if (temperature < 350)
+                return "Hot";
+            else
+                return "Very Hot";
+        }
+
+        /// <summary>
+        /// Calculates gradient for each point to the next point.
+        /// Updates the CalculatedGradient property on each point.
+        /// </summary>
+        /// <param name="points">Thermal gradient points (will be sorted by TVD)</param>
+        public void CalculatePointGradients(List<ThermalGradientPoint> points)
+        {
+            if (points == null || points.Count == 0)
+                return;
+
+            var sortedPoints = points.OrderBy(p => p.TVD).ToList();
+
+            for (int i = 0; i < sortedPoints.Count - 1; i++)
+            {
+                var p1 = sortedPoints[i];
+                var p2 = sortedPoints[i + 1];
+
+                double gradient = CalculateGradient(p1.TVD, p1.Temperature, p2.TVD, p2.Temperature);
+                p1.CalculatedGradient = gradient;
+            }
+
+            // Last point has no gradient to next point
+            if (sortedPoints.Count > 0)
+                sortedPoints[sortedPoints.Count - 1].CalculatedGradient = null;
+        }
     }
 }

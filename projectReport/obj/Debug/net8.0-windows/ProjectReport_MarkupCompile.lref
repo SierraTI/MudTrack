@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
 
 FC:\Users\Maryo\source\repos\MudTrack\ProjectReport\Core\Views\Controls\ToastNotificationControl.xaml;;
@@ -9,4 +10,17 @@ FC:\Users\Maryo\source\repos\MudTrack\ProjectReport\Modules\Home\Views\HomeView.
 FC:\Users\Maryo\source\repos\MudTrack\ProjectReport\Modules\ReportWizard\Views\ReportWizardView.xaml;;
 FC:\Users\Maryo\source\repos\MudTrack\ProjectReport\Modules\Shell\Views\MainWindow.xaml;;
 FC:\Users\Maryo\source\repos\MudTrack\ProjectReport\Modules\Well\Views\WellDashboardView.xaml;;
+=======
+﻿
+
+Fc:\Dev\MudTrack\ProjectReport\Core\Views\Controls\ToastNotificationControl.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Geometry\Views\DrillString\DrillStringGeometryView.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Geometry\Views\GeometryView.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Geometry\Views\PressureDropConfigWindow.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Geometry\Views\Wellbore\WellboreGeometryView.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Home\Views\HomeView.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\ReportWizard\Views\ReportWizardView.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Shell\Views\MainWindow.xaml;;
+Fc:\Dev\MudTrack\ProjectReport\Modules\Well\Views\WellDashboardView.xaml;;
+>>>>>>> ea3cb986f849b4626de2c3b9a62bbf41f581be68
 

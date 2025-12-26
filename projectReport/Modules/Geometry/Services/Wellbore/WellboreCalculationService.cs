@@ -15,7 +15,8 @@ namespace ProjectReport.Services.Wellbore
 
         /// <summary>
         /// Calcula el volumen de un componente de wellbore.
-        /// Considerando si es OpenHole (con washout) o Casing/Liner (volumen anular).
+        /// Para OpenHole: Volume = (ID² / 1029.4) × Length × (1 + Washout/100)
+        /// Para Casing/Liner: Volume anular o capacidad interna según contexto.
         /// </summary>
         public void CalculateWellboreComponentVolume(WellboreComponent component, string units, WellboreComponent? previousComponent)
         {
@@ -25,17 +26,18 @@ namespace ProjectReport.Services.Wellbore
 
             if (component.SectionType == WellboreSectionType.OpenHole)
             {
-                // OpenHole: Volumen = Hoyo con washout
-                // Formula: π/4 * OD² * Length * (1 + Washout%) / 1029.4
+                // OpenHole: Volumen = Diámetro del hoyo con washout
+                // Formula: (ID² / 1029.4) × Length × (1 + Washout%)
+                // Donde ID = OD (diámetro del hoyo en Open Hole)
                 if (component.OD.HasValue && component.OD.Value > 0)
                 {
-                    double length = (component.BottomMD ?? 0) - 
-                                  (component.TopMD ?? 0);
+                    double length = (component.BottomMD ?? 0) - (component.TopMD ?? 0);
                     
                     if (length > 0)
                     {
-                        double washoutFactor = 1.0 + (((component.Washout ?? 0) / 100.0));
-                        volume = (Math.PI / 4.0) * Math.Pow(component.OD.Value, 2) * length * washoutFactor / FEET_TO_BBL_DIVISOR;
+                        double washoutFactor = 1.0 + ((component.Washout ?? 0) / 100.0);
+                        double idSquared = Math.Pow(component.OD.Value, 2);
+                        volume = (idSquared / FEET_TO_BBL_DIVISOR) * length * washoutFactor;
                     }
                 }
             }
@@ -47,8 +49,7 @@ namespace ProjectReport.Services.Wellbore
                 if (previousComponent != null && previousComponent.ID.HasValue && 
                     component.OD.HasValue && previousComponent.ID.Value > 0 && component.OD.Value > 0)
                 {
-                    double length = (component.BottomMD ?? 0) - 
-                                  (component.TopMD ?? 0);
+                    double length = (component.BottomMD ?? 0) - (component.TopMD ?? 0);
                     
                     if (length > 0)
                     {
@@ -59,15 +60,13 @@ namespace ProjectReport.Services.Wellbore
                 }
                 else if (component.ID.HasValue && component.ID.Value > 0)
                 {
-                    // No previous component available. Fall back to internal capacity
-                    // of the current string (useful for single-row casing entries).
+                    // No previous component: capacidad interna del string actual
                     double length = (component.BottomMD ?? 0) - (component.TopMD ?? 0);
 
                     if (length > 0)
                     {
-                        // Internal capacity = π/4 * ID^2 * Length / divisor
                         double id2 = Math.Pow(component.ID.Value, 2);
-                        volume = (Math.PI / 4.0) * id2 * length / FEET_TO_BBL_DIVISOR;
+                        volume = (id2 / FEET_TO_BBL_DIVISOR) * length;
                     }
                 }
             }

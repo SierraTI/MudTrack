@@ -27,6 +27,8 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private ObservableCollection<string> _externalWarnings = new ObservableCollection<string>();
         // Dictionary for Warnings (Property -> List of Warnings)
         private readonly Dictionary<string, List<string>> _warnings = new();
+        private bool _isFirstRow = false;
+        private double? _previousBottomMD = null;
 
         public ObservableCollection<string> ValidationErrors
         {
@@ -286,6 +288,50 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
         }
 
+        /// <summary>
+        /// Gets a value indicating if this is the first wellbore row (starts at 0 MD).
+        /// </summary>
+        public bool IsFirstRow => _isFirstRow;
+
+        /// <summary>
+        /// Sets whether this is the first row in the wellbore.
+        /// First row must have TopMD = 0.
+        /// </summary>
+        public void SetAsFirstRow(bool isFirst)
+        {
+            if (_isFirstRow != isFirst)
+            {
+                _isFirstRow = isFirst;
+                if (isFirst)
+                {
+                    _topMD = 0;
+                    OnPropertyChanged(nameof(TopMD));
+                }
+                OnPropertyChanged(nameof(IsFirstRow));
+                OnPropertyChanged(nameof(IsTopMDEditable));
+            }
+        }
+
+        /// <summary>
+        /// Sets the previous component's Bottom MD to auto-link this row's Top MD.
+        /// </summary>
+        public void SetPreviousBottomMD(double? previousBottomMD)
+        {
+            _previousBottomMD = previousBottomMD;
+            if (previousBottomMD.HasValue && !_isFirstRow)
+            {
+                _topMD = previousBottomMD.Value;
+                OnPropertyChanged(nameof(TopMD));
+                OnPropertyChanged(nameof(Length));
+                OnPropertyChanged(nameof(Volume));
+            }
+        }
+
+        /// <summary>
+        /// Gets whether Top MD is editable (false if first row or linked to previous).
+        /// </summary>
+        public bool IsTopMDEditable => !_isFirstRow && _previousBottomMD == null;
+
         private void ValidateTopMD()
         {
             ClearErrors(nameof(TopMD));
@@ -496,6 +542,11 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
         }
 
+        /// <summary>
+        /// Gets whether Washout field should be enabled (only for OpenHole sections).
+        /// </summary>
+        public bool IsWashoutEnabled => SectionType == WellboreSectionType.OpenHole;
+
         public double AnnularVolume
         {
             get
@@ -630,7 +681,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
             // Rule A2: OD[n] < ID[n-1] (Telescopic Diameter)
             if (OD.GetValueOrDefault() >= previousComponent.ID.GetValueOrDefault() && previousComponent.ID.GetValueOrDefault() > 0.001)
             {
-                AddError(nameof(OD), $"Error A2: OD ({OD.GetValueOrDefault():F3} in) must be smaller than previous section ID ({previousComponent.ID.GetValueOrDefault():F3} in). Telescopic progression required.");
+                string currentOD = OD.GetValueOrDefault().ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+                string prevID = previousComponent.ID.GetValueOrDefault().ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+                AddError(nameof(OD), $"Error A2: OD ({currentOD} in) must be smaller than previous section ID ({prevID} in). Telescopic progression required.");
             }
         }
 
@@ -651,7 +704,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
                 
                 if (!isCasingOverride && (BottomMD ?? 0) < (previousComponent.BottomMD ?? 0))
                 {
-                    AddError(nameof(BottomMD), $"Error D3: Bottom MD ({BottomMD:F2} ft) cannot be less than previous casing depth ({previousComponent.BottomMD:F2} ft).");
+                    string currentMD = (BottomMD ?? 0).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                    string prevMD = (previousComponent.BottomMD ?? 0).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+                    AddError(nameof(BottomMD), $"Error D3: Bottom MD ({currentMD} ft) cannot be less than previous casing depth ({prevMD} ft).");
                 }
             }
         }

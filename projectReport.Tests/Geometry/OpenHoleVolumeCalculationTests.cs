@@ -135,7 +135,7 @@ namespace ProjectReport.Tests.Geometry
             };
 
             // Act
-            double id = component.ID;
+            double id = component.ID.GetValueOrDefault();
 
             // Assert
             Assert.Equal(0.0, id, 3); // ID should be exactly 0.000

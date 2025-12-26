@@ -34,6 +34,7 @@ namespace ProjectReport.Models.Geometry.DrillString
 
         // ✅ Jets only relevant if this component is BIT
         public BitJetSet Jets { get; set; } = new BitJetSet();
+        public ProjectReport.Models.Geometry.BitAndJets.MultiBitJetsConfig? MultiBitJetsConfig { get; set; }
 
         // Configuration objects
         public ToolJointConfig? ToolJoint { get; set; }
@@ -316,6 +317,48 @@ namespace ProjectReport.Models.Geometry.DrillString
         {
             get => _fluidDensity;
             set { _fluidDensity = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Weighted average OD considering tool joints.
+        /// Formula: (PipeLength × PipeOD + JointLength × JointOD) / TotalLength
+        /// </summary>
+        public double WeightedAverageOD
+        {
+            get
+            {
+                if (!IsToolJointConfigured || ToolJoint == null || !ToolJoint.TJ_OD.HasValue)
+                    return OD ?? 0;
+
+                double totalLength = Length ?? 0;
+                if (totalLength == 0) return OD ?? 0;
+
+                double jointLength = NumberOfJoints * (ToolJoint.TJ_Length ?? 0);
+                double pipeLength = totalLength - jointLength;
+
+                return ((pipeLength * (OD ?? 0)) + (jointLength * ToolJoint.TJ_OD.Value)) / totalLength;
+            }
+        }
+
+        /// <summary>
+        /// Weighted average ID considering tool joints.
+        /// Formula: (PipeLength × PipeID + JointLength × JointID) / TotalLength
+        /// </summary>
+        public double WeightedAverageID
+        {
+            get
+            {
+                if (!IsToolJointConfigured || ToolJoint == null || !ToolJoint.TJ_ID.HasValue)
+                    return ID ?? 0;
+
+                double totalLength = Length ?? 0;
+                if (totalLength == 0) return ID ?? 0;
+
+                double jointLength = NumberOfJoints * (ToolJoint.TJ_Length ?? 0);
+                double pipeLength = totalLength - jointLength;
+
+                return ((pipeLength * (ID ?? 0)) + (jointLength * ToolJoint.TJ_ID.Value)) / totalLength;
+            }
         }
 
         public List<PressureDropPoint> PressureDropPoints

@@ -31,6 +31,14 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             ThermalGradientPoints = new ObservableCollection<ThermalGradientPoint>();
             ThermalGradientPoints.CollectionChanged += OnThermalPointsCollectionChanged;
 
+            // Ensure a default Surface point (ID=1, TVD=0)
+            if (ThermalGradientPoints.Count == 0)
+            {
+                var surface = new ThermalGradientPoint(_nextId++, 0, 70.0);
+                surface.PropertyChanged += OnThermalPointPropertyChanged;
+                ThermalGradientPoints.Add(surface);
+            }
+
             // Initialize Chart
             SeriesCollection = new SeriesCollection
             {
@@ -185,6 +193,13 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             set => SetProperty(ref _temperatureZones, value);
         }
 
+        private int _anomaliesDetectedCount;
+        public int AnomaliesDetectedCount
+        {
+            get => _anomaliesDetectedCount;
+            set => SetProperty(ref _anomaliesDetectedCount, value);
+        }
+
         #endregion
 
         #region Commands
@@ -297,11 +312,19 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 return;
             }
 
-            var newPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, 0.0);
+            // Suggest a BHT temperature based on existing data (interpolation) if possible
+            double suggestedTemp = 0.0;
+            if (ThermalGradientPoints.Count >= 2)
+            {
+                suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), MaxWellboreTVD);
+            }
+
+            var newPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, suggestedTemp);
+            newPoint.Label = "BHT (Survey)"; // Auto-label imported point
             newPoint.PropertyChanged += OnThermalPointPropertyChanged;
             ThermalGradientPoints.Add(newPoint);
 
-            ToastNotificationService.Instance.ShowInfo($"TVD máxima del survey importada ({MaxWellboreTVD:F2} ft). Ingrese la temperatura.");
+            ToastNotificationService.Instance.ShowInfo($"TVD máxima del survey importada ({MaxWellboreTVD:F2} ft). Temperatura sugerida: {suggestedTemp:F1}°F");
         }
 
         #endregion
@@ -374,6 +397,42 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             var gradientWarnings = _thermalService.ValidateTemperatureGradient(ThermalGradientPoints.ToList());
             errors.AddRange(gradientWarnings);
 
+            // Clear per-point warnings
+            foreach (var p in ThermalGradientPoints)
+            {
+                p.HasValidationWarning = false;
+                p.ValidationMessage = string.Empty;
+            }
+
+            // Mark rows with warnings when gradient validation returns an ID (format includes "ID {id}:")
+            foreach (var warn in gradientWarnings)
+            {
+                try
+                {
+                    var marker = "ID ";
+                    var idx = warn.IndexOf(marker);
+                    if (idx >= 0)
+                    {
+                        var start = idx + marker.Length;
+                        var end = warn.IndexOf(':', start);
+                        if (end > start)
+                        {
+                            var idStr = warn.Substring(start, end - start).Trim();
+                            if (int.TryParse(idStr, out int warnId))
+                            {
+                                var point = ThermalGradientPoints.FirstOrDefault(pt => pt.Id == warnId);
+                                if (point != null)
+                                {
+                                    point.HasValidationWarning = true;
+                                    point.ValidationMessage = warn;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { /* non-fatal parsing */ }
+            }
+
             // Surface temperature reasonableness (T4 surface check)
             var surfacePoint = ThermalGradientPoints.OrderBy(p => p.TVD).FirstOrDefault();
             var surfaceWarning = surfacePoint != null ? _thermalService.ValidateSurfaceTemperature(surfacePoint) : null;
@@ -427,17 +486,20 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
             SurfaceTemperature = sortedPoints.First().Temperature;
             
-            if (sortedPoints.Count >= 2)
-            {
-                var (slope, intercept) = _thermalService.ComputeLinearRegression(sortedPoints);
-                RegressionSlope = slope;
-                RegressionIntercept = intercept;
+                if (sortedPoints.Count >= 2)
+                {
+                    // Regression for trend display
+                    var (slope, intercept) = _thermalService.ComputeLinearRegression(sortedPoints);
+                    RegressionSlope = slope;
+                    RegressionIntercept = intercept;
 
-                double targetTvd = MaxWellboreTVD > 0 ? MaxWellboreTVD : sortedPoints.Last().TVD;
-                BottomHoleTemperature = slope * targetTvd + intercept;
+                    // Use interpolation for BHT (temperature at target TVD)
+                    double targetTvd = MaxWellboreTVD > 0 ? MaxWellboreTVD : sortedPoints.Last().TVD;
+                    BottomHoleTemperature = _thermalService.InterpolateTemperature(sortedPoints, targetTvd);
 
-                TemperatureRange = BottomHoleTemperature - SurfaceTemperature;
-                AverageGradient = slope * 100.0; // °F per 100 ft
+                    // Temperature range and average gradient per spec
+                    TemperatureRange = BottomHoleTemperature - SurfaceTemperature;
+                    AverageGradient = _thermalService.CalculateAverageGradient(sortedPoints); // °F per 100 ft (per spec)
 
                 // Calculate segment gradients
                 var segments = _thermalService.CalculateSegmentGradients(sortedPoints);
@@ -465,6 +527,30 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             OnPropertyChanged(nameof(ShowChart));
         }
 
+        /// <summary>
+        /// Updates point labels automatically based on position.
+        /// </summary>
+        private void UpdatePointLabels()
+        {
+            if (ThermalGradientPoints.Count == 0) return;
+
+            var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
+
+            // Auto-label surface point (TVD = 0 or first point)
+            var surfacePoint = sortedPoints.FirstOrDefault(p => Math.Abs(p.TVD) < 0.01);
+            if (surfacePoint != null && string.IsNullOrEmpty(surfacePoint.Label))
+            {
+                surfacePoint.Label = "Surface";
+            }
+
+            // Auto-label BHT (deepest point) if not already labeled
+            var bhtPoint = sortedPoints.LastOrDefault();
+            if (bhtPoint != null && string.IsNullOrEmpty(bhtPoint.Label) && bhtPoint != surfacePoint)
+            {
+                bhtPoint.Label = "BHT";
+            }
+        }
+
         private void CalculateTemperatureZones(List<ThermalGradientPoint> sortedPoints)
         {
             var zones = new List<string>();
@@ -486,6 +572,32 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 zones.Add($"Very Hot (> 350°F): {sortedPoints.Where(p => p.Temperature >= 350).Min(p => p.TVD):F0}-{sortedPoints.Where(p => p.Temperature >= 350).Max(p => p.TVD):F0} ft");
             
             TemperatureZones = zones.Count > 0 ? string.Join(" | ", zones) : "No zones defined";
+
+            // Calculate per-point gradients
+            _thermalService.CalculatePointGradients(sortedPoints);
+
+            // Detect and flag anomalies
+            var anomalousIds = _thermalService.DetectGradientAnomalies(sortedPoints);
+            AnomaliesDetectedCount = anomalousIds.Count;
+
+            // Clear all anomaly flags first
+            foreach (var point in ThermalGradientPoints)
+            {
+                point.IsAnomalous = false;
+            }
+
+            // Set anomaly flags
+            foreach (var id in anomalousIds)
+            {
+                var point = ThermalGradientPoints.FirstOrDefault(p => p.Id == id);
+                if (point != null)
+                {
+                    point.IsAnomalous = true;
+                }
+            }
+
+            // Update point labels
+            UpdatePointLabels();
         }
 
         private void UpdateChart()

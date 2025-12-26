@@ -33,6 +33,13 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
             set => SetProperty(ref _totalWellboreMD, value);
         }
 
+        private double _totalVolume;
+        public double TotalVolume
+        {
+            get => _totalVolume;
+            set => SetProperty(ref _totalVolume, value);
+        }
+
         public WellboreGeometryViewModel(WellboreValidationService validationService, WellboreCalculationService calculationService)
         {
             _validationService = validationService ?? throw new ArgumentNullException(nameof(validationService));
@@ -70,6 +77,22 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                 ID = null,
                 Washout = null
             };
+
+            // If this is the first row, set it as first row (TopMD = 0)
+            if (WellboreComponents.Count == 0)
+            {
+                newSection.SetAsFirstRow(true);
+            }
+            else
+            {
+                // If not the first row, auto-link Top MD to previous Bottom MD
+                var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+                var lastComponent = sorted.LastOrDefault();
+                if (lastComponent != null && lastComponent.BottomMD.HasValue)
+                {
+                    newSection.SetPreviousBottomMD(lastComponent.BottomMD.Value);
+                }
+            }
 
             WellboreComponents.Add(newSection);
             newSection.PropertyChanged += OnWellboreComponentChanged;
@@ -112,12 +135,39 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                 RenumberWellboreSections();
             }
 
+            // Update continuity for all components
+            UpdateWellboreContinuity();
+
             foreach (var component in WellboreComponents)
             {
                 ValidateWellboreComponent(component);
             }
 
             RecalculateTotals();
+        }
+
+        /// <summary>
+        /// Actualiza la continuidad de Top MD para todas las secciones.
+        /// Primera fila: TopMD = 0
+        /// Filas posteriores: TopMD = BottomMD anterior
+        /// </summary>
+        private void UpdateWellboreContinuity()
+        {
+            var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                if (i == 0)
+                {
+                    sorted[i].SetAsFirstRow(true);
+                }
+                else
+                {
+                    sorted[i].SetAsFirstRow(false);
+                    var previousComponent = sorted[i - 1];
+                    sorted[i].SetPreviousBottomMD(previousComponent.BottomMD);
+                }
+            }
         }
 
         /// <summary>
@@ -159,6 +209,17 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                     var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
                     int index = sorted.IndexOf(component);
                     var prev = index > 0 ? sorted[index - 1] : null;
+
+                    // If Bottom MD changed, update continuity for following components
+                    if (e.PropertyName == nameof(WellboreComponent.BottomMD))
+                    {
+                        // Update Top MD of next component
+                        if (index >= 0 && index < sorted.Count - 1)
+                        {
+                            var nextComponent = sorted[index + 1];
+                            nextComponent.SetPreviousBottomMD(component.BottomMD);
+                        }
+                    }
 
                     _calculationService.CalculateWellboreComponentVolume(component, "Imperial", prev);
                     ValidateWellboreComponent(component);
@@ -224,13 +285,14 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
         #region Calculations
 
         /// <summary>
-        /// Recalcula el MD total del wellbore basado en la última sección.
+        /// Recalcula el MD total del wellbore y volumen total basado en las secciones.
         /// </summary>
         public void RecalculateTotals()
         {
             if (WellboreComponents.Count == 0)
             {
                 TotalWellboreMD = 0;
+                TotalVolume = 0;
                 return;
             }
 
@@ -245,6 +307,9 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
             {
                 TotalWellboreMD = 0;
             }
+
+            // Calculate total volume
+            TotalVolume = WellboreComponents.Sum(c => c.Volume);
         }
 
         #endregion

@@ -65,13 +65,15 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
         /// </summary>
         private void AddDrillStringComponent(object? parameter)
         {
+            // Create completely empty component
             var newComponent = new DrillStringComponent
             {
                 Id = GetNextDrillStringId(),
-                ComponentType = ComponentType.DrillPipe,
+                ComponentType = default,  // No default type - user must select
                 Length = null,
                 OD = null,
-                ID = null
+                ID = null,
+                Name = string.Empty  // Auto-name will be generated after type is selected
             };
 
             DrillStringComponents.Add(newComponent);
@@ -137,6 +139,9 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
                     component.Id = idCounter++;
                 }
                 _nextDrillStringId = idCounter;
+
+                // Auto-rename components to maintain sequence (e.g., "Drill Pipe 1", "Drill Pipe 2")
+                DrillStringNamingService.AutoRenameSequence((IList<DrillStringComponent>)DrillStringComponents);
             }
             finally
             {
@@ -157,8 +162,21 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
             {
                 if (sender is DrillStringComponent component)
                 {
+                    // Auto-generate name when ComponentType is selected
+                    if (e.PropertyName == nameof(DrillStringComponent.ComponentType) && component.ComponentType != default)
+                    {
+                        if (string.IsNullOrEmpty(component.Name))
+                        {
+                            component.Name = DrillStringNamingService.GenerateComponentName(
+                                component.ComponentType,
+                                DrillStringComponents
+                            );
+                        }
+                    }
+
                     ValidateDrillStringComponent(component);
                 }
+
                 RecalculateTotals();
             }
         }

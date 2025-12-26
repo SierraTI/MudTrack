@@ -271,10 +271,10 @@ namespace ProjectReport.Views
                         break;
 
                     case ComponentType.Bit:
-                        var bitJetsWindow = new ProjectReport.Views.Geometry.BitAndJets.BitJetsConfigWindow(component.BitJetsConfig ?? null);
+                        var bitJetsWindow = new ProjectReport.Views.Geometry.BitAndJets.BitJetsConfigWindow(component.MultiBitJetsConfig ?? new ProjectReport.Models.Geometry.BitAndJets.MultiBitJetsConfig());
                         if (bitJetsWindow.ShowDialog() == true)
                         {
-                            component.BitJetsConfig = bitJetsWindow.Config;
+                            component.MultiBitJetsConfig = bitJetsWindow.Config;
                             component.IsTfaConfigured = true;
                         }
                         break;
@@ -290,9 +290,9 @@ namespace ProjectReport.Views
             {
                 Id = _viewModel.GetNextSurveyId(),
                 MD = 0,
-                TVD = 0,
                 HoleAngle = 0,
                 Azimuth = 0
+                // TVD, Northing, Easting, VerticalSection are auto-calculated
             };
 
             _viewModel.SurveyPoints.Add(newPoint);

@@ -10,12 +10,13 @@ namespace ProjectReport.ViewModels.Geometry.Config
     {
         public ToolJointConfig Model { get; }
 
-        private double _tjOD;
-        private double _tjID;
-        private double _tjLength;
-        private double _weight;
+        private double? _tjOD;
+        private double? _tjID;
+        private double? _tjLength;
+        private double? _weight;
+        private double? _tjIDLength;
 
-        public double TJ_OD
+        public double? TJ_OD
         {
             get => Model.TJ_OD;
             set
@@ -31,21 +32,21 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_OD_String
         {
-            get => Model.TJ_OD == 0 ? "0" : Model.TJ_OD.ToString("F2");
+            get => Model.TJ_OD.HasValue ? Model.TJ_OD.Value.ToString("F2") : string.Empty;
             set
             {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    TJ_OD = null;
+                    return;
+                }
+
                 if (double.TryParse(value, out double result))
-                {
                     TJ_OD = result;
-                }
-                else if (string.IsNullOrWhiteSpace(value))
-                {
-                    TJ_OD = 0;
-                }
             }
         }
 
-        public double TJ_ID
+        public double? TJ_ID
         {
             get => Model.TJ_ID;
             set
@@ -61,21 +62,21 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_ID_String
         {
-            get => Model.TJ_ID == 0 ? "0" : Model.TJ_ID.ToString("F2");
+            get => Model.TJ_ID.HasValue ? Model.TJ_ID.Value.ToString("F2") : string.Empty;
             set
             {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    TJ_ID = null;
+                    return;
+                }
+
                 if (double.TryParse(value, out double result))
-                {
                     TJ_ID = result;
-                }
-                else if (string.IsNullOrWhiteSpace(value))
-                {
-                    TJ_ID = 0;
-                }
             }
         }
 
-        public double TJ_Length
+        public double? TJ_Length
         {
             get => Model.TJ_Length;
             set
@@ -91,21 +92,21 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_Length_String
         {
-            get => Model.TJ_Length == 0 ? "0" : Model.TJ_Length.ToString("F2");
+            get => Model.TJ_Length.HasValue ? Model.TJ_Length.Value.ToString("F2") : string.Empty;
             set
             {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    TJ_Length = null;
+                    return;
+                }
+
                 if (double.TryParse(value, out double result))
-                {
                     TJ_Length = result;
-                }
-                else if (string.IsNullOrWhiteSpace(value))
-                {
-                    TJ_Length = 0;
-                }
             }
         }
 
-        public double Weight
+        public double? Weight
         {
             get => Model.Weight;
             set
@@ -121,22 +122,21 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string Weight_String
         {
-            get => Model.Weight == 0 ? "0" : Model.Weight.ToString("F2");
+            get => Model.Weight.HasValue ? Model.Weight.Value.ToString("F2") : string.Empty;
             set
             {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    Weight = null;
+                    return;
+                }
+
                 if (double.TryParse(value, out double result))
-                {
                     Weight = result;
-                }
-                else if (string.IsNullOrWhiteSpace(value))
-                {
-                    Weight = 0;
-                }
             }
         }
 
-        private double _tjIDLength;
-        public double TJ_ID_Length
+        public double? TJ_ID_Length
         {
             get => Model.TJ_ID_Length;
             set
@@ -152,16 +152,53 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_ID_Length_String
         {
-            get => Model.TJ_ID_Length == 0 ? "0" : Model.TJ_ID_Length.ToString("F2");
+            get => Model.TJ_ID_Length.HasValue ? Model.TJ_ID_Length.Value.ToString("F2") : string.Empty;
             set
             {
-                if (double.TryParse(value, out double result))
+                if (string.IsNullOrWhiteSpace(value))
                 {
-                    TJ_ID_Length = result;
+                    TJ_ID_Length = null;
+                    return;
                 }
-                else if (string.IsNullOrWhiteSpace(value))
+
+                if (double.TryParse(value, out double result))
+                    TJ_ID_Length = result;
+            }
+        }
+
+        /// <summary>
+        /// Drill pipe grade (API standard)
+        /// </summary>
+        public string Grade
+        {
+            get => Model.Grade;
+            set
+            {
+                if (Model.Grade != value)
                 {
-                    TJ_ID_Length = 0;
+                    Model.Grade = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Available API standard grades for dropdown
+        /// </summary>
+        public System.Collections.Generic.List<string> AvailableGrades => ToolJointConfig.StandardGrades;
+
+        /// <summary>
+        /// Indicates if this component has a float sub installed
+        /// </summary>
+        public bool HasFloatSub
+        {
+            get => Model.HasFloatSub;
+            set
+            {
+                if (Model.HasFloatSub != value)
+                {
+                    Model.HasFloatSub = value;
+                    OnPropertyChanged();
                 }
             }
         }
@@ -188,27 +225,28 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public ToolJointConfigViewModel(ToolJointConfig model, ComponentType componentType = ComponentType.DrillPipe)
         {
-            Model = model;
+            Model = model ?? throw new ArgumentNullException(nameof(model));
             _componentType = componentType;
             _tjOD = model.TJ_OD;
             _tjID = model.TJ_ID;
             _tjLength = model.TJ_Length;
             _weight = model.Weight;
             _tjIDLength = model.TJ_ID_Length;
-            
-            // Notify that ShowToolIDLength is initialized
+
             OnPropertyChanged(nameof(ShowToolIDLength));
-            
-            // Notify string properties to ensure proper display
+
             OnPropertyChanged(nameof(TJ_OD_String));
             OnPropertyChanged(nameof(TJ_ID_String));
             OnPropertyChanged(nameof(TJ_Length_String));
             OnPropertyChanged(nameof(Weight_String));
             OnPropertyChanged(nameof(TJ_ID_Length_String));
+            OnPropertyChanged(nameof(Grade));
+            OnPropertyChanged(nameof(HasFloatSub));
+            OnPropertyChanged(nameof(AvailableGrades));
 
             SaveCommand = new RelayCommand(_ =>
             {
-                if (TJ_ID >= TJ_OD)
+                if (Model.TJ_ID.HasValue && Model.TJ_OD.HasValue && Model.TJ_ID >= Model.TJ_OD)
                 {
                     MessageBox.Show("Tool Joint ID must be less than Tool Joint OD", "Validation Error",
                         MessageBoxButton.OK, MessageBoxImage.Error);

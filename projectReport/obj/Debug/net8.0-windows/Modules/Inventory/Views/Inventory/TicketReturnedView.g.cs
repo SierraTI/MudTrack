@@ -51,7 +51,11 @@ namespace ProjectReport.Views.Inventory {
                 return;
             }
             _contentLoaded = true;
+<<<<<<< HEAD:projectReport/obj/Debug/net8.0-windows/Modules/Inventory/Views/Inventory/TicketReturnedView.g.cs
             System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/inventory/views/inventory/ticketreturnedview.xam" +
+=======
+            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/inventory/views/inventory/ticketconsumedview.xam" +
+>>>>>>> ea3cb986f849b4626de2c3b9a62bbf41f581be68:projectReport/obj/Debug/net8.0-windows/Modules/Inventory/Views/Inventory/TicketConsumedView.g.cs
                     "l"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Inventory\Views\Inventory\TicketReturnedView.xaml"

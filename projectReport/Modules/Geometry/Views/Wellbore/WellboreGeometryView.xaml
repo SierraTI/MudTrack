@@ -5,8 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:converters="clr-namespace:ProjectReport.Converters"
              mc:Ignorable="d"
-             d:DesignHeight="600"
-             d:DesignWidth="1200">
+             d:DesignHeight="700"
+             d:DesignWidth="1400">
 
     <UserControl.Resources>
         <!-- Converters -->
@@ -21,6 +21,8 @@
         <SolidColorBrush x:Key="BrandOrange" Color="#F57C1F"/>
         <SolidColorBrush x:Key="BrandOrangeHover" Color="#EF6C00"/>
         <SolidColorBrush x:Key="Danger" Color="#DC2626"/>
+        <SolidColorBrush x:Key="DisabledBackground" Color="#F3F4F6"/>
+        <SolidColorBrush x:Key="DisabledText" Color="#9CA3AF"/>
 
         <!-- Card Style -->
         <Style x:Key="CardBorder" TargetType="Border">
@@ -68,36 +70,66 @@
             <Setter Property="SelectionUnit" Value="FullRow"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
+
+        <!-- Disabled TextBox Style -->
+        <Style x:Key="DisabledTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource DisabledBackground}"/>
+            <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header with Total MD and Add Button -->
+        <!-- Header with Totals and Add Button -->
         <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Total Wellbore MD:"
-                               Foreground="{StaticResource TextMuted}"
-                               FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding TotalWellboreMD, StringFormat='  {0:F2} ft'}"
-                               Foreground="{StaticResource BrandOrange}"
-                               FontWeight="Bold"/>
-                    <TextBlock Text="   Tip: use '.' for decimals."
-                               Foreground="{StaticResource TextMuted}"
-                               FontSize="12"
-                               VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Total Wellbore MD:"
+                                   Foreground="{StaticResource TextMuted}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalWellboreMD, StringFormat=' {0:F2} ft '}"
+                                   Foreground="{StaticResource BrandOrange}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Total Volume:"
+                                   Foreground="{StaticResource TextMuted}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalWellboreVolume, StringFormat=' {0:F2} bbl'}"
+                                   Foreground="{StaticResource BrandOrange}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
 
-                <Button Grid.Column="1"
+                <TextBlock Grid.Column="1"
+                           Text="Use '.' for decimals"
+                           Foreground="{StaticResource TextMuted}"
+                           FontSize="11"
+                           VerticalAlignment="Center"
+                           Margin="20,0,20,0"/>
+
+                <Button Grid.Column="2"
                         Content="Add Section"
                         Style="{StaticResource BrandPrimaryButton}"
                         Command="{Binding AddWellboreSectionCommand}"/>
@@ -115,10 +147,10 @@
 
             <DataGrid.Columns>
                 <!-- ID Column -->
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60" IsReadOnly="True"/>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" IsReadOnly="True"/>
 
                 <!-- Section Type Column -->
-                <DataGridTemplateColumn Header="Section Type" Width="160">
+                <DataGridTemplateColumn Header="Section Type" Width="130">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding SectionType}" VerticalAlignment="Center" Padding="10,6"/>
@@ -128,7 +160,8 @@
                         <DataTemplate>
                             <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                       SelectedItem="{Binding SectionType, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="."/>
+                                      DisplayMemberPath="."
+                                      Padding="8,6"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
@@ -136,47 +169,96 @@
                 <!-- OD Column -->
                 <DataGridTextColumn Header="OD (in)" 
                                     Binding="{Binding OD, StringFormat=F3, TargetNullValue=''}" 
-                                    Width="110"/>
+                                    Width="100"/>
 
                 <!-- ID Column -->
                 <DataGridTextColumn Header="ID (in)" 
                                     Binding="{Binding ID, StringFormat=F3, TargetNullValue=''}" 
-                                    Width="110"/>
+                                    Width="100"/>
 
-                <!-- Top MD Column -->
-                <DataGridTextColumn Header="Top MD (ft)" 
-                                    Binding="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
-                                    Width="130"/>
+                <!-- Top MD Column - Read-only for continuity -->
+                <DataGridTemplateColumn Header="Top MD (ft)" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
+                                       VerticalAlignment="Center" 
+                                       Padding="10,6"
+                                       Foreground="{StaticResource DisabledText}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
+                                     IsEnabled="{Binding IsTopMDEditable}"
+                                     Style="{StaticResource DisabledTextBox}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
 
                 <!-- Bottom MD Column -->
                 <DataGridTextColumn Header="Bottom MD (ft)" 
                                     Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" 
-                                    Width="140"/>
+                                    Width="120"/>
 
-                <!-- Washout Column -->
-                <DataGridTextColumn Header="Washout (%)" 
-                                    Binding="{Binding Washout, StringFormat=F2, TargetNullValue=''}" 
-                                    Width="130"/>
+                <!-- Washout Column - Enabled only for OpenHole -->
+                <DataGridTemplateColumn Header="Washout (%)" Width="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Washout, StringFormat=F2, TargetNullValue='-'}" 
+                                       VerticalAlignment="Center" 
+                                       Padding="10,6"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Washout, StringFormat=F2, TargetNullValue=''}" 
+                                     IsEnabled="{Binding IsWashoutEnabled}"
+                                     Style="{StaticResource DisabledTextBox}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
 
                 <!-- Volume Column -->
                 <DataGridTextColumn Header="Volume (bbl)" 
                                     Binding="{Binding Volume, StringFormat=F2, TargetNullValue=''}" 
-                                    Width="130" 
+                                    Width="110" 
                                     IsReadOnly="True"/>
 
                 <!-- Actions Column -->
-                <DataGridTemplateColumn Header="Actions" Width="160">
+                <DataGridTemplateColumn Header="Actions" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Content="↑" Padding="8,4" MinWidth="30" ToolTip="Move Up" Margin="2,0"/>
-                                <Button Content="↓" Padding="8,4" MinWidth="30" ToolTip="Move Down" Margin="2,0"/>
-                                <Button Content="×" Padding="8,4" MinWidth="30" ToolTip="Delete" Foreground="{StaticResource Danger}" Margin="2,0"/>
+                                <Button Content="↑" Padding="8,4" MinWidth="25" ToolTip="Move Up" Margin="1,0"/>
+                                <Button Content="↓" Padding="8,4" MinWidth="25" ToolTip="Move Down" Margin="1,0"/>
+                                <Button Content="×" Padding="8,4" MinWidth="25" ToolTip="Delete" 
+                                        Foreground="{StaticResource Danger}" Margin="1,0"
+                                        Command="{Binding DataContext.DeleteWellboreSectionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        CommandParameter="{Binding}"/>
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+
+        <!-- Footer with Legend and Notes -->
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Margin="0,12,0,0">
+            <StackPanel>
+                <TextBlock Text="Legend &amp; Notes" FontWeight="Bold" Foreground="{StaticResource TextStrong}" Margin="0,0,0,8"/>
+                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
+                    <Run Text="• Top MD is auto-linked to the previous section's Bottom MD (cannot be edited manually)."/>
+                </TextBlock>
+                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
+                    <Run Text="• Washout (%) is only enabled for Open Hole sections."/>
+                </TextBlock>
+                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
+                    <Run Text="• Volume (bbl) is calculated automatically based on ID, Bottom MD, Top MD, and Washout."/>
+                </TextBlock>
+                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11">
+                    <Run Text="• Ensure ID ≤ OD for all sections to maintain telescopic progression."/>
+                </TextBlock>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

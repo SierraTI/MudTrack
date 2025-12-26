@@ -52,8 +52,8 @@ namespace ProjectReport.Views.Modals {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/modules/geometry/views/modals/validationresultmodal.xaml" +
-                    "", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ProjectReport;V1.0.0.0;component/modules/geometry/views/modals/validationresultm" +
+                    "odal.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Geometry\Views\Modals\ValidationResultModal.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

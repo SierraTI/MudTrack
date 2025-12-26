@@ -60,53 +60,58 @@ namespace ProjectReport.Services
 
         /// <summary>
         /// Calculates volume for a wellbore component.
-        /// Only calculates Annular Volume for Casing/Liner if previous ID is known.
-        /// Internal capacity is left to the View/Model binding if needed, but per spec, "Volume" column is Annular.
+        /// For Casing/Liner: Annular Volume = (ID_prev^2 - OD_curr^2) * Length / 1029.4
+        /// For first casing without previous section: Internal Capacity = ID^2 * Length / 1029.4
+        /// For OpenHole: Uses internal calculation with washout adjustment
         /// </summary>
         public double CalculateWellboreComponentVolume(WellboreComponent component, string unitSystem, WellboreComponent? previousComponent = null)
         {
             if (component == null) return 0;
 
-            // OpenHole volume is self-contained (depends on ID/Washout) and handled in the Model property getter mainly,
-            // but we can force update here if needed.
-            // However, the Model getter uses its own properties.
-            
-            // For Casing/Liner, we need the Annular Volume (Previous ID - Current OD).
-            if (component.SectionType != WellboreSectionType.OpenHole)
+            // Verify we have minimum required data
+            if (component.Length <= 0 || (!component.OD.HasValue && !component.ID.HasValue))
             {
-                if (previousComponent != null && previousComponent.ID.HasValue && component.OD.HasValue)
+                component.Volume = 0;
+                return 0;
+            }
+
+            // Case 1: OpenHole
+            if (component.SectionType == WellboreSectionType.OpenHole)
+            {
+                // For OpenHole: OD = Hole Diameter, ID = 0
+                if (component.OD.HasValue && component.OD.Value > 0)
                 {
-                    // Annular Volume = (ID_prev^2 - OD_curr^2) * Length / 1029.4
-                    double prevID = previousComponent.ID.Value;
-                    double currOD = component.OD.Value;
-                    
-                    if (prevID > currOD)
-                    {
-                        double length = component.Length;
-                        double vol = Math.Max(0, (Math.Pow(prevID, 2) - Math.Pow(currOD, 2)) / BblVolumeConstant * length);
-                        
-                        // We need to set this on the component. 
-                        // Since component.Volume is just a getter for OpenHole or a backing field,
-                        // we need to set the backing field.
-                        component.Volume = vol; 
-                        return vol;
-                    }
+                    double holeDiameter = component.OD.Value;
+                    double washoutFactor = 1.0 + (component.Washout.GetValueOrDefault(0) / 100.0);
+                    double vol = (Math.PI / 4.0) * Math.Pow(holeDiameter, 2) * component.Length * washoutFactor / BblVolumeConstant;
+                    component.Volume = vol;
+                    return vol;
                 }
-                else if (previousComponent == null)
-                {
-                   // First component (Surface Casing/Conductor)?
-                   // Spec 3.1: "Para la primera fila... calcular con el ID del agujero perforado o conductor."
-                   // If we don't know the drilled hole size, we can't calculate annular.
-                   // Leave as 0 or strictly capacity?
-                   // Let's leave as 0 for now as we lack the "Drilled Hole Size" property for the first row.
-                   component.Volume = 0;
-                   return 0;
-                }
+                component.Volume = 0;
+                return 0;
             }
             
-            // For OpenHole, the model calculates it internally given Washout.
-            // Just return what the model says (triggering its internal logic if accessed).
-            return component.Volume;
+            // Case 2: Casing/Liner with previous component
+            if (previousComponent != null && previousComponent.ID.HasValue && component.OD.HasValue && previousComponent.ID.Value > component.OD.Value)
+            {
+                // Annular Volume = (ID_prev^2 - OD_curr^2) * Length / 1029.4
+                double annularVol = Math.Max(0, (Math.Pow(previousComponent.ID.Value, 2) - Math.Pow(component.OD.Value, 2)) / BblVolumeConstant * component.Length);
+                component.Volume = annularVol;
+                return annularVol;
+            }
+            
+            // Case 3: First Casing/Liner (no previous component) - Use Internal Capacity
+            if (previousComponent == null && component.ID.HasValue && component.ID.Value > 0)
+            {
+                // Internal Capacity = ID^2 * Length / 1029.4
+                double capacity = (Math.Pow(component.ID.Value, 2) / BblVolumeConstant) * component.Length;
+                component.Volume = capacity;
+                return capacity;
+            }
+            
+            // Default: insufficient data
+            component.Volume = 0;
+            return 0;
         }
 
         /// <summary>

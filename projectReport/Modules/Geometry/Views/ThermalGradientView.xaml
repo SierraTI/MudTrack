@@ -376,6 +376,19 @@
                               Style="{StaticResource ModernDataGrid}"
                               SelectionMode="Single">
 
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <!-- Anomalous gradient highlighting -->
+                                    <DataTrigger Binding="{Binding IsAnomalous}" Value="True">
+                                        <Setter Property="Background" Value="#FFFFF4E6"/>
+                                        <Setter Property="BorderBrush" Value="#FFFF9800"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
                         <DataGrid.Columns>
 
                             <!-- ID -->
@@ -419,6 +432,43 @@
                                                 <Setter Property="Background" Value="#FFF7ED"/>
                                             </DataTrigger>
                                         </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Label -->
+                            <DataGridTextColumn Header="Label"
+                                                Binding="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="140">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="ToolTip" Value="Point label (e.g., Surface, Mudline, BHT)"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Foreground" Value="#6366F1"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Calculated Gradient (Read-Only) -->
+                            <DataGridTextColumn Header="Gradient (°F/100ft)"
+                                                Binding="{Binding CalculatedGradient, StringFormat=F2}"
+                                                Width="160"
+                                                IsReadOnly="True">
+                                <DataGridTextColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="ToolTip" Value="Calculated gradient to next point (AUTO-CALCULATED)"/>
+                                    </Style>
+                                </DataGridTextColumn.HeaderStyle>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Background" Value="#FFF3F4F6"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                        <Setter Property="FontStyle" Value="Italic"/>
+                                        <Setter Property="Padding" Value="10,0"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
@@ -515,6 +565,16 @@
                                 <TextBlock Text="{Binding DataPointsCount}" Style="{StaticResource MetricValue}"/>
                             </StackPanel>
                         </Border>
+
+                        <Border Style="{StaticResource MetricTile}" Margin="0,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Anomalies Detected" Style="{StaticResource MetricLabel}"/>
+                                <TextBlock Text="{Binding AnomaliesDetectedCount}" 
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="#DC2626"/>
+                            </StackPanel>
+                        </Border>
                     </WrapPanel>
 
                     <!-- Placeholder (only when ShowChart false) -->
@@ -545,12 +605,19 @@
                             BorderThickness="1"
                             Padding="10"
                             Style="{StaticResource ShownWhenTrue}">
-                        <!-- Si ya tienes el LiveCharts aquí en tu versión real, pégalo dentro de este Border -->
                         <Grid>
-                            <TextBlock Text="(Chart goes here)"
-                                       Foreground="{StaticResource TextMuted}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
+                            <lvc:CartesianChart Series="{Binding SeriesCollection}"
+                                                LegendLocation="Right"
+                                                Zoom="Xy"
+                                                Hoverable="True">
+                                <lvc:CartesianChart.AxisX>
+                                    <lvc:Axis Title="Temperature (°F)" LabelFormatter="{Binding XFormatter}"/>
+                                </lvc:CartesianChart.AxisX>
+                                <lvc:CartesianChart.AxisY>
+                                    <!-- We store TVD as negative to invert axis; use formatter to show positive values -->
+                                    <lvc:Axis Title="TVD (ft)" LabelFormatter="{Binding YFormatter}"/>
+                                </lvc:CartesianChart.AxisY>
+                            </lvc:CartesianChart>
                         </Grid>
                     </Border>
 

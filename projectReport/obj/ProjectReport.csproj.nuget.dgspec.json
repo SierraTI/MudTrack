@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Dev\\MudTrack\\projectReport\\ProjectReport.csproj": {}
+    "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj": {}
   },
   "projects": {
-    "C:\\Dev\\MudTrack\\projectReport\\ProjectReport.csproj": {
+    "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Dev\\MudTrack\\projectReport\\ProjectReport.csproj",
+        "projectUniqueName": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj",
         "projectName": "ProjectReport",
-        "projectPath": "C:\\Dev\\MudTrack\\projectReport\\ProjectReport.csproj",
+        "projectPath": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj",
         "packagesPath": "C:\\Users\\GSA_PC_049\\.nuget\\packages\\",
-        "outputPath": "C:\\Dev\\MudTrack\\projectReport\\obj\\",
+        "outputPath": "C:\\Dev\\MudTrack\\ProjectReport\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

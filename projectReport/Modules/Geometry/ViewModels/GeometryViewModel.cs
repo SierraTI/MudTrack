@@ -454,8 +454,8 @@ namespace ProjectReport.ViewModels.Geometry
         
         private void AddWellboreSection(object? parameter)
         {
-            var sorted = WellboreComponents.OrderBy(c => c.TopMD).ToList();
-            var lastSection = sorted.LastOrDefault();
+            var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            var lastSection = sorted.FirstOrDefault(c => c.TopMD.HasValue);
             
             // Create completely empty section - user must fill all fields
             var newSection = new WellboreComponent
@@ -463,15 +463,25 @@ namespace ProjectReport.ViewModels.Geometry
                 Id = GetNextWellboreId(),
                 Name = string.Empty,          // Empty name - user must enter
                 SectionType = default,        // null - user must select from dropdown
-                TopMD = null,                 // Empty - user must enter
+                TopMD = null,                 // Will be auto-set
                 BottomMD = null,              // Empty - user must enter
                 OD = null,                    // Empty - user must enter
                 ID = null,                    // Empty - user must enter
                 Washout = null                // Empty - optional for OpenHole
             };
 
-            // Do NOT set TopMD/BottomMD to 0 - keep them null for empty form
-            // Do NOT set SectionType to Casing - keep it null (unselected in dropdown)
+            // Auto-link TopMD logic:
+            if (WellboreComponents.Count == 0)
+            {
+                // First row always starts at TopMD = 0
+                newSection.SetAsFirstRow(true);
+                newSection.TopMD = 0;
+            }
+            else if (lastSection != null && lastSection.BottomMD.HasValue)
+            {
+                // Subsequent rows: TopMD = previous row's BottomMD (auto-linked)
+                newSection.SetPreviousBottomMD(lastSection.BottomMD.Value);
+            }
             
             WellboreComponents.Add(newSection);
             newSection.PropertyChanged += OnWellboreComponentChanged;

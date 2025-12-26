@@ -115,7 +115,7 @@
                                    Foreground="{StaticResource TextMuted}"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding TotalVolume, StringFormat=' {0:F2} bbl'}"
+                        <TextBlock Text="{Binding TotalWellboreVolume, StringFormat=' {0:F2} bbl'}"
                                    Foreground="{StaticResource BrandOrange}"
                                    FontWeight="Bold"
                                    VerticalAlignment="Center"/>

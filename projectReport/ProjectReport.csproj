@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>NU1701</NoWarn>
+    <UseAppHost>true</UseAppHost>
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon>
+    <Win32Icon>Assets\app.ico</Win32Icon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\Inventory\InventoryItem.cs" />
+    <Compile Remove="ViewModels\Inventory\InventoryViewModel.cs" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="LiveCharts.Wpf" Version="0.9.7" />
+	<PackageReference Include="CommunityToolkit.Mvvm" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <Resource Include="Assets\Logo.png" />
+    <Resource Include="Assets\FooterLogo.png" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Modules\Inventory\Legacy\Models\" />
+    <Folder Include="Modules\Inventory\Legacy\Services\" />
+    <Folder Include="Modules\Inventory\Legacy\ViewModels\" />
+    <Folder Include="Views\Geometry\Modals\" />
+    <Folder Include="Views\Geometry\ThermalGradient\" />
+  </ItemGroup>
+
+
+</Project>
+

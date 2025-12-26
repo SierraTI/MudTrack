@@ -1,0 +1,5 @@
+Name,Section Type,Top MD,Bottom MD,ID,OD
+Surface Casing,Casing,0,1000,12.615,13.375
+Intermediate Casing,Casing,1000,5000,8.835,9.625
+Production Liner,Liner,5000,10000,6.276,7.000
+Open Hole Section,OpenHole,10000,12500,8.5,0

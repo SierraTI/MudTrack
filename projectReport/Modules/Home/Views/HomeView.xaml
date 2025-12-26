@@ -1,0 +1,300 @@
+<UserControl x:Class="ProjectReport.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:inventory="clr-namespace:ProjectReport.Views.Inventory"
+             xmlns:conv="clr-namespace:ProjectReport.Converters"
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+
+        <!-- Responsive dashboard columns -->
+        <conv:WidthToColumnsConverter x:Key="WidthToColumnsConverter"/>
+
+        <!-- ===== TEMPLATE: GRID VIEW (DataGrid) ===== -->
+        <DataTemplate x:Key="GridTemplate">
+            <Border Background="White"
+                    BorderBrush="#DDD"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <DataGrid ItemsSource="{Binding WellsView}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          RowHeaderWidth="0"
+                          ColumnHeaderHeight="32"
+                          MinRowHeight="30"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="True"
+                          ScrollViewer.CanContentScroll="True">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Well" Binding="{Binding WellName}" Width="*" />
+                        <DataGridTextColumn Header="Operator" Binding="{Binding Operator}" Width="*" />
+                        <DataGridTextColumn Header="Field" Binding="{Binding Field}" Width="*" />
+                        <DataGridTextColumn Header="Block" Binding="{Binding Block}" Width="*" />
+                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120" />
+                        <DataGridTextColumn Header="Last Modified"
+                                            Binding="{Binding LastModified, StringFormat=g}"
+                                            Width="160" />
+
+                        <!-- ACTIONS -->
+                        <DataGridTemplateColumn Header="Actions" Width="260">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Content="Open" Margin="2" Padding="6,2"
+                                                Command="{Binding DataContext.OpenWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Edit" Margin="2" Padding="6,2"
+                                                Command="{Binding DataContext.EditWellDataCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Duplicate" Margin="2" Padding="6,2"
+                                                Command="{Binding DataContext.DuplicateWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Archive" Margin="2" Padding="6,2"
+                                                Command="{Binding DataContext.ArchiveWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Delete" Margin="2" Padding="6,2"
+                                                Background="#CC3333" Foreground="White"
+                                                Command="{Binding DataContext.DeleteWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+        </DataTemplate>
+
+        <!-- ===== TEMPLATE: CARD VIEW ===== -->
+        <DataTemplate x:Key="CardTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding WellsView}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel IsItemsHost="True" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="360"
+                                    Margin="8"
+                                    Padding="14"
+                                    CornerRadius="10"
+                                    BorderBrush="#E5E5E5"
+                                    BorderThickness="1"
+                                    Background="White">
+                                <StackPanel>
+
+                                    <DockPanel Margin="0,0,0,10">
+                                        <TextBlock Text="{Binding WellName}"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Status}"
+                                                   Foreground="#666"
+                                                   DockPanel.Dock="Right"
+                                                   HorizontalAlignment="Right"/>
+                                    </DockPanel>
+
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Operator:" Foreground="#777"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Operator}" />
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Field:" Foreground="#777"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Field}" />
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Block:" Foreground="#777"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Block}" />
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding LastModified, StringFormat=Last Modified: {0:g}}"
+                                               Foreground="#777"
+                                               Margin="0,0,0,10"/>
+
+                                    <WrapPanel HorizontalAlignment="Right">
+                                        <Button Content="Open" Margin="2" Padding="10,4"
+                                                Command="{Binding DataContext.OpenWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Edit" Margin="2" Padding="10,4"
+                                                Command="{Binding DataContext.EditWellDataCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Duplicate" Margin="2" Padding="10,4"
+                                                Command="{Binding DataContext.DuplicateWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Archive" Margin="2" Padding="10,4"
+                                                Command="{Binding DataContext.ArchiveWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <Button Content="Delete" Margin="2" Padding="10,4"
+                                                Background="#CC3333" Foreground="White"
+                                                Command="{Binding DataContext.DeleteWellCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DataTemplate>
+
+    </UserControl.Resources>
+
+    <Grid>
+        <TabControl>
+
+            <!-- TAB 1: DASHBOARD -->
+            <TabItem Header="Dashboard">
+                <Grid Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />   <!-- Dashboard -->
+                        <RowDefinition Height="Auto" />   <!-- Filters -->
+                        <RowDefinition Height="*" />      <!-- Content -->
+                    </Grid.RowDefinitions>
+
+                    <!-- DASHBOARD CARD -->
+                    <Border Grid.Row="0"
+                            Background="White"
+                            CornerRadius="8"
+                            Padding="20"
+                            BorderBrush="#DDD"
+                            BorderThickness="1"
+                            Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="PROJECT REPORT MANAGER"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,4" />
+                            <TextBlock Text="Well Selector Dashboard"
+                                       FontSize="12"
+                                       Foreground="#777"
+                                       Margin="0,0,0,16" />
+
+                            <!-- KPIs responsive: columnas se adaptan al ancho -->
+                            <UniformGrid
+                                Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource WidthToColumnsConverter}}">
+
+                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="TOTAL WELLS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding TotalWells}" FontSize="26" FontWeight="Bold" Foreground="Black"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="DRAFT" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding DraftWells}" FontSize="26" FontWeight="Bold" Foreground="#FFA500"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="IN PROGRESS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding InProgressWells}" FontSize="26" FontWeight="Bold" Foreground="#0078D7"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="COMPLETED" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding CompletedWells}" FontSize="26" FontWeight="Bold" Foreground="Green"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="ARCHIVED" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding ArchivedWells}" FontSize="26" FontWeight="Bold" Foreground="#888"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="OPERATORS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding ActiveOperators}" FontSize="26" FontWeight="Bold" Foreground="#800080"/>
+                                    </StackPanel>
+                                </Border>
+
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- FILTROS / ACCIONES responsive -->
+                    <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,12">
+
+                        <!-- Acciones derecha -->
+                        <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                            <ToggleButton Margin="0,0,8,0"
+                                          Padding="12,4"
+                                          Content="Card View"
+                                          IsChecked="{Binding IsCardView, Mode=TwoWay}" />
+
+                            <Button Margin="0,0,8,0"
+                                    Content="Clear Filters"
+                                    Padding="12,4"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ClearFiltersCommand}" />
+
+                            <Button Background="{DynamicResource OrangeBrush}"
+                                    Foreground="White"
+                                    Padding="16,4"
+                                    Content="New Well"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding NewWellCommand}" />
+                        </WrapPanel>
+
+                        <!-- Search + Sort -->
+                        <WrapPanel>
+                            <TextBox Width="360"
+                                     MinWidth="220"
+                                     Margin="0,0,8,0"
+                                     VerticalAlignment="Center"
+                                     Height="28"
+                                     Padding="6,2"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <ComboBox Width="240"
+                                      MinWidth="180"
+                                      Height="28"
+                                      VerticalAlignment="Center"
+                                      ItemsSource="{Binding SortOptions}"
+                                      SelectedItem="{Binding SelectedSortOption}" />
+                        </WrapPanel>
+                    </DockPanel>
+
+                    <!-- CONTENT: Grid o Cards según IsCardView -->
+                    <ContentControl Grid.Row="2" Content="{Binding}">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsCardView}" Value="True">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource CardTemplate}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+    </Grid>
+</UserControl>

@@ -1,0 +1,272 @@
+<Window x:Class="ProjectReport.Views.ReportWizardView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ProjectReport.Views"
+        xmlns:wizard="clr-namespace:ProjectReport.Views.ReportWizard"
+        mc:Ignorable="d"
+        Title="New Daily Report"
+        Height="700" Width="1000"
+        WindowStartupLocation="CenterOwner"
+        Background="#F7F8FA">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Brand tokens -->
+        <SolidColorBrush x:Key="BrandOrange" Color="#F57C1F"/>
+        <SolidColorBrush x:Key="BrandOrangeHover" Color="#EF6C00"/>
+        <SolidColorBrush x:Key="BrandOrangePressed" Color="#E65100"/>
+
+        <SolidColorBrush x:Key="Surface" Color="White"/>
+        <SolidColorBrush x:Key="BorderSoft" Color="#E6E8EB"/>
+        <SolidColorBrush x:Key="TextStrong" Color="#111827"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#6B7280"/>
+
+        <!-- Button base -->
+        <Style x:Key="BtnBase" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Padding" Value="18,10"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary (neutral) -->
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFF3F4F6"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#FFE5E7EB"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Primary (orange) -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="{StaticResource BrandOrange}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BrandOrange}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BrandOrangeHover}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource BrandOrangeHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{StaticResource BrandOrangePressed}"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource BrandOrangePressed}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Outline orange (for Save Draft) -->
+        <Style x:Key="OutlineOrangeButton" TargetType="Button" BasedOn="{StaticResource BtnBase}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BrandOrange}"/>
+            <Setter Property="Foreground" Value="{StaticResource BrandOrange}"/>
+            <Setter Property="MinWidth" Value="130"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFFFF7ED"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#FFFFEDD5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="#F8F9FA"
+                Padding="20,15"
+                BorderBrush="{StaticResource BorderSoft}"
+                BorderThickness="0,0,0,1">
+            <DockPanel LastChildFill="False">
+                <TextBlock Text="Create New Daily Report"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextStrong}"
+                           DockPanel.Dock="Left"/>
+
+                <Button Content="Save Draft"
+                        Command="{Binding SaveDraftCommand}"
+                        Style="{StaticResource OutlineOrangeButton}"
+                        DockPanel.Dock="Right"/>
+            </DockPanel>
+        </Border>
+
+        <!-- Step Indicator -->
+        <Grid Grid.Row="1" Margin="20,16,20,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Step 1 -->
+            <StackPanel Grid.Column="0" Orientation="Vertical">
+                <TextBlock Text="1. Report Details" HorizontalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsStep1Active}" Value="True">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="{StaticResource BrandOrange}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <Rectangle Height="3"
+                           Fill="{StaticResource BrandOrange}"
+                           Visibility="{Binding IsStep1Active, Converter={StaticResource BoolToVis}}"
+                           Margin="0,8,0,0"
+                           RadiusX="2" RadiusY="2"/>
+            </StackPanel>
+
+            <!-- Step 2 -->
+            <StackPanel Grid.Column="1" Orientation="Vertical">
+                <TextBlock Text="2. Personnel" HorizontalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="Normal"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsStep2Active}" Value="True">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="{StaticResource BrandOrange}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <Rectangle Height="3"
+                           Fill="{StaticResource BrandOrange}"
+                           Visibility="{Binding IsStep2Active, Converter={StaticResource BoolToVis}}"
+                           Margin="0,8,0,0"
+                           RadiusX="2" RadiusY="2"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Content Area -->
+        <Border Grid.Row="2" Padding="20" Background="{StaticResource Surface}">
+            <Grid>
+                <wizard:ReportDetailsPage Visibility="{Binding IsStep1Active, Converter={StaticResource BoolToVis}}" />
+                <wizard:PersonnelPage Visibility="{Binding IsStep2Active, Converter={StaticResource BoolToVis}}" />
+            </Grid>
+        </Border>
+
+        <!-- Footer -->
+        <Border Grid.Row="3"
+                Padding="20"
+                Background="#F8F9FA"
+                BorderBrush="{StaticResource BorderSoft}"
+                BorderThickness="0,1,0,0">
+            <DockPanel LastChildFill="False">
+
+                <!-- Optional: you can put helper text here later -->
+                <TextBlock DockPanel.Dock="Left"
+                           Foreground="{StaticResource TextMuted}"
+                           VerticalAlignment="Center"
+                           Text=""/>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Margin="0,0,10,0"
+                            Style="{StaticResource SecondaryButton}"/>
+
+                    <Button Content="Back"
+                            Command="{Binding BackCommand}"
+                            Margin="0,0,10,0"
+                            IsEnabled="{Binding CanGoBack, Mode=OneWay}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStep1Active}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Content="Next"
+                            Command="{Binding NextCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStep2Active}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <Button Content="Finish &amp; Save"
+                            Command="{Binding FinishCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStep2Active}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

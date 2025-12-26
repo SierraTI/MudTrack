@@ -1,0 +1,101 @@
+<Window x:Class="ProjectReport.Views.Geometry.PressureDropConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:ProjectReport.Converters"
+        Title="Pressure Drop Configuration"
+        Height="500" Width="650"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource AppBackground}">
+
+    <Window.Resources>
+        <!-- Converter que calcula PPG desde FlowRate y PressureDrop -->
+        <converters:FlowPressureToPpgConverter x:Key="FlowPressureToPpgConverter"/>
+    </Window.Resources>
+
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="Pressure Drop Profile"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"
+                   Foreground="{DynamicResource AppPrimaryText}"/>
+
+        <!-- Data Table (PPG calculado por fila) -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Data}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="True"
+                  Background="{DynamicResource AppCardBackground}"
+                  HeadersVisibility="Column"
+                  Margin="0,0,0,20">
+
+            <DataGrid.Columns>
+
+                <!-- 1) Flow Rate (editable) -->
+                <DataGridTextColumn Header="Flow Rate (gpm)"
+                                    Binding="{Binding FlowRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="*"
+                                    DisplayIndex="0"/>
+
+                <!-- 2) Pressure Drop (editable) -->
+                <DataGridTextColumn Header="Pressure Drop (psi)"
+                                    Binding="{Binding PressureDrop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="*"
+                                    DisplayIndex="1"/>
+
+                <!-- 3) Mud Density (ppg) calculado desde FlowRate y PressureDrop (AHORA última columna) -->
+                <DataGridTemplateColumn Width="170" DisplayIndex="2">
+                    <DataGridTemplateColumn.Header>
+                        <TextBlock Text="Mud Density (ppg)"/>
+                    </DataGridTemplateColumn.Header>
+
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Width="120" Height="28" VerticalAlignment="Center" TextAlignment="Right">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource FlowPressureToPpgConverter}" StringFormat="{}{0:F3}">
+                                        <Binding Path="FlowRate" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
+                                        <Binding Path="PressureDrop" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                                <TextBlock.ToolTip>
+                                    <MultiBinding Converter="{StaticResource FlowPressureToPpgConverter}" StringFormat="PPG: {0:F3}">
+                                        <Binding Path="FlowRate"/>
+                                        <Binding Path="PressureDrop"/>
+                                    </MultiBinding>
+                                </TextBlock.ToolTip>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Footer Buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+
+            <Button Content="Cancel"
+                    Width="100" Height="35"
+                    Command="{Binding CancelCommand}"
+                    Margin="0,0,15,0"
+                    Style="{StaticResource DefaultButton}"/>
+
+            <Button Content="Save"
+                    Width="100" Height="35"
+                    Command="{Binding SaveCommand}"
+                    Style="{StaticResource DefaultButton}"/>
+
+        </StackPanel>
+
+    </Grid>
+</Window>

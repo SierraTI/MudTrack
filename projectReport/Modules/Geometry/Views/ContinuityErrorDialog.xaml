@@ -1,0 +1,206 @@
+<Window x:Class="ProjectReport.Views.Geometry.ContinuityErrorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ERROR DE CONTINUIDAD" 
+        Height="350" 
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="White">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Error Icon and Title -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+            <Ellipse Width="40" Height="40" Fill="#FFDC3545" Margin="0,0,15,0">
+                <Ellipse.Effect>
+                    <DropShadowEffect Color="#FFDC3545" BlurRadius="10" ShadowDepth="0" Opacity="0.3"/>
+                </Ellipse.Effect>
+            </Ellipse>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="⚠" FontSize="24" Foreground="White" 
+                          HorizontalAlignment="Center" VerticalAlignment="Center"
+                          Margin="-55,0,0,0"/>
+            </StackPanel>
+            <TextBlock Text="Continuity Error Detected" 
+                      FontSize="18" 
+                      FontWeight="Bold" 
+                      Foreground="#FF212529"
+                      VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Error Message -->
+        <Border Grid.Row="1" 
+                Background="#FFF8D7DA" 
+                BorderBrush="#FFDC3545" 
+                BorderThickness="1" 
+                CornerRadius="4" 
+                Padding="15"
+                Margin="0,0,0,15">
+            <TextBlock TextWrapping="Wrap" 
+                      FontSize="14" 
+                      Foreground="#FF721C24"
+                      Text="{Binding ErrorMessage}"/>
+        </Border>
+
+        <!-- Current Values Display -->
+        <GroupBox Grid.Row="2" Header="Current Values" Margin="0,0,0,15">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Previous Section Bottom MD -->
+                <TextBlock Grid.Row="0" Grid.Column="0" 
+                          Text="• Section" 
+                          FontWeight="SemiBold" 
+                          Margin="0,5,10,5"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" 
+                          Margin="0,5,0,5">
+                    <Run Text="{Binding PreviousSectionId, Mode=OneWay}"/>
+                    <Run Text=" Bottom MD: "/>
+                    <Run Text="{Binding PreviousBottomMD, StringFormat='{}{0:F2} ft', TargetNullValue='N/A', Mode=OneWay}" 
+                         FontWeight="Bold" 
+                         Foreground="#FF28A745"/>
+                </TextBlock>
+
+                <!-- Current Section Top MD -->
+                <TextBlock Grid.Row="1" Grid.Column="0" 
+                          Text="• Section" 
+                          FontWeight="SemiBold" 
+                          Margin="0,5,10,5"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" 
+                          Margin="0,5,0,5">
+                    <Run Text="{Binding CurrentSectionId, Mode=OneWay}"/>
+                    <Run Text=" Top MD: "/>
+                    <Run Text="{Binding CurrentTopMD, StringFormat='{}{0:F2} ft', TargetNullValue='N/A', Mode=OneWay}" 
+                         FontWeight="Bold" 
+                         Foreground="#FFDC3545"/>
+                </TextBlock>
+
+                <!-- Difference -->
+                <TextBlock Grid.Row="2" Grid.Column="0" 
+                          Text="• Difference:" 
+                          FontWeight="SemiBold" 
+                          Margin="0,5,10,5"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" 
+                          Text="{Binding Difference, StringFormat='{}{0:F2} ft', TargetNullValue='N/A', Mode=OneWay}" 
+                          FontWeight="Bold" 
+                          Foreground="#FFDC3545"
+                          Margin="0,5,0,5"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="4" 
+                   Orientation="Horizontal" 
+                   HorizontalAlignment="Right">
+            <Button Content="Fix Section 1 Bottom MD" 
+                   Click="FixPreviousSection_Click"
+                   Background="#FF28A745" 
+                   Foreground="White"
+                   Padding="15,8" 
+                   Margin="0,0,10,0"
+                   FontWeight="SemiBold"
+                   BorderThickness="0"
+                   Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                           CornerRadius="4" 
+                                           Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FF218838"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <Button Content="Fix Section 2 Top MD" 
+                   Click="FixCurrentSection_Click"
+                   Background="#FF007BFF" 
+                   Foreground="White"
+                   Padding="15,8" 
+                   Margin="0,0,10,0"
+                   FontWeight="SemiBold"
+                   BorderThickness="0"
+                   Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                           CornerRadius="4" 
+                                           Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FF0056B3"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <Button Content="Cancel" 
+                   Click="Cancel_Click"
+                   Background="#FF6C757D" 
+                   Foreground="White"
+                   Padding="15,8"
+                   FontWeight="SemiBold"
+                   BorderThickness="0"
+                   Cursor="Hand">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" 
+                                           CornerRadius="4" 
+                                           Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                        VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#FF5A6268"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

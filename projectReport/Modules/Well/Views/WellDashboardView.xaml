@@ -1,0 +1,359 @@
+<UserControl x:Class="ProjectReport.Views.WellDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:ProjectReport.Views"
+             mc:Ignorable="d"
+             Background="White">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <BooleanToVisibilityConverter x:Key="InverseBoolToVis" />
+
+        <!-- Tokens UI -->
+        <SolidColorBrush x:Key="TextPrimary" Color="#111827"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#6B7280"/>
+        <SolidColorBrush x:Key="BorderSoft" Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="Accent" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="Link" Color="#2563EB"/>
+
+        <!-- Tipografía -->
+        <Style x:Key="H1" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+        </Style>
+
+        <Style x:Key="Muted" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+        </Style>
+
+        <!-- Botones -->
+        <Style x:Key="LinkButton" TargetType="Button">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource Link}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#F3F4F6"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Card base -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <!-- Card + visibilidad (evita Style duplicado) -->
+        <Style x:Key="EmptyStateCardStyle"
+               TargetType="Border"
+               BasedOn="{StaticResource Card}">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ReportsEmpty}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ReportsGridCardStyle"
+               TargetType="Border"
+               BasedOn="{StaticResource Card}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ReportsEmpty}" Value="True">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DataGrid look & feel -->
+        <Style TargetType="DataGrid">
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#FAFAFB"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+            <Setter Property="RowHeight" Value="36"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Background" Value="#F9FAFB"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Fondo blanco para tapar el gris del MainWindow -->
+    <Grid Margin="12" Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" /> <!-- Breadcrumbs -->
+            <RowDefinition Height="*" />    <!-- Content -->
+        </Grid.RowDefinitions>
+
+        <!-- Breadcrumbs -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <Button Content="Home"
+                    Style="{StaticResource LinkButton}"
+                    Command="{Binding NavigateHomeCommand}" />
+            <TextBlock Text="  /  "
+                       FontSize="14"
+                       Foreground="{StaticResource TextMuted}"
+                       Margin="6,0"/>
+            <TextBlock Text="{Binding CurrentWell.WellName}"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimary}"
+                       TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- Summary -->
+                <RowDefinition Height="Auto" /> <!-- Stats -->
+                <RowDefinition Height="*" />    <!-- Reports -->
+            </Grid.RowDefinitions>
+
+            <!-- Well Summary -->
+            <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{Binding CurrentWell.WellName}" Style="{StaticResource H1}" />
+
+                        <WrapPanel Margin="0,8,0,0">
+                            <TextBlock Text="Field:" Style="{StaticResource Label}" />
+                            <TextBlock Text="{Binding CurrentWell.Field}"
+                                       Margin="0,0,18,0"
+                                       Foreground="{StaticResource TextPrimary}" />
+
+                            <TextBlock Text="Block:" Style="{StaticResource Label}" />
+                            <TextBlock Text="{Binding CurrentWell.Block}"
+                                       Margin="0,0,18,0"
+                                       Foreground="{StaticResource TextPrimary}" />
+
+                            <TextBlock Text="Operator:" Style="{StaticResource Label}" />
+                            <TextBlock Text="{Binding CurrentWell.Operator}"
+                                       Foreground="{StaticResource TextPrimary}" />
+                        </WrapPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0">
+                        <Button Content="Edit Well Data"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding EditWellDataCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Quick Stats -->
+            <WrapPanel Grid.Row="1" Margin="0,0,0,10">
+                <Border Style="{StaticResource Card}" Margin="0,0,10,10" MinWidth="190">
+                    <StackPanel>
+                        <TextBlock Text="Total Reports" FontSize="11" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding Reports.Count}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,10,10" MinWidth="240">
+                    <StackPanel>
+                        <TextBlock Text="Last Report Date" FontSize="11" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding CurrentWell.LastReport.ReportDateTime, StringFormat=g}"
+                                   FontSize="14"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,10,10" MinWidth="190">
+                    <StackPanel>
+                        <TextBlock Text="Current MD" FontSize="11" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding CurrentWell.TotalMD}" FontSize="14" Foreground="{StaticResource TextPrimary}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,10" MinWidth="240">
+                    <StackPanel>
+                        <TextBlock Text="Current Activity" FontSize="11" Style="{StaticResource Muted}" />
+                        <TextBlock Text="{Binding CurrentWell.CurrentOperation}"
+                                   FontSize="14"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- Reports Section -->
+            <Grid Grid.Row="2">
+                <!-- Empty State -->
+                <Border Style="{StaticResource EmptyStateCardStyle}"
+                        Padding="26">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="📄"
+                                   FontSize="52"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#D1D5DB"
+                                   Margin="0,0,0,14" />
+                        <TextBlock Text="No reports yet for this well"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimary}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,8" />
+                        <TextBlock Text="Create the first report to start tracking progress."
+                                   FontSize="12"
+                                   Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,14" />
+                        <Button Content="Create First Report"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding NewReportCommand}"
+                                HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Reports List -->
+                <Border Style="{StaticResource ReportsGridCardStyle}"
+                        Padding="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,10">
+                            <TextBlock Text="Reports"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimary}"
+                                       DockPanel.Dock="Left"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="+ New Report"
+                                    Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding NewReportCommand}"
+                                    DockPanel.Dock="Right"/>
+                        </DockPanel>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding Reports}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Interval #"
+                                                    Binding="{Binding IntervalNumber}"
+                                                    Width="110" />
+                                <DataGridTextColumn Header="Date/Time"
+                                                    Binding="{Binding ReportDateTime, StringFormat=g}"
+                                                    Width="170" />
+                                <DataGridTextColumn Header="MD (ft)"
+                                                    Binding="{Binding MD}"
+                                                    Width="110" />
+                                <DataGridTextColumn Header="TVD (ft)"
+                                                    Binding="{Binding TVD}"
+                                                    Width="110" />
+                                <DataGridTextColumn Header="Activity"
+                                                    Binding="{Binding Activity}"
+                                                    Width="*" />
+
+                                <DataGridTemplateColumn Header="Actions" Width="220">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="View"
+                                                        Margin="0,0,6,0"
+                                                        Style="{StaticResource SecondaryButton}"
+                                                        Padding="8,4"
+                                                        Command="{Binding DataContext.ViewReportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Edit"
+                                                        Margin="0,0,6,0"
+                                                        Style="{StaticResource SecondaryButton}"
+                                                        Padding="8,4"
+                                                        Command="{Binding DataContext.EditReportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Duplicate"
+                                                        Style="{StaticResource SecondaryButton}"
+                                                        Padding="8,4"
+                                                        Command="{Binding DataContext.DuplicateReportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

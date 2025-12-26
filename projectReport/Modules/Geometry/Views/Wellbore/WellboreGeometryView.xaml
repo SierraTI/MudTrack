@@ -1,0 +1,182 @@
+<UserControl x:Class="ProjectReport.Views.Geometry.Wellbore.WellboreGeometryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:ProjectReport.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="1200">
+
+    <UserControl.Resources>
+        <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:CollectionToVisibilityConverter x:Key="CollectionToVis"/>
+
+        <!-- Brushes -->
+        <SolidColorBrush x:Key="Surface" Color="White"/>
+        <SolidColorBrush x:Key="BorderSoft" Color="#E6E8EB"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#6B7280"/>
+        <SolidColorBrush x:Key="TextStrong" Color="#111827"/>
+        <SolidColorBrush x:Key="BrandOrange" Color="#F57C1F"/>
+        <SolidColorBrush x:Key="BrandOrangeHover" Color="#EF6C00"/>
+        <SolidColorBrush x:Key="Danger" Color="#DC2626"/>
+
+        <!-- Card Style -->
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="14"/>
+        </Style>
+
+        <!-- Button Styles -->
+        <Style x:Key="BrandPrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource BrandOrange}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource BrandOrangeHover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DataGrid Style -->
+        <Style x:Key="ModernDataGrid" TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#FFF9FAFB"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+            <Setter Property="RowHeight" Value="36"/>
+            <Setter Property="ColumnHeaderHeight" Value="38"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header with Total MD and Add Button -->
+        <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Total Wellbore MD:"
+                               Foreground="{StaticResource TextMuted}"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalWellboreMD, StringFormat='  {0:F2} ft'}"
+                               Foreground="{StaticResource BrandOrange}"
+                               FontWeight="Bold"/>
+                    <TextBlock Text="   Tip: use '.' for decimals."
+                               Foreground="{StaticResource TextMuted}"
+                               FontSize="12"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="Add Section"
+                        Style="{StaticResource BrandPrimaryButton}"
+                        Command="{Binding AddWellboreSectionCommand}"/>
+            </Grid>
+        </Border>
+
+        <!-- Wellbore Components DataGrid -->
+        <DataGrid Grid.Row="1"
+                  Style="{StaticResource ModernDataGrid}"
+                  ItemsSource="{Binding WellboreComponents}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  SelectionMode="Single">
+
+            <DataGrid.Columns>
+                <!-- ID Column -->
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60" IsReadOnly="True"/>
+
+                <!-- Section Type Column -->
+                <DataGridTemplateColumn Header="Section Type" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding SectionType}" VerticalAlignment="Center" Padding="10,6"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                      SelectedItem="{Binding SectionType, UpdateSourceTrigger=PropertyChanged}"
+                                      DisplayMemberPath="."/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- OD Column -->
+                <DataGridTextColumn Header="OD (in)" 
+                                    Binding="{Binding OD, StringFormat=F3, TargetNullValue=''}" 
+                                    Width="110"/>
+
+                <!-- ID Column -->
+                <DataGridTextColumn Header="ID (in)" 
+                                    Binding="{Binding ID, StringFormat=F3, TargetNullValue=''}" 
+                                    Width="110"/>
+
+                <!-- Top MD Column -->
+                <DataGridTextColumn Header="Top MD (ft)" 
+                                    Binding="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
+                                    Width="130"/>
+
+                <!-- Bottom MD Column -->
+                <DataGridTextColumn Header="Bottom MD (ft)" 
+                                    Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" 
+                                    Width="140"/>
+
+                <!-- Washout Column -->
+                <DataGridTextColumn Header="Washout (%)" 
+                                    Binding="{Binding Washout, StringFormat=F2, TargetNullValue=''}" 
+                                    Width="130"/>
+
+                <!-- Volume Column -->
+                <DataGridTextColumn Header="Volume (bbl)" 
+                                    Binding="{Binding Volume, StringFormat=F2, TargetNullValue=''}" 
+                                    Width="130" 
+                                    IsReadOnly="True"/>
+
+                <!-- Actions Column -->
+                <DataGridTemplateColumn Header="Actions" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="↑" Padding="8,4" MinWidth="30" ToolTip="Move Up" Margin="2,0"/>
+                                <Button Content="↓" Padding="8,4" MinWidth="30" ToolTip="Move Down" Margin="2,0"/>
+                                <Button Content="×" Padding="8,4" MinWidth="30" ToolTip="Delete" Foreground="{StaticResource Danger}" Margin="2,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

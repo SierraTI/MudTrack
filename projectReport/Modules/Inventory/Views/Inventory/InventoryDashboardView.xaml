@@ -1,0 +1,75 @@
+<UserControl x:Class="ProjectReport.Views.Inventory.InventoryDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Tabs -->
+            <RowDefinition Height="Auto"/>
+            <!-- Buttons -->
+            <RowDefinition Height="*"/>
+            <!-- Table -->
+            <RowDefinition Height="Auto"/>
+            <!-- Total -->
+        </Grid.RowDefinitions>
+
+        <!-- 1?? Tabs -->
+        <TabControl Grid.Row="0" Margin="0,0,0,8">
+            <TabItem Header="Products"/>
+            <TabItem Header="Whole Fluids"/>
+            <TabItem Header="Additional Charge"/>
+        </TabControl>
+
+        <!-- 2?? Ticket buttons -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,10">
+            <Button Content="Ticket Received"
+                    Width="160"
+                    Margin="0,0,10,0"
+                    Command="{Binding OpenTicketReceivedCommand}"/>
+
+            <Button Content="Ticket Consumed"
+                    Width="160"
+                    Command="{Binding OpenTicketConsumedCommand}"/>
+        </StackPanel>
+
+        <!-- 3?? Table -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Rows}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False"
+                  Margin="0,0,0,10">
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="2*"/>
+                <DataGridTextColumn Header="Initial" Binding="{Binding InitialQty}" Width="*"/>
+                <DataGridTextColumn Header="Received" Binding="{Binding Received}" Width="*"/>
+                <DataGridTextColumn Header="Used" Binding="{Binding Used}" Width="*"/>
+                <DataGridTextColumn Header="Return" Binding="{Binding Returned}" Width="*"/>
+                <DataGridTextColumn Header="Final" Binding="{Binding FinalQty}" Width="*"/>
+                <DataGridTextColumn Header="Remaining Stock" Binding="{Binding RemainingStock}" Width="*"/>
+                <DataGridTextColumn Header="Daily Cost" Binding="{Binding DailyCost}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- 4?? Total cost -->
+        <Border Grid.Row="3"
+                Padding="12"
+                BorderThickness="1"
+                BorderBrush="#DDDDDD"
+                CornerRadius="6">
+            <DockPanel>
+                <TextBlock Text="Daily Total Cost"
+                           FontWeight="Bold"
+                           DockPanel.Dock="Left"/>
+                <TextBlock Text="{Binding TotalProductsCost}"
+                           FontWeight="Bold"
+                           DockPanel.Dock="Right"/>
+            </DockPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

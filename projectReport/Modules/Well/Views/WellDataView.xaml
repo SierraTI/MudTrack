@@ -1,0 +1,567 @@
+<UserControl x:Class="ProjectReport.Views.WellDataView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1000"
+             Background="#F7F8FA"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+
+        <!-- Tokens -->
+        <SolidColorBrush x:Key="SurfaceBrush" Color="White"/>
+        <SolidColorBrush x:Key="SoftBorderBrush" Color="#E6E8EB"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#1F2328"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#6B7280"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#EE7E32"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#CC3333"/>
+
+        <!-- Card -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="18"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <!-- Header -->
+        <Style x:Key="PageTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <!-- Labels -->
+        <Style x:Key="LabelStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <!-- Inputs -->
+        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="2"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="InputComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+
+        <!-- Buttons -->
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SoftBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style x:Key="DangerLinkButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <!-- Expander simple (sin templates peligrosos) -->
+        <Style x:Key="SimpleExpanderStyle" TargetType="Expander">
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Main content grid espacio en la pantalla -->
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- HEADER -->
+        <Border Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="WELL DATA" Style="{StaticResource PageTitleStyle}"/>
+                    <TextBlock Text="{Binding CurrentWell.WellName, FallbackValue='New Well'}"
+                               FontSize="13"
+                               Foreground="{StaticResource TextSecondary}"
+                               Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        Background="#ECFDF3"
+                        BorderBrush="#A7F3D0"
+                        BorderThickness="1"
+                        CornerRadius="999"
+                        Padding="10,6"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LastSavedText}"
+                               FontSize="12"
+                               Foreground="#047857"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- VALIDATION (auto-hide si está vacío) -->
+        <Border Grid.Row="1" Margin="0,0,0,14">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource CardStyle}">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ValidationSummary}" Value="">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ValidationSummary}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <StackPanel>
+                <TextBlock Text="Validation"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimary}"
+                           Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding ValidationSummary}"
+                           FontSize="13"
+                           Foreground="{StaticResource TextPrimary}"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <!-- FORM -->
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,0,10,0">
+            <StackPanel>
+
+                <!-- SECTION 1 -->
+                <Border Style="{StaticResource CardStyle}">
+                    <Expander Style="{StaticResource SimpleExpanderStyle}" IsExpanded="True">
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="✓"
+                                           Foreground="Green"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Margin="0,0,10,0"
+                                           Visibility="{Binding IsSection1Complete, Converter={StaticResource BoolToVisibility}}"/>
+                                <TextBlock Text="⚠"
+                                           Foreground="Orange"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Margin="0,0,10,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSection1Complete}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="General Well Information (Required)"
+                                           Style="{StaticResource SectionHeaderStyle}"/>
+                            </StackPanel>
+                        </Expander.Header>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Well Name -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Well Name"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <TextBox Text="{Binding CurrentWell.WellName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Operator -->
+                            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Operator"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <TextBox Text="{Binding CurrentWell.Operator, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Operator Logo -->
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                                    BorderBrush="{StaticResource SoftBorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="12"
+                                    Padding="14"
+                                    Background="#FBFBFC"
+                                    Margin="0,0,0,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0"
+                                            Width="104" Height="104"
+                                            CornerRadius="12"
+                                            BorderBrush="{StaticResource SoftBorderBrush}"
+                                            BorderThickness="1"
+                                            Background="White">
+                                        <Grid>
+                                            <Image Source="{Binding CurrentWell.OperatorLogoPath}"
+                                                   Stretch="Uniform"
+                                                   Margin="10"/>
+                                            <TextBlock Text="No Logo"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CurrentWell.OperatorLogoPath}" Value="">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding CurrentWell.OperatorLogoPath}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBlock Text="Operator Logo (Optional)"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimary}"
+                                                   Margin="0,0,0,6"/>
+                                        <WrapPanel>
+                                            <Button Content="Upload Image"
+                                                    Command="{Binding UploadLogoCommand}"
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Margin="0,0,10,0"/>
+                                            <Button Content="Remove"
+                                                    Command="{Binding RemoveLogoCommand}"
+                                                    Style="{StaticResource DangerLinkButtonStyle}"
+                                                    VerticalAlignment="Center"/>
+                                        </WrapPanel>
+                                        <TextBlock Text="Recommended: 200x200px | Max size: 2MB | Formats: PNG, JPG, SVG"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextSecondary}"
+                                                   Margin="0,8,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Fluid Type -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Load Fluid"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding LoadFluid}"
+                                          SelectedItem="{Binding CurrentWell.LoadFluid, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Spud Date -->
+                            <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Spud Date"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <DatePicker SelectedDate="{Binding CurrentWell.SpudDate, UpdateSourceTrigger=PropertyChanged}"
+                                            Height="34"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander>
+                </Border>
+
+                <!-- SECTION 2 -->
+                <Border Style="{StaticResource CardStyle}">
+                    <Expander Style="{StaticResource SimpleExpanderStyle}" IsExpanded="False">
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="✓"
+                                           Foreground="Green"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Margin="0,0,10,0"
+                                           Visibility="{Binding IsSection2Complete, Converter={StaticResource BoolToVisibility}}"/>
+                                <TextBlock Text="⚠"
+                                           Foreground="Orange"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Margin="0,0,10,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSection2Complete}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="Well Design &amp; Classification (Required)"
+                                           Style="{StaticResource SectionHeaderStyle}"/>
+                            </StackPanel>
+                        </Expander.Header>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Trajectory"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding TrajectoryTypes}"
+                                          SelectedItem="{Binding CurrentWell.Trajectory, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Well Type"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding WellTypes}"
+                                          SelectedItem="{Binding CurrentWell.WellType, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Rig Name"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <TextBox Text="{Binding CurrentWell.RigName, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="2">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Rig Type"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding RigTypes}"
+                                          SelectedItem="{Binding CurrentWell.RigType, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander>
+                </Border>
+
+                <!-- SECTION 3 -->
+                <Border Style="{StaticResource CardStyle}">
+                    <Expander Style="{StaticResource SimpleExpanderStyle}" IsExpanded="False">
+                        <Expander.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="✓"
+                                           Foreground="Green"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Margin="0,0,10,0"
+                                           Visibility="{Binding IsSection3Complete, Converter={StaticResource BoolToVisibility}}"/>
+                                <TextBlock Text="⚠"
+                                           Foreground="Orange"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Margin="0,0,10,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSection3Complete}" Value="False">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="Location Details"
+                                           Style="{StaticResource SectionHeaderStyle}"/>
+                            </StackPanel>
+                        </Expander.Header>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Location"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding LocationTypes}"
+                                          SelectedItem="{Binding CurrentWell.Location, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Country"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding Countries}"
+                                          SelectedItem="{Binding CurrentWell.Country, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"
+                                          IsEditable="False"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Basin"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding Basins}"
+                                          SelectedItem="{Binding CurrentWell.Basin, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"
+                                          IsEditable="False"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="State/Province"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <ComboBox ItemsSource="{Binding ColombianStates}"
+                                          SelectedItem="{Binding CurrentWell.State, UpdateSourceTrigger=PropertyChanged}"
+                                          Style="{StaticResource InputComboBoxStyle}"
+                                          IsEditable="False"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Municipality"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <TextBox Text="{Binding CurrentWell.Municipality, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputTextBoxStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                    <Run Text="Field(block)"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <TextBox Text="{Binding CurrentWell.Field, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputTextBoxStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Expander>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ACTION BAR -->
+        <Border Grid.Row="3"
+                Background="White"
+                BorderBrush="{StaticResource SoftBorderBrush}"
+                BorderThickness="1,0,0,0"
+                Padding="14"
+                Margin="-12,14,-12,-12">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource TextSecondary}"
+                           FontSize="12"
+                           Text="Tip: guarda seguido. La memoria RAM no es un sistema de respaldo." />
+
+                <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,10,0"/>
+                    <Button Content="Save"
+                            Command="{Binding SaveCommand}"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,10,0"/>
+                    <Button Content="Save &amp; Continue"
+                            Command="{Binding SaveAndContinueCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}"/>
+                </WrapPanel>
+            </DockPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

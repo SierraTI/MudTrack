@@ -51,7 +51,7 @@ namespace ProjectReport.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ProjectReport;V1.0.0.0;component/modules/well/views/welldataview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/modules/well/views/welldataview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Modules\Well\Views\WellDataView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

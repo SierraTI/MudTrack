@@ -7393,11 +7393,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj",
+      "projectUniqueName": "C:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj",
       "projectName": "projectReport.Tests",
-      "projectPath": "c:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj",
+      "projectPath": "C:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj",
       "packagesPath": "C:\\Users\\GSA_PC_049\\.nuget\\packages\\",
-      "outputPath": "c:\\Dev\\MudTrack\\projectReport.Tests\\obj\\",
+      "outputPath": "C:\\Dev\\MudTrack\\projectReport.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

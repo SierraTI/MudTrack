@@ -53,7 +53,8 @@ namespace ProjectReport.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/modules/reportwizard/views/reportwizardview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri(("/ProjectReport;V1.0.0.0;component/modules/reportwizard/views/reportwizardview.xam" +
+                    "l"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Modules\ReportWizard\Views\ReportWizardView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

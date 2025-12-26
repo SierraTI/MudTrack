@@ -13,12 +13,12 @@ namespace ProjectReport.ViewModels.Inventory
 
         // ======= NAV EVENTS (MainWindow listens) =======
         public event Action? RequestOpenReceived;
-        public event Action? RequestOpenConsumed;
+        public event Action? RequestOpenReturned;
         public event Action? RequestOpenHistory;
 
         // ======= COMMANDS (buttons in dashboard) =======
         public RelayCommand OpenTicketReceivedCommand { get; }
-        public RelayCommand OpenTicketConsumedCommand { get; }
+        public RelayCommand OpenTicketReturnedCommand { get; }
         public RelayCommand OpenHistoryCommand { get; }
         public RelayCommand RefreshCommand { get; }
 
@@ -57,15 +57,25 @@ namespace ProjectReport.ViewModels.Inventory
             _service = service;
 
             OpenTicketReceivedCommand = new RelayCommand(_ => RequestOpenReceived?.Invoke());
-
-            // ✅ SOLO habilita consumo si hay fila seleccionada y stock > 0
-            OpenTicketConsumedCommand = new RelayCommand(
-                _ => RequestOpenConsumed?.Invoke(),
-                _ => SelectedRow != null && SelectedRow.RemainingStock > 0
-            );
+            OpenTicketReturnedCommand = new RelayCommand(_ => RequestOpenReturned?.Invoke());
 
             OpenHistoryCommand = new RelayCommand(_ => RequestOpenHistory?.Invoke());
             RefreshCommand = new RelayCommand(_ => LoadForDate(SelectedDate));
+
+            // Subscribe to inventory updates to refresh dashboard in real time
+            _service.InventoryUpdated += () =>
+            {
+                // Ensure update runs on UI thread
+                var app = System.Windows.Application.Current;
+                if (app != null)
+                {
+                    app.Dispatcher.Invoke(() => LoadForDate(SelectedDate));
+                }
+                else
+                {
+                    LoadForDate(SelectedDate);
+                }
+            };
 
             LoadForDate(SelectedDate);
         }
@@ -91,20 +101,16 @@ namespace ProjectReport.ViewModels.Inventory
                 list ??= new System.Collections.Generic.List<InventoryMovement>();
 
                 double received = list.Where(x => x.Type == TicketType.Received).Sum(x => x.Quantity);
-                double used = list.Where(x => x.Type == TicketType.Consumed).Sum(x => x.Quantity);
-                double returned = 0; // not implemented yet
+                double used = 0; // consumed removed
+                double returned = list.Where(x => x.Type == TicketType.Returned).Sum(x => x.Quantity);
 
-                double dailyCost = list.Where(x => x.Type == TicketType.Consumed)
-                                        .Sum(x => x.Quantity * x.UnitPrice);
+                double dailyCost = 0; // no consumed cost
 
-                var consumed = list.Where(x => x.Type == TicketType.Consumed && x.Quantity > 0).ToList();
-                double unitAvg = consumed.Count == 0
-                    ? 0
-                    : consumed.Sum(x => x.Quantity * x.UnitPrice) / consumed.Sum(x => x.Quantity);
+                double unitAvg = 0; // no consumed data
 
                 // Assume current product.StockQty reflects stock AFTER today's movements.
-                // Compute initial as current stock minus today's net change (received - used)
-                double netChangeToday = received - used;
+                // Compute initial as current stock minus today's net change (received - used + returned)
+                double netChangeToday = received - used + returned;
                 double initialQty = p.StockQty - netChangeToday;
 
                 Rows.Add(new ProductSummaryRow

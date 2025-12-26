@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ProjectReport.Models.Inventory
 {
@@ -15,5 +16,8 @@ namespace ProjectReport.Models.Inventory
         // Para empezar simple: 1 línea por ticket.
         // Si mañana quieres multi-línea: lo cambias a List<TicketLine>.
         public TicketLine Line { get; set; } = new TicketLine();
+
+        // Multi-line support (optional). InventoryService will process Lines if present, otherwise Line.
+        public List<TicketLine> Lines { get; set; } = new List<TicketLine>();
     }
 }

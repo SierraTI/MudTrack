@@ -12,11 +12,9 @@ namespace ProjectReport.ViewModels.Inventory
         private readonly InventoryService _service;
 
         public event Action? RequestReceived;
-        public event Action? RequestConsumed;
         public event Action? RequestHistory;
 
         public ICommand ReceivedCommand { get; }
-        public ICommand ConsumedCommand { get; }
         public ICommand HistoryCommand { get; }
 
         public ObservableCollection<Product> Products { get; } = new();
@@ -34,12 +32,10 @@ namespace ProjectReport.ViewModels.Inventory
             }
 
             ReceivedCommand = new RelayCommand(_ => OnRequestReceived());
-            ConsumedCommand = new RelayCommand(_ => OnRequestConsumed());
             HistoryCommand = new RelayCommand(_ => OnRequestHistory());
         }
 
         private void OnRequestReceived() => RequestReceived?.Invoke();
-        private void OnRequestConsumed() => RequestConsumed?.Invoke();
         private void OnRequestHistory() => RequestHistory?.Invoke();
     }
 }

@@ -11,12 +11,51 @@ namespace ProjectReport.ViewModels.Inventory
         private readonly InventoryService _service;
 
         public ObservableCollection<Product> Products { get; }
+        public ObservableCollection<Product> FilteredProducts { get; } = new();
 
         private Product? _selectedProduct;
         public Product? SelectedProduct
         {
             get => _selectedProduct;
-            set => SetProperty(ref _selectedProduct, value);
+            set
+            {
+                if (SetProperty(ref _selectedProduct, value))
+                {
+                    if (_selectedProduct != null)
+                    {
+                        ProductCode = _selectedProduct.Code;
+                        ProductName = _selectedProduct.Name;
+                        ProductSearchText = _selectedProduct.Name;
+                    }
+                }
+            }
+        }
+
+        private string _productSearchText = "";
+        public string ProductSearchText
+        {
+            get => _productSearchText;
+            set
+            {
+                if (SetProperty(ref _productSearchText, value))
+                {
+                    UpdateFilter(_productSearchText);
+                }
+            }
+        }
+
+        private string _productCode = "";
+        public string ProductCode
+        {
+            get => _productCode;
+            set => SetProperty(ref _productCode, value);
+        }
+
+        private string _productName = "";
+        public string ProductName
+        {
+            get => _productName;
+            set => SetProperty(ref _productName, value);
         }
 
         private string _origin = "";
@@ -71,15 +110,44 @@ namespace ProjectReport.ViewModels.Inventory
             _service = service;
             Products = new ObservableCollection<Product>(_service.GetProducts().Where(p => p.Status == ProductStatus.Active));
 
+            // Initialize filtered list
+            foreach (var p in Products)
+                FilteredProducts.Add(p);
+
             SaveCommand = new RelayCommand(_ => Save());
             CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
+        }
+
+        private void UpdateFilter(string text)
+        {
+            FilteredProducts.Clear();
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                foreach (var p in Products)
+                    FilteredProducts.Add(p);
+                return;
+            }
+
+            var q = text.Trim();
+            var matches = Products.Where(p =>
+                (!string.IsNullOrEmpty(p.Code) && p.Code.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                || (!string.IsNullOrEmpty(p.Name) && p.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0))
+                .OrderBy(p => p.Name)
+                .ToList();
+
+            foreach (var m in matches)
+                FilteredProducts.Add(m);
         }
 
         private void Save()
         {
             Error = "";
 
-            if (SelectedProduct == null) { Error = "Select a product."; return; }
+            var code = SelectedProduct?.Code ?? ProductCode?.Trim();
+            var name = SelectedProduct?.Name ?? ProductName?.Trim();
+
+            if (string.IsNullOrWhiteSpace(code)) { Error = "Product code is required."; return; }
             if (Quantity <= 0) { Error = "Quantity must be > 0."; return; }
 
             try
@@ -92,7 +160,8 @@ namespace ProjectReport.ViewModels.Inventory
                     Observations = Observations,
                     Line = new TicketLine
                     {
-                        ProductCode = SelectedProduct.Code,
+                        ProductCode = code,
+                        ProductName = name,
                         Quantity = Quantity,
                         UnitPrice = UnitPrice,
                         Context = Origin

@@ -23,18 +23,7 @@ namespace ProjectReport.Services.Inventory
             _productsFile = Path.Combine(_basePath, "products.json");
             _movementsFile = Path.Combine(_basePath, "movements.json");
 
-            // Seed sample products on first run to help UI debugging
-            if (!File.Exists(_productsFile))
-            {
-                var samples = new List<Product>
-                {
-                    new Product { Code = "P-001", Name = "Diesel", Category = "Fuel", Unit = "L", StockQty = 1200, CurrentUnitCost = 1.25 },
-                    new Product { Code = "P-002", Name = "Drilling Mud", Category = "Fluid", Unit = "L", StockQty = 800, CurrentUnitCost = 0.75 },
-                    new Product { Code = "P-003", Name = "Casing Shoe", Category = "Hardware", Unit = "pc", StockQty = 30, CurrentUnitCost = 45.0 }
-                };
-
-                SaveProducts(samples);
-            }
+            // Do not seed sample products: start with empty products list so inventory is filled only via tickets.
 
             // Ensure movements file exists
             if (!File.Exists(_movementsFile))

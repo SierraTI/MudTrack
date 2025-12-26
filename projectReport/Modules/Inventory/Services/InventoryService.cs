@@ -14,6 +14,9 @@ namespace ProjectReport.Services.Inventory
             _repo = repo;
         }
 
+        // Event fired when products or movements change so UI can refresh
+        public event Action? InventoryUpdated;
+
         public List<Product> GetProducts() => _repo.LoadProducts();
         public List<InventoryMovement> GetMovements() => _repo.LoadMovements();
 
@@ -38,27 +41,58 @@ namespace ProjectReport.Services.Inventory
             }
 
             _repo.SaveProducts(products);
+            InventoryUpdated?.Invoke();
         }
 
         public void CreateTicketReceived(Ticket ticket)
         {
             if (ticket.Type != TicketType.Received) throw new InvalidOperationException("Ticket type mismatch.");
 
+            if (ticket.Lines != null && ticket.Lines.Count > 0)
+            {
+                foreach (var line in ticket.Lines)
+                {
+                    ProcessReceivedLine(ticket, line);
+                }
+            }
+            else
+            {
+                ProcessReceivedLine(ticket, ticket.Line);
+            }
+
+            InventoryUpdated?.Invoke();
+        }
+
+        private void ProcessReceivedLine(Ticket ticket, TicketLine line)
+        {
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
-            var p = products.FirstOrDefault(x => x.Code.Equals(ticket.Line.ProductCode, StringComparison.OrdinalIgnoreCase));
-            if (p == null) throw new InvalidOperationException("Product not found.");
+            var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
+
+            // If product does not exist yet, create it so inventory is populated by tickets
+            if (p == null)
+            {
+                p = new Product
+                {
+                    Code = line.ProductCode,
+                    Name = string.IsNullOrWhiteSpace(line.ProductName) ? line.ProductCode : line.ProductName,
+                    StockQty = 0,
+                    CurrentUnitCost = line.UnitPrice > 0 ? line.UnitPrice : 0,
+                    Status = ProductStatus.Active
+                };
+                products.Add(p);
+            }
 
             var before = p.StockQty;
-            var qty = ticket.Line.Quantity;
+            var qty = line.Quantity;
             if (qty <= 0) throw new InvalidOperationException("Quantity must be > 0.");
 
             p.StockQty += qty;
 
             // “Último costo” como referencia (histórico queda en movimiento)
-            if (ticket.Line.UnitPrice > 0)
-                p.CurrentUnitCost = ticket.Line.UnitPrice;
+            if (line.UnitPrice > 0)
+                p.CurrentUnitCost = line.UnitPrice;
 
             movements.Add(new InventoryMovement
             {
@@ -68,8 +102,8 @@ namespace ProjectReport.Services.Inventory
                 ProductName = p.Name,
                 Type = TicketType.Received,
                 Quantity = qty,
-                UnitPrice = ticket.Line.UnitPrice,
-                OriginOrUse = ticket.Line.Context,
+                UnitPrice = line.UnitPrice,
+                OriginOrUse = line.Context,
                 User = ticket.User,
                 Observations = ticket.Observations,
                 StockBefore = before,
@@ -80,25 +114,56 @@ namespace ProjectReport.Services.Inventory
             _repo.SaveMovements(movements);
         }
 
-        public void CreateTicketConsumed(Ticket ticket)
+        public void CreateTicketReturned(Ticket ticket)
         {
-            if (ticket.Type != TicketType.Consumed) throw new InvalidOperationException("Ticket type mismatch.");
+            if (ticket.Type != TicketType.Returned) throw new InvalidOperationException("Ticket type mismatch.");
 
+            if (ticket.Lines != null && ticket.Lines.Count > 0)
+            {
+                foreach (var line in ticket.Lines)
+                {
+                    ProcessReturnedLine(ticket, line);
+                }
+            }
+            else
+            {
+                ProcessReturnedLine(ticket, ticket.Line);
+            }
+
+            InventoryUpdated?.Invoke();
+        }
+
+        private void ProcessReturnedLine(Ticket ticket, TicketLine line)
+        {
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
-            var p = products.FirstOrDefault(x => x.Code.Equals(ticket.Line.ProductCode, StringComparison.OrdinalIgnoreCase));
-            if (p == null) throw new InvalidOperationException("Product not found.");
+            var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
+
+            // If product does not exist yet, create it so inventory is populated by tickets
+            if (p == null)
+            {
+                p = new Product
+                {
+                    Code = line.ProductCode,
+                    Name = string.IsNullOrWhiteSpace(line.ProductName) ? line.ProductCode : line.ProductName,
+                    StockQty = 0,
+                    CurrentUnitCost = line.UnitPrice > 0 ? line.UnitPrice : 0,
+                    Status = ProductStatus.Active
+                };
+                products.Add(p);
+            }
 
             var before = p.StockQty;
-            var qty = ticket.Line.Quantity;
+            var qty = line.Quantity;
             if (qty <= 0) throw new InvalidOperationException("Quantity must be > 0.");
 
-            // VALIDACIÓN CLAVE
-            if (p.StockQty < qty)
-                throw new InvalidOperationException($"Insufficient stock. Available: {p.StockQty}, required: {qty}");
+            // Returned increases stock
+            p.StockQty += qty;
 
-            p.StockQty -= qty;
+            // If a unit price is provided on return, optionally update current unit cost
+            if (line.UnitPrice > 0)
+                p.CurrentUnitCost = line.UnitPrice;
 
             movements.Add(new InventoryMovement
             {
@@ -106,10 +171,10 @@ namespace ProjectReport.Services.Inventory
                 Date = ticket.Date,
                 ProductCode = p.Code,
                 ProductName = p.Name,
-                Type = TicketType.Consumed,
+                Type = TicketType.Returned,
                 Quantity = qty,
-                UnitPrice = p.CurrentUnitCost, // o 0 si no quieres costeo en consumo
-                OriginOrUse = ticket.Line.Context,
+                UnitPrice = line.UnitPrice > 0 ? line.UnitPrice : p.CurrentUnitCost,
+                OriginOrUse = line.Context,
                 User = ticket.User,
                 Observations = ticket.Observations,
                 StockBefore = before,

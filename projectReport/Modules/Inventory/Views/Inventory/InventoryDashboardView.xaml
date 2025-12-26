@@ -30,9 +30,16 @@
                     Margin="0,0,10,0"
                     Command="{Binding OpenTicketReceivedCommand}"/>
 
+            <Button Content="Ticket Returned"
+                    Width="160"
+                    Margin="0,0,10,0"
+                    Command="{Binding OpenTicketReturnedCommand}"/>
+
             <Button Content="Ticket Consumed"
                     Width="160"
                     Command="{Binding OpenTicketConsumedCommand}"/>
+
+            <Button Content="Refresh" Width="110" Margin="20,0,0,0" Command="{Binding RefreshCommand}"/>
         </StackPanel>
 
         <!-- 3?? Table -->
@@ -41,7 +48,8 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserAddRows="False"
-                  Margin="0,0,0,10">
+                  Margin="0,0,0,10"
+                  SelectedItem="{Binding SelectedRow, Mode=TwoWay}">
 
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="2*"/>

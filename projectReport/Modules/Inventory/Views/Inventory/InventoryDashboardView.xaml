@@ -35,25 +35,22 @@
                     Margin="0,0,10,0"
                     Command="{Binding OpenTicketReturnedCommand}"/>
 
-            <Button Content="Ticket Consumed"
-                    Width="160"
-                    Command="{Binding OpenTicketConsumedCommand}"/>
-
             <Button Content="Refresh" Width="110" Margin="20,0,0,0" Command="{Binding RefreshCommand}"/>
+            <Button Content="Importar Excel" Command="{Binding ImportExcelCommand}" Margin="4" />
         </StackPanel>
 
         <!-- 3?? Table -->
         <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Rows}"
+                  ItemsSource="{Binding Items}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserAddRows="False"
                   Margin="0,0,0,10"
-                  SelectedItem="{Binding SelectedRow, Mode=TwoWay}">
+                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="2*"/>
-                <DataGridTextColumn Header="Initial" Binding="{Binding InitialQty}" Width="*"/>
+                <DataGridTextColumn Header="Product" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Initial" Binding="{Binding QuantityAvailable}" Width="*"/>
                 <DataGridTextColumn Header="Received" Binding="{Binding Received}" Width="*"/>
                 <DataGridTextColumn Header="Used" Binding="{Binding Used}" Width="*"/>
                 <DataGridTextColumn Header="Return" Binding="{Binding Returned}" Width="*"/>

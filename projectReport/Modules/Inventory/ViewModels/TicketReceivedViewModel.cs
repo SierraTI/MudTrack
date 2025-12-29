@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.IO;
+using System.Globalization;
+using System.Windows;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
+using ProjectReport.ViewModels;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace ProjectReport.ViewModels.Inventory
 {
@@ -100,22 +106,117 @@ namespace ProjectReport.ViewModels.Inventory
             set => SetProperty(ref _error, value);
         }
 
+        private string _requisition = "";
+        public string Requisition
+        {
+            get => _requisition;
+            set => SetProperty(ref _requisition, value);
+        }
+
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public RelayCommand RefreshCommand { get; }
 
         public event Action? RequestClose;
 
         public TicketReceivedViewModel(InventoryService service)
         {
-            _service = service;
-            Products = new ObservableCollection<Product>(_service.GetProducts().Where(p => p.Status == ProductStatus.Active));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
 
-            // Initialize filtered list
-            foreach (var p in Products)
-                FilteredProducts.Add(p);
+            Products = new ObservableCollection<Product>();
 
             SaveCommand = new RelayCommand(_ => Save());
             CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
+            RefreshCommand = new RelayCommand(_ => LoadProductsFromExcelOrRepo());
+
+            // Carga inicial: intenta desde Data\Lista.xlsx (output) y si no existe usa el repo
+            LoadProductsFromExcelOrRepo();
+        }
+
+        private void LoadProductsFromExcelOrRepo()
+        {
+            try
+            {
+                Products.Clear();
+
+                // Ruta del fichero copiado al output por el proyecto
+                var excelPath = Path.Combine(AppContext.BaseDirectory, "Data", "Lista.xlsx");
+                if (!File.Exists(excelPath))
+                {
+                    // Fallback: intentar en la raíz del output por si el archivo fue copiado ahí
+                    var alt = Path.Combine(AppContext.BaseDirectory, "Lista.xlsx");
+                    if (File.Exists(alt)) excelPath = alt;
+                }
+
+                List<Product> loaded = new();
+
+                if (File.Exists(excelPath))
+                {
+                    var importer = new InventoryExcelImportService();
+                    var uni = importer.LoadUniversalProducts(excelPath);
+
+                    foreach (var u in uni)
+                    {
+                        var p = new Product
+                        {
+                            Code = u.Codigo ?? string.Empty,
+                            Name = string.IsNullOrWhiteSpace(u.Nombre) ? (u.Codigo ?? string.Empty) : u.Nombre,
+                            Description = string.IsNullOrWhiteSpace(u.Categoria) ? string.Empty : u.Categoria,
+                            Category = u.Categoria ?? string.Empty,
+                            Unit = string.IsNullOrWhiteSpace(u.Unidad) ? "Each" : u.Unidad,
+                            StockQty = 0,
+                            CurrentUnitCost = 0,
+                            Status = ProductStatus.Active
+                        };
+                        loaded.Add(p);
+                    }
+                }
+                else
+                {
+                    // No hay Excel: cargar desde el repositorio (persistido)
+                    loaded = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name).ToList();
+                }
+
+                // Añadir a la colección ObservableCollection en el hilo UI
+                var app = System.Windows.Application.Current;
+                if (app != null)
+                {
+                    app.Dispatcher.Invoke(() =>
+                    {
+                        foreach (var p in loaded) Products.Add(p);
+
+                        // Inicializar FilteredProducts y seleccionar el primero
+                        UpdateFilter(string.Empty);
+
+                        if (FilteredProducts.Count > 0)
+                        {
+                            SelectedProduct = FilteredProducts.First();
+                        }
+                    });
+                }
+                else
+                {
+                    foreach (var p in loaded) Products.Add(p);
+                    UpdateFilter(string.Empty);
+                    if (FilteredProducts.Count > 0) SelectedProduct = FilteredProducts.First();
+                }
+
+                // Aviso mínimo para depuración si no hay productos
+                if (loaded.Count == 0)
+                {
+                    MessageBox.Show("No products found in Data\\Lista.xlsx or repository.", "No products", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Mostrar error y fallback al repo
+                MessageBox.Show($"Error loading list from Excel: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Products.Clear();
+                var list = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name);
+                foreach (var p in list) Products.Add(p);
+                UpdateFilter(string.Empty);
+                if (FilteredProducts.Count > 0) SelectedProduct = FilteredProducts.First();
+            }
         }
 
         private void UpdateFilter(string text)
@@ -124,8 +225,7 @@ namespace ProjectReport.ViewModels.Inventory
 
             if (string.IsNullOrWhiteSpace(text))
             {
-                foreach (var p in Products)
-                    FilteredProducts.Add(p);
+                foreach (var p in Products) FilteredProducts.Add(p);
                 return;
             }
 
@@ -136,8 +236,7 @@ namespace ProjectReport.ViewModels.Inventory
                 .OrderBy(p => p.Name)
                 .ToList();
 
-            foreach (var m in matches)
-                FilteredProducts.Add(m);
+            foreach (var m in matches) FilteredProducts.Add(m);
         }
 
         private void Save()

@@ -18,7 +18,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private double? _topMD;
         private double? _bottomMD;
         private string _name = string.Empty;
-        private WellboreSectionType _sectionType;
+        private WellboreSectionType? _sectionType;
         public const double BBL_TO_CUBIC_FEET = 5.615;
         public const double CUBIC_FEET_TO_BBL = 1.0 / 5.615;
 
@@ -400,8 +400,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
 
         // For OpenHole: OD is editable (hole diameter), ID is disabled (always 0)
         // For Casing/Liner: Both OD and ID are editable
-        public bool IsODEnabled => true; // OD is always editable
-        public bool IsIDEnabled => SectionType != WellboreSectionType.OpenHole; // ID disabled for OpenHole
+        // If SectionType is null (Select...), fields should be disabled.
+        public bool IsODEnabled => SectionType.HasValue;
+        public bool IsIDEnabled => SectionType.HasValue && SectionType != WellboreSectionType.OpenHole;
 
 
 
@@ -472,7 +473,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             set { _collapseRating = value; OnPropertyChanged(); }
         }
 
-        public WellboreSectionType SectionType 
+        public WellboreSectionType? SectionType 
         { 
             get => _sectionType;
             set
@@ -482,6 +483,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
                     OnPropertyChanged(nameof(SectionType));
                     OnPropertyChanged(nameof(IsODEnabled)); 
                     OnPropertyChanged(nameof(IsIDEnabled)); // Notify ID enabled state change
+                    OnPropertyChanged(nameof(IsWashoutEnabled)); 
                     
                     // CORRECTED LOGIC: For OpenHole, ID = 0 (no pipe), OD = hole diameter
                     if (value == WellboreSectionType.OpenHole)
@@ -491,6 +493,19 @@ namespace ProjectReport.Models.Geometry.Wellbore
                         ClearErrors(nameof(ID)); // Remove any existing ID errors
                         
                         ValidateWashout(); // Validate washout when switching to OpenHole
+                    }
+                    else
+                    {
+                        // If switching away from OpenHole (or to null), clear Washout logic?
+                        // Spec says: "Washout says N/A for Casing".
+                        // Logic: Set Washout to null or let UI handle "N/A" display. Model should probably just clear value or ignore it.
+                        // Let's clear it to be safe.
+                        if (_washout.HasValue)
+                        {
+                            _washout = null;
+                            OnPropertyChanged(nameof(Washout));
+                            ClearErrors(nameof(Washout));
+                        }
                     }
                     
                     ValidateSectionType();
@@ -522,7 +537,11 @@ namespace ProjectReport.Models.Geometry.Wellbore
         {
             ClearErrors(nameof(SectionType));
             
-            if (!Enum.IsDefined(typeof(WellboreSectionType), SectionType))
+            // Allow null as "not selected" but maybe mark as error if user saves?
+            // "Al elegir 'Seleccionar...', todos los campos ... null o deshabilitados."
+            // This implies null is valid temporary state.
+            
+            if (SectionType.HasValue && !Enum.IsDefined(typeof(WellboreSectionType), SectionType.Value))
             {
                 AddError(nameof(SectionType), "Invalid section type");
             }
@@ -617,7 +636,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
                 {
                     AddError(nameof(OD), "Hole Diameter must be > 0.");
                 }
-                else
+                else if (SectionType.HasValue) // Casing/Liner
                 {
                     AddError(nameof(OD), "OD must be > 0.");
                 }
@@ -625,7 +644,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
             
             // Rule: ID < OD (Internal Diameter Logic)
-            if (SectionType != WellboreSectionType.OpenHole && (ID ?? 0) > 0 && (OD ?? 0) <= (ID ?? 0))
+            if (SectionType != WellboreSectionType.OpenHole && SectionType.HasValue && (ID ?? 0) > 0 && (OD ?? 0) <= (ID ?? 0))
             {
                 AddError(nameof(OD), "ID ≥ OD is not allowed. Fix diameters before continuing.");
                 AddError(nameof(ID), "ID ≥ OD is not allowed. Fix diameters before continuing.");

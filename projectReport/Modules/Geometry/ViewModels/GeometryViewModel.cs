@@ -70,11 +70,14 @@ namespace ProjectReport.ViewModels.Geometry
             AnnularVolumeDetails = new ObservableCollection<AnnularVolumeDetail>();
 
             // Initialize dropdown options
-            WellboreSectionTypes = new ObservableCollection<WellboreSectionType>(
-                Enum.GetValues(typeof(WellboreSectionType)).Cast<WellboreSectionType>());
+            // Include null for "Select..." state
+            var sectionTypes = new List<WellboreSectionType?> { null };
+            sectionTypes.AddRange(Enum.GetValues(typeof(WellboreSectionType)).Cast<WellboreSectionType?>());
+            WellboreSectionTypes = new ObservableCollection<WellboreSectionType?>(sectionTypes);
             
             ComponentTypes = new ObservableCollection<ComponentType>(
                 Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>());
+
 
             WellTestTypes = new ObservableCollection<string> 
             { 
@@ -105,7 +108,8 @@ namespace ProjectReport.ViewModels.Geometry
 
 
         // Dropdown options
-        public ObservableCollection<WellboreSectionType> WellboreSectionTypes { get; }
+        public ObservableCollection<WellboreSectionType?> WellboreSectionTypes { get; }
+
         public ObservableCollection<ComponentType> ComponentTypes { get; }
         public ObservableCollection<string> WellTestTypes { get; }
 
@@ -232,6 +236,27 @@ namespace ProjectReport.ViewModels.Geometry
                             {
                                 WellboreComponents.Remove(component);
                             });
+                        }
+                    }
+
+                    // DEPTH CHAINING: Update next component's TopMD if BottomMD changed
+                    if (e.PropertyName == nameof(WellboreComponent.BottomMD))
+                    {
+                        var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
+                        if (next != null)
+                        {
+                            next.SetPreviousBottomMD(component.BottomMD);
+                        }
+                    }
+
+                    // VOLUME CASCADING: If this ID changes, the NEXT component's annular volume might change.
+                    if (e.PropertyName == nameof(WellboreComponent.ID) || e.PropertyName == nameof(WellboreComponent.OD)) // OD can also affect next if we ever support complex annulus
+                    {
+                        var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
+                        if (next != null)
+                        {
+                             // Recalculate next component volume with THIS component as 'previous'
+                            _geometryService.CalculateWellboreComponentVolume(next, "Imperial", component);
                         }
                     }
                 }
@@ -1365,6 +1390,13 @@ namespace ProjectReport.ViewModels.Geometry
             }
         }
 
+        private double _shoeDepth;
+        public double ShoeDepth
+        {
+            get => _shoeDepth;
+            set => SetProperty(ref _shoeDepth, value);
+        }
+
         /// <summary>
         /// Checks if drill string exceeds well MD (should block save)
         /// </summary>
@@ -1579,6 +1611,14 @@ namespace ProjectReport.ViewModels.Geometry
             TotalAnnularVolume = _geometryService.CalculateTotalAnnularVolume(TotalWellboreVolume, TotalDrillStringVolume);
             TotalCirculationVolume = TotalAnnularVolume + TotalDrillStringVolume;
             TotalWellboreMD = WellboreComponents.Count > 0 ? WellboreComponents.Max(w => w.BottomMD ?? 0) : 0;
+            
+            // Calculate Shoe Depth: BottomMD of the deepest Casing or Liner section
+            var lastCasing = WellboreComponents
+                .Where(c => c.SectionType == WellboreSectionType.Casing || c.SectionType == WellboreSectionType.Liner)
+                .OrderByDescending(c => c.BottomMD)
+                .FirstOrDefault();
+            ShoeDepth = lastCasing?.BottomMD ?? 0;
+            
             // Update Thermal Gradient context with survey depth information
             var maxSurveyTvd = SurveyPoints.Count > 0 ? SurveyPoints.Max(p => p.TVD) : 0;
             ThermalGradientViewModel.MaxWellboreTVD = (maxSurveyTvd > 0 ? maxSurveyTvd : TotalWellboreMD);

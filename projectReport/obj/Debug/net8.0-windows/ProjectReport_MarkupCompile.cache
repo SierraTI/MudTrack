@@ -12,7 +12,7 @@ TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR
 C:\DEV\ProjectReport\App.xaml
 251831697373
 1187118535
-1342056039406
+134797453303
 237-172961555
 Core\Views\Common\ConnectionDialog.xaml;Core\Views\Controls\ToastNotificationControl.xaml;Core\Views\Dialogs\InputDialog.xaml;Modules\Geometry\Views\BitAndJets\BitJetsConfigWindow.xaml;Modules\Geometry\Views\ContinuityErrorDialog.xaml;Modules\Geometry\Views\DrillStringGeometryView.xaml;Modules\Geometry\Views\DrillString\DrillStringGeometryView.xaml;Modules\Geometry\Views\GeometryView.xaml;Modules\Geometry\Views\Modals\ValidationResultModal.xaml;Modules\Geometry\Views\PressureDropConfigWindow.xaml;Modules\Geometry\Views\ThermalGradientView.xaml;Modules\Geometry\Views\ToolJointConfigWindow.xaml;Modules\Geometry\Views\Wellbore\WellboreGeometryView.xaml;Modules\Home\Views\HomeView.xaml;Modules\Inventory\Views\Inventory\InventoryDashboardView.xaml;Modules\Inventory\Views\Inventory\InventoryHistoryView.xaml;Modules\Inventory\Views\Inventory\TicketReceivedView.xaml;Modules\Inventory\Views\Inventory\TicketReturnedView.xaml;Modules\ReportWizard\Views\PersonnelPage.xaml;Modules\ReportWizard\Views\ReportDetailsPage.xaml;Modules\ReportWizard\Views\ReportWizardView.xaml;Modules\Shell\Views\MainWindow.xaml;Modules\Well\Views\WellDashboardView.xaml;Modules\Well\Views\WellDataView.xaml;Resources\Lookups\StaticData.xaml;
 

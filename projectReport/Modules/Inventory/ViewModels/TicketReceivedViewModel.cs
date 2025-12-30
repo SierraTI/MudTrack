@@ -106,13 +106,6 @@ namespace ProjectReport.ViewModels.Inventory
             set => SetProperty(ref _error, value);
         }
 
-        private string _requisition = "";
-        public string Requisition
-        {
-            get => _requisition;
-            set => SetProperty(ref _requisition, value);
-        }
-
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
         public RelayCommand RefreshCommand { get; }
@@ -257,6 +250,7 @@ namespace ProjectReport.ViewModels.Inventory
                     Date = DateTime.Now,
                     User = User,
                     Observations = Observations,
+                    // Requisition removed from UI — do not set here
                     Line = new TicketLine
                     {
                         ProductCode = code,

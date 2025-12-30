@@ -18,5 +18,9 @@ namespace ProjectReport.Models.Inventory
 
         public double UnitCostAvg { get; set; }     // opcional: promedio del día
         public double DailyCost { get; set; }       // suma del costo del día
+
+        // Nuevo: TicketId y Requisition asociados a esta fila (para borrar)
+        public string TicketId { get; set; } = "";
+        public string Requisition { get; set; } = "";
     }
 }

@@ -22,5 +22,8 @@ namespace ProjectReport.Models.Inventory
 
         public double StockBefore { get; set; }
         public double StockAfter { get; set; }
+
+        // Requisition asociada al ticket (puede quedar vacía)
+        public string Requisition { get; set; } = "";
     }
 }

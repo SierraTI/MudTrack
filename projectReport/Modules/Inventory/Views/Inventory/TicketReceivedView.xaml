@@ -24,7 +24,7 @@
             </Grid.ColumnDefinitions>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/> <!-- Requisition -->
+                <!-- Requisition removed -->
                 <RowDefinition Height="Auto"/> <!-- Product -->
                 <RowDefinition Height="Auto"/> <!-- Origin -->
                 <RowDefinition Height="Auto"/> <!-- UnitPrice -->
@@ -33,13 +33,9 @@
                 <RowDefinition Height="Auto"/> <!-- Error -->
             </Grid.RowDefinitions>
 
-            <!-- Requisition -->
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Requisition #:" VerticalAlignment="Center" Margin="0,0,10,8"/>
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
-
             <!-- Product selector -->
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Product:" VerticalAlignment="Center" Margin="0,0,10,8"/>
-            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical" Margin="0,0,0,8">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Product:" VerticalAlignment="Center" Margin="0,0,10,8"/>
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" Margin="0,0,0,8">
                 <DockPanel Margin="0,0,0,6">
                     <TextBox DockPanel.Dock="Left"
                              Width="420"
@@ -62,20 +58,20 @@
             </StackPanel>
 
             <!-- Origin -->
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Origin:" VerticalAlignment="Center" Margin="0,0,10,8"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Origin, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Origin:" VerticalAlignment="Center" Margin="0,0,10,8"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Origin, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
 
             <!-- Unit Price -->
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Unit Price:" VerticalAlignment="Center" Margin="0,0,10,8"/>
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Unit Price:" VerticalAlignment="Center" Margin="0,0,10,8"/>
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
 
             <!-- Quantity -->
-            <TextBlock Grid.Row="4" Grid.Column="0" Text="Quantity:" VerticalAlignment="Center" Margin="0,0,10,8"/>
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Quantity:" VerticalAlignment="Center" Margin="0,0,10,8"/>
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
 
             <!-- Observations -->
-            <TextBlock Grid.Row="5" Grid.Column="0" Text="Observations:" VerticalAlignment="Top" Margin="0,0,10,8"/>
-            <TextBox Grid.Row="5" Grid.Column="1"
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Observations:" VerticalAlignment="Top" Margin="0,0,10,8"/>
+            <TextBox Grid.Row="4" Grid.Column="1"
                      Text="{Binding Observations, UpdateSourceTrigger=PropertyChanged}"
                      Height="80"
                      TextWrapping="Wrap"
@@ -83,8 +79,8 @@
                      Margin="0,0,0,8"/>
 
             <!-- Error -->
-            <TextBlock Grid.Row="6" Grid.Column="0" Text="Error:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <TextBlock Grid.Row="6" Grid.Column="1"
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Error:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBlock Grid.Row="5" Grid.Column="1"
                        Text="{Binding Error}"
                        Foreground="Red"
                        TextWrapping="Wrap"/>

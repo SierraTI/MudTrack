@@ -13,6 +13,9 @@ namespace ProjectReport.Models.Inventory
 
         public string Observations { get; set; } = "";
 
+        // Nuevo: número/identificador de requisición asociado al ticket
+        public string Requisition { get; set; } = "";
+
         // Para empezar simple: 1 línea por ticket.
         // Si mañana quieres multi-línea: lo cambias a List<TicketLine>.
         public TicketLine Line { get; set; } = new TicketLine();

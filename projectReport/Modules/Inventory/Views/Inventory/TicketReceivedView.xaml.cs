@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using ProjectReport.Services.Inventory;
+using ProjectReport.Services;
 using ProjectReport.ViewModels.Inventory;
 
 namespace ProjectReport.Views.Inventory
@@ -12,8 +12,7 @@ namespace ProjectReport.Views.Inventory
             InitializeComponent();
 
             // Create ViewModel (or use DI)
-            var repo = new JsonInventoryRepository();
-            var service = new InventoryService(repo);
+            var service = ServiceLocator.InventoryService;
             var vm = new TicketReceivedViewModel(service);
 
             DataContext = vm;

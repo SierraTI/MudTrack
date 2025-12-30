@@ -32,15 +32,10 @@ namespace ProjectReport.Models.Geometry.ThermalGradient
                 ColorCode = "#28A745"; // Green - Normal gradient
                 Description = "Normal";
             }
-            else if (gradient >= 2.0 && gradient < 3.0)
-            {
-                ColorCode = "#FFC107"; // Orange - Elevated gradient
-                Description = "Elevated";
-            }
             else
             {
-                ColorCode = "#DC3545"; // Red - High gradient
-                Description = "High";
+                ColorCode = "#DC3545"; // Red - High gradient (> 2.0 per spec)
+                Description = "High / Anomaly";
             }
         }
     }

@@ -1,5 +1,6 @@
-using ProjectReport.Models;
 using System;
+using System.Collections.ObjectModel;
+using ProjectReport.Models;
 
 namespace ProjectReport.Models.Geometry.WellTest
 {
@@ -34,7 +35,9 @@ namespace ProjectReport.Models.Geometry.WellTest
         private double _testValue;
         private string _description = string.Empty;
         private double _formationPressureGradient;
+        private double _testPressurePsi;
         private PressureUnit _pressureUnit = PressureUnit.PPG;
+        private ObservableCollection<PumpDataPoint> _pumpDataPoints = new();
 
         public string Section
         {
@@ -138,6 +141,18 @@ namespace ProjectReport.Models.Geometry.WellTest
             {
                 AddError(nameof(TestValue), "Test Value cannot exceed 25,000 ppb");
             }
+        }
+
+        public double TestPressurePsi
+        {
+            get => _testPressurePsi;
+            set => SetProperty(ref _testPressurePsi, value);
+        }
+
+        public ObservableCollection<PumpDataPoint> PumpDataPoints
+        {
+            get => _pumpDataPoints;
+            set => SetProperty(ref _pumpDataPoints, value);
         }
 
         public string Description

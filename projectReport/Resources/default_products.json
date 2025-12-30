@@ -1,0 +1,142 @@
+[
+  {
+    "Code": "10001",
+    "Name": "G-WASH - 55 gal Can",
+    "Category": "Surfactantes",
+    "Unit": "gal",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Surfactante completamiento"
+  },
+  {
+    "Code": "10002",
+    "Name": "G-ROP - 55 gal Can",
+    "Category": "Surfactantes",
+    "Unit": "gal",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Mejorador de ROP"
+  },
+  {
+    "Code": "10003",
+    "Name": "KLEENFLOC - 55 gal Can",
+    "Category": "Surfactantes",
+    "Unit": "gal",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Floculante WBCO"
+  },
+  {
+    "Code": "10004",
+    "Name": "G-SURF 395 -55 gal",
+    "Category": "Surfactantes",
+    "Unit": "gal",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Surfactante no iónico"
+  },
+  {
+    "Code": "10005",
+    "Name": "G-SURF 393 - 55gal",
+    "Category": "Surfactantes",
+    "Unit": "gal",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Surfactante no iónico"
+  },
+  {
+    "Code": "10006",
+    "Name": "G-ROP PLUS",
+    "Category": "Surfactantes",
+    "Unit": "gal",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Antiacreción - Mejorador ROP"
+  },
+  {
+    "Code": "1001",
+    "Name": "G-BAR - 100 lb Bag",
+    "Category": "Densificantes",
+    "Unit": "lb",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Barita, Baritina"
+  },
+  {
+    "Code": "1002",
+    "Name": "G-BAR - 1 Ton Big Bag",
+    "Category": "Densificantes",
+    "Unit": "Ton",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Barita, Baritina"
+  },
+  {
+    "Code": "1003",
+    "Name": "HEMATITA 1 Ton Big bag",
+    "Category": "Densificantes",
+    "Unit": "Ton",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Hematita"
+  },
+  {
+    "Code": "1004",
+    "Name": "Carbonato de Calcio M10-40 - 110 lb Bag",
+    "Category": "Densificantes",
+    "Unit": "lb",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Carbonato de Calcio"
+  },
+  {
+    "Code": "1005",
+    "Name": "Carbonato de Calcio M40-100 - 110 lb Bag",
+    "Category": "Densificantes",
+    "Unit": "lb",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Carbonato de Calcio"
+  },
+  {
+    "Code": "1006",
+    "Name": "Carbonato de Calcio M200 - 110 lb Bag",
+    "Category": "Densificantes",
+    "Unit": "lb",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Carbonato de Calcio"
+  },
+  {
+    "Code": "1007",
+    "Name": "Carbonato de Calcio M325 - 110 lb Bag",
+    "Category": "Densificantes",
+    "Unit": "lb",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Carbonato de Calcio"
+  },
+  {
+    "Code": "1008",
+    "Name": "Carbonato de Calcio M600 - 55 lb Bag",
+    "Category": "Densificantes",
+    "Unit": "lb",
+    "StockQty": 0,
+    "CurrentUnitCost": 0.0,
+    "Status": 1,
+    "Description": "Carbonato de Calcio"
+  }
+]

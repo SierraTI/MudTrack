@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -6,6 +7,10 @@ using System.Windows;
 using Microsoft.Win32;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
+using System.Text;
+using System.IO;
+using System.Windows.Input;
+using ProjectReport.ViewModels;
 
 namespace ProjectReport.Modules.Inventory.ViewModels
 {
@@ -91,8 +96,67 @@ namespace ProjectReport.Modules.Inventory.ViewModels
             }
         }
 
+        // Nuevo comando para exportar productos
+        public ICommand ExportProductsCommand => new RelayCommand(ExportProductsCsv);
+
+        private void ExportProductsCsv(object? parameter)
+        {
+            try
+            {
+                var saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "CSV Files (*.csv)|*.csv",
+                    DefaultExt = ".csv",
+                    FileName = $"ProductList_{System.DateTime.Now:yyyyMMdd_HHmmss}.csv"
+                };
+
+                if (saveFileDialog.ShowDialog() != true) return;
+
+                var sb = new StringBuilder();
+                // Cabecera
+                sb.AppendLine("ItemCode,Name,Category,Packaging,Unit,QuantityAvailable,MinStock,MaxStock,Location,Status,Supplier,HazardClass,BatchNumber,ExpirationDate,LastMovementDate");
+
+                foreach (var item in Items)
+                {
+                    string expiration = item.ExpirationDate.HasValue ? item.ExpirationDate.Value.ToString("yyyy-MM-dd") : "";
+                    string lastMovement = item.LastMovementDate.HasValue ? item.LastMovementDate.Value.ToString("yyyy-MM-dd") : "";
+
+                    // Asegurar comillas para campos que pueden contener comas
+                    string Escape(string s) => $"\"{(s ?? "").Replace("\"", "\"\"")}\"";
+
+                    sb.AppendLine(
+                        $"{Escape(item.ItemCode)}," +
+                        $"{Escape(item.Name)}," +
+                        $"{Escape(item.Category)}," +
+                        $"{Escape(item.Packaging)}," +
+                        $"{Escape(item.Unit)}," +
+                        $"{item.QuantityAvailable:F3}," +
+                        $"{item.MinStock:F3}," +
+                        $"{item.MaxStock:F3}," +
+                        $"{Escape(item.Location)}," +
+                        $"{Escape(item.Status)}," +
+                        $"{Escape(item.Supplier)}," +
+                        $"{Escape(item.HazardClass)}," +
+                        $"{Escape(item.BatchNumber)}," +
+                        $"{Escape(expiration)}," +
+                        $"{Escape(lastMovement)}"
+                    );
+                }
+
+                File.WriteAllText(saveFileDialog.FileName, sb.ToString(), Encoding.UTF8);
+
+                MessageBox.Show($"Exportado {Items.Count} productos a:\n{saveFileDialog.FileName}", "Exportación completada", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error exportando productos", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public ICommand ImportExcelCommand => new RelayCommand(_ => ImportExcelDialog());
+
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propName = null)
+        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }
 }

@@ -231,8 +231,11 @@ namespace ProjectReport.ViewModels
             
             if (CurrentWell.IsRequiredFieldsComplete)
             {
-                // Navigate to Geometry Module
-                NavigationService.Instance.NavigateToWellDashboard(CurrentWell.Id);
+                // Update Context
+                WellContextService.Instance.CurrentWell = CurrentWell;
+                
+                // Navigate to Report Wizard (First Daily Report Flow)
+                NavigationService.Instance.NavigateToReportWizard(CurrentWell.Id);
             }
         }
 

@@ -17,6 +17,16 @@
     <Compile Remove="ViewModels\Inventory\InventoryViewModel.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Remove="Data\Lista.xlsx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\Lista.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />

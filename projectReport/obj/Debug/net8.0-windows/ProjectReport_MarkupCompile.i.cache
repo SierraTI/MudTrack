@@ -4,17 +4,17 @@
 winexe
 C#
 .cs
-C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\
 ProjectReport
 none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
-C:\Users\Maryo\source\repos\MudTrack\ProjectReport\App.xaml
-251831697373
+C:\Dev\MudTrack\ProjectReport\App.xaml
+2753385955
+1187118535
+145-428939823
+237-2110374240
+Core\Views\Common\ConnectionDialog.xaml;Core\Views\Controls\ToastNotificationControl.xaml;Core\Views\Dialogs\InputDialog.xaml;Modules\Geometry\Views\BitAndJets\BitJetsConfigWindow.xaml;Modules\Geometry\Views\ContinuityErrorDialog.xaml;Modules\Geometry\Views\DrillStringGeometryView.xaml;Modules\Geometry\Views\DrillString\DrillStringGeometryView.xaml;Modules\Geometry\Views\GeometryView.xaml;Modules\Geometry\Views\Geometry\BhaSchematicView.xaml;Modules\Geometry\Views\Geometry\WellboreSchematicView.xaml;Modules\Geometry\Views\Modals\ValidationResultModal.xaml;Modules\Geometry\Views\PressureDropConfigWindow.xaml;Modules\Geometry\Views\ThermalGradientView.xaml;Modules\Geometry\Views\ToolJointConfigWindow.xaml;Modules\Geometry\Views\Wellbore\WellboreGeometryView.xaml;Modules\Home\Views\HomeView.xaml;Modules\Inventory\Views\Inventory\InventoryDashboardView.xaml;Modules\Inventory\Views\Inventory\InventoryHistoryView.xaml;Modules\Inventory\Views\Inventory\TicketReceivedView.xaml;Modules\Inventory\Views\Inventory\TicketReturnedView.xaml;Modules\ReportWizard\Views\PersonnelPage.xaml;Modules\ReportWizard\Views\ReportDetailsPage.xaml;Modules\ReportWizard\Views\ReportWizardView.xaml;Modules\Shell\Views\MainWindow.xaml;Modules\Well\Views\WellDashboardView.xaml;Modules\Well\Views\WellDataView.xaml;Resources\Lookups\StaticData.xaml;
 
-136-1603155550
-23713121119
-Core\Views\Common\ConnectionDialog.xaml;Core\Views\Controls\ToastNotificationControl.xaml;Core\Views\Dialogs\InputDialog.xaml;Modules\Geometry\Views\BitAndJets\BitJetsConfigWindow.xaml;Modules\Geometry\Views\ContinuityErrorDialog.xaml;Modules\Geometry\Views\DrillStringGeometryView.xaml;Modules\Geometry\Views\DrillString\DrillStringGeometryView.xaml;Modules\Geometry\Views\GeometryView.xaml;Modules\Geometry\Views\Modals\ValidationResultModal.xaml;Modules\Geometry\Views\PressureDropConfigWindow.xaml;Modules\Geometry\Views\ThermalGradientView.xaml;Modules\Geometry\Views\ToolJointConfigWindow.xaml;Modules\Geometry\Views\Wellbore\WellboreGeometryView.xaml;Modules\Home\Views\HomeView.xaml;Modules\Inventory\Views\Inventory\InventoryDashboardView.xaml;Modules\Inventory\Views\Inventory\InventoryHistoryView.xaml;Modules\Inventory\Views\Inventory\TicketReceivedView.xaml;Modules\Inventory\Views\Inventory\TicketReturnedView.xaml;Modules\ReportWizard\Views\PersonnelPage.xaml;Modules\ReportWizard\Views\ReportDetailsPage.xaml;Modules\ReportWizard\Views\ReportWizardView.xaml;Modules\Shell\Views\MainWindow.xaml;Modules\Well\Views\WellDashboardView.xaml;Modules\Well\Views\WellDataView.xaml;Resources\Lookups\StaticData.xaml;
-
-True
+False
 

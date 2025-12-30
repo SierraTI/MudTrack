@@ -6,7 +6,7 @@ namespace ProjectReport.Models.Geometry.BitAndJets
     public class JetSet : BaseModel
     {
         private int _id;
-        public int Id
+        public new int Id
         {
             get => _id;
             set => SetProperty(ref _id, value);

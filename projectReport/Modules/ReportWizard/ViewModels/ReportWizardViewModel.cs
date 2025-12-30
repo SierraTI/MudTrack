@@ -117,6 +117,7 @@ namespace ProjectReport.ViewModels
                     newReport.PrimaryFluidSet = lastReport.PrimaryFluidSet;
                     newReport.OtherActiveFluids = lastReport.OtherActiveFluids;
                     newReport.WellSection = lastReport.WellSection;
+                    newReport.MudDensity = lastReport.MudDensity; // Inherit density
                     
                     foreach(var op in lastReport.OperatorReps) newReport.OperatorReps.Add(op);
                     foreach(var c in lastReport.ContractorReps) newReport.ContractorReps.Add(c);
@@ -204,6 +205,13 @@ namespace ProjectReport.ViewModels
             Report.IsDraft = false;
             await SaveReportAsync();
             ToastNotificationService.Instance.ShowSuccess("Report completed");
+
+            // Update Global Thread Context
+            if (Report.MD.HasValue)
+                WellContextService.Instance.UpdateSystemDepth(Report.MD.Value);
+            
+            if (Report.MudDensity.HasValue)
+                WellContextService.Instance.UpdateMudDensity(Report.MudDensity.Value);
 
             NavigationService.Instance.NavigateToGeometry(_well.Id);
 

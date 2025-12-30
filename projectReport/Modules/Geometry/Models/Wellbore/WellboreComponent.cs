@@ -19,6 +19,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private double? _bottomMD;
         private string _name = string.Empty;
         private WellboreSectionType? _sectionType;
+        private WellboreStage? _stage;
         public const double BBL_TO_CUBIC_FEET = 5.615;
         public const double CUBIC_FEET_TO_BBL = 1.0 / 5.615;
 
@@ -533,6 +534,18 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
         }
 
+        public WellboreStage? Stage 
+        { 
+            get => _stage;
+            set
+            {
+                if (SetProperty(ref _stage, value))
+                {
+                    OnPropertyChanged(nameof(Stage));
+                }
+            }
+        }
+
         private void ValidateSectionType()
         {
             ClearErrors(nameof(SectionType));
@@ -611,7 +624,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
         /// <summary>
         /// Gets whether this component is valid (has no validation errors)
         /// </summary>
-        public bool IsValid => !HasErrors && !HasValidationError;
+        public override bool IsValid => !HasErrors && !HasValidationError;
 
         // Sync with standard validation
         protected override void OnErrorsChanged(string propertyName)

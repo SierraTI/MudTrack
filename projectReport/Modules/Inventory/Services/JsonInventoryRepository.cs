@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using ProjectReport.Models.Inventory;
 
@@ -23,7 +24,8 @@ namespace ProjectReport.Services.Inventory
             _productsFile = Path.Combine(_basePath, "products.json");
             _movementsFile = Path.Combine(_basePath, "movements.json");
 
-            // Do not seed sample products: start with empty products list so inventory is filled only via tickets.
+            // Seed products.json desde recurso embebido o archivo externo si no existe
+            SeedProductsIfMissing();
 
             // Ensure movements file exists
             if (!File.Exists(_movementsFile))
@@ -43,6 +45,60 @@ namespace ProjectReport.Services.Inventory
 
         public void SaveMovements(List<InventoryMovement> movements)
             => Write(_movementsFile, movements);
+
+        private void SeedProductsIfMissing()
+        {
+            if (File.Exists(_productsFile))
+                return;
+
+            // 1) Intentar recurso embebido
+            try
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                // Ajusta el nombre si cambias la carpeta/namespace. Ej: ProjectReport.Resources.default_products.json
+                var resourceName = "ProjectReport.Resources.default_products.json";
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    using var sr = new StreamReader(stream);
+                    var json = sr.ReadToEnd();
+                    var products = JsonSerializer.Deserialize<List<Product>>(json);
+                    if (products != null)
+                    {
+                        Write(_productsFile, products);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore and try fallback
+            }
+
+            // 2) Fallback: buscar archivo en el directorio de salida (por si no se embebió)
+            try
+            {
+                var exeDir = AppContext.BaseDirectory;
+                var fallbackPath = Path.Combine(exeDir, "default_products.json");
+                if (File.Exists(fallbackPath))
+                {
+                    var json = File.ReadAllText(fallbackPath);
+                    var products = JsonSerializer.Deserialize<List<Product>>(json);
+                    if (products != null)
+                    {
+                        Write(_productsFile, products);
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+
+            // 3) Si todo falla, crear vacío
+            Write(_productsFile, new List<Product>());
+        }
 
         private static T? Read<T>(string path)
         {

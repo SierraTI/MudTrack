@@ -12,6 +12,7 @@
         <!-- Converters -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:CollectionToVisibilityConverter x:Key="CollectionToVis"/>
+        <converters:StringIsNullOrEmptyConverter x:Key="StringIsNullOrEmptyConverter"/>
 
         <!-- Brushes -->
         <SolidColorBrush x:Key="Surface" Color="White"/>
@@ -137,8 +138,42 @@
                       SelectionMode="Single">
 
                 <DataGrid.Columns>
-                    <!-- ID Column -->
-                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40" IsReadOnly="True"/>
+                    <!-- No. Column (Renamed from ID) -->
+                    <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
+                                        Foreground="{StaticResource TextMuted}"/>
+
+                    <!-- Name / Description Column -->
+                    <DataGridTemplateColumn Header="Name / Descripción" Width="200">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <TextBlock Text="Ej: Intermediate Casing"
+                                               Foreground="{StaticResource DisabledText}"
+                                               FontStyle="Italic"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Name, Converter={StaticResource StringIsNullOrEmptyConverter}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <!-- Placeholder handled by CellTemplate usually, but in editing mode we just show TextBox -->
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
                     <!-- Section Type Column -->
                     <DataGridTemplateColumn Header="Section Type" Width="130">
@@ -151,6 +186,23 @@
                             <DataTemplate>
                                 <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                           SelectedItem="{Binding SectionType, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="."
+                                          Padding="8,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Stage (Logistics) Column -->
+                    <DataGridTemplateColumn Header="Stage / Etapa" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Stage}" VerticalAlignment="Center" Padding="10,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.WellboreStages, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                          SelectedItem="{Binding Stage, UpdateSourceTrigger=PropertyChanged}"
                                           DisplayMemberPath="."
                                           Padding="8,6"/>
                             </DataTemplate>

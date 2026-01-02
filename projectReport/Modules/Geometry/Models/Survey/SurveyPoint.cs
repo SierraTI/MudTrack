@@ -246,6 +246,5 @@ namespace ProjectReport.Models.Geometry.Survey
 
         #endregion
 
-        public bool IsValid => !HasErrors;
     }
 }

@@ -518,6 +518,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -578,7 +579,7 @@
                     </WrapPanel>
 
                     <!-- Placeholder (only when ShowChart false) -->
-                    <Border Grid.Row="2"
+                    <Border Grid.Row="3"
                             Background="#F9FAFB"
                             BorderBrush="{StaticResource BorderBrushSoft}"
                             BorderThickness="1"
@@ -598,26 +599,167 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Chart Controls (Reference Gradient) -->
+                    <Border Grid.Row="2" 
+                            Margin="0,0,0,10" 
+                            Padding="0,0,0,0"
+                            Style="{StaticResource ShownWhenTrue}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <CheckBox Content="Show Reference Gradient"
+                                      IsChecked="{Binding ShowReferenceLine}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,15,0"/>
+                            
+                            <TextBlock Text="Ref. Gradient:" 
+                                       VerticalAlignment="Center" 
+                                       Foreground="{StaticResource TextSecondary}"
+                                       Margin="0,0,8,0"/>
+                            
+                            <TextBox Text="{Binding ReferenceGradient, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}"
+                                     Width="60"
+                                     VerticalAlignment="Center"
+                                     Padding="4"
+                                     IsEnabled="{Binding ShowReferenceLine}"/>
+                                     
+                            <TextBlock Text="°F/100ft" 
+                                       VerticalAlignment="Center" 
+                                       Foreground="{StaticResource TextMuted}"
+                                       FontSize="11"
+                                       Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Chart container (only when ShowChart true) -->
-                    <Border Grid.Row="2"
+                    <Border Grid.Row="3"
                             CornerRadius="12"
                             BorderBrush="{StaticResource BorderBrushSoft}"
                             BorderThickness="1"
-                            Padding="10"
+                            Padding="0" 
+                            ClipToBounds="True"
+                            Height="650"
                             Style="{StaticResource ShownWhenTrue}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#E0F2FE" Offset="0"/> <!-- Light Blue (top/surface) -->
+                                <GradientStop Color="#FEF2F2" Offset="1"/> <!-- Light Red (bottom/hot) -->
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        
                         <Grid>
-                            <lvc:CartesianChart Series="{Binding SeriesCollection}"
-                                                LegendLocation="Right"
-                                                Zoom="Xy"
-                                                Hoverable="True">
-                                <lvc:CartesianChart.AxisX>
-                                    <lvc:Axis Title="Temperature (°F)" LabelFormatter="{Binding XFormatter}"/>
-                                </lvc:CartesianChart.AxisX>
-                                <lvc:CartesianChart.AxisY>
-                                    <!-- We store TVD as negative to invert axis; use formatter to show positive values -->
-                                    <lvc:Axis Title="TVD (ft)" LabelFormatter="{Binding YFormatter}"/>
-                                </lvc:CartesianChart.AxisY>
-                            </lvc:CartesianChart>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Chart Area -->
+                            <Grid Grid.Column="0" Margin="15">
+                                <lvc:CartesianChart Series="{Binding SeriesCollection}"
+                                                    LegendLocation="Bottom"
+                                                    Zoom="None"
+                                                    Hoverable="True"
+                                                    VisualElements="{Binding VisualElements}">
+                                    
+                                    <lvc:CartesianChart.DataTooltip>
+                                        <lvc:DefaultTooltip SelectionMode="SharedYValues" ShowTitle="False" />
+                                    </lvc:CartesianChart.DataTooltip>
+                                    
+                                    <lvc:CartesianChart.AxisX>
+                                        <lvc:Axis Title="Temperature (°F)" 
+                                                  LabelFormatter="{Binding XFormatter}">
+                                            <lvc:Axis.Separator>
+                                                <lvc:Separator Stroke="#E5E7EB" StrokeThickness="1" StrokeDashArray="2"/>
+                                            </lvc:Axis.Separator>
+                                        </lvc:Axis>
+                                    </lvc:CartesianChart.AxisX>
+                                    
+                                    <lvc:CartesianChart.AxisY>
+                                        <lvc:Axis Title="TVD (ft)" 
+                                                  LabelFormatter="{Binding YFormatter}"
+                                                  Sections="{Binding AxisSections}">
+                                            <lvc:Axis.Separator>
+                                                <lvc:Separator Step="1000" Stroke="#E5E7EB" StrokeThickness="1"/>
+                                            </lvc:Axis.Separator>
+                                        </lvc:Axis>
+                                    </lvc:CartesianChart.AxisY>
+                                </lvc:CartesianChart>
+                            </Grid>
+
+                            <!-- Formation Overlay/Sidebar -->
+                            <Border Grid.Column="1" 
+                                    Background="#CCFFFFFF" 
+                                    BorderBrush="{StaticResource BorderBrushSoft}" 
+                                    BorderThickness="1,0,0,0"
+                                    Padding="10">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Geological Zones" 
+                                               FontSize="12" 
+                                               FontWeight="Bold" 
+                                               Foreground="{StaticResource TextSecondary}"
+                                               Margin="0,0,0,10"/>
+
+                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding Formations}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="White" BorderBrush="{StaticResource BorderBrushSoft}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,6" Padding="6">
+                                                    <StackPanel>
+                                                        <Grid>
+                                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" 
+                                                                     FontSize="11" FontWeight="SemiBold" BorderThickness="0" Background="Transparent"
+                                                                     Margin="0,0,20,0"/>
+                                                            <Button Content="×" 
+                                                                    Command="{Binding DataContext.DeleteFormationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                    Width="16" Height="16" FontSize="10" Padding="0" Margin="0,-2,0,0"
+                                                                    Style="{StaticResource DangerIconButton}"/>
+                                                        </Grid>
+                                                        
+                                                        <Grid Margin="0,4,0,0">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel>
+                                                                <TextBlock Text="Top" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                                                <TextBox Text="{Binding TopTVD, UpdateSourceTrigger=PropertyChanged}" FontSize="10" BorderThickness="0,0,0,1" BorderBrush="#DDD"/>
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                                                                <TextBlock Text="Bottom" FontSize="9" Foreground="{StaticResource TextMuted}"/>
+                                                                <TextBox Text="{Binding BottomTVD, UpdateSourceTrigger=PropertyChanged}" FontSize="10" BorderThickness="0,0,0,1" BorderBrush="#DDD"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                        
+                                                        <ComboBox ItemsSource="{Binding DataContext.FormationColors, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                  SelectedValue="{Binding Color}"
+                                                                  Margin="0,5,0,0" Height="20" Padding="2" FontSize="9">
+                                                            <ComboBox.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <Border Width="10" Height="10" Background="{Binding}" CornerRadius="2" Margin="0,0,5,0"/>
+                                                                        <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <Button Grid.Row="2" 
+                                            Content="+ Add formation" 
+                                            Command="{Binding AddFormationCommand}"
+                                            Style="{StaticResource SecondaryButton}" 
+                                            FontSize="11" Height="28" Padding="0"/>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Border>
 

@@ -184,7 +184,9 @@ namespace ProjectReport.Services
                         WellboreID = section.ID ?? 0,
                         DrillStringOD = 0,
                         TopMD = section.TopMD ?? 0,
-                        BottomMD = section.BottomMD ?? 0
+                        BottomMD = section.BottomMD ?? 0,
+                        SectionType = section.SectionType.ToString(),
+                        Stage = section.Stage?.ToString() ?? string.Empty
                     });
                 }
                 return details;
@@ -309,7 +311,9 @@ namespace ProjectReport.Services
                             WellboreID = section.ID.GetValueOrDefault(),
                             DrillStringOD = comp.OD.GetValueOrDefault(),
                             TopMD = start,
-                            BottomMD = end
+                            BottomMD = end,
+                            SectionType = section.SectionType.ToString(),
+                            Stage = section.Stage?.ToString() ?? string.Empty
                         });
                         
                         currentCursor = end;
@@ -329,7 +333,9 @@ namespace ProjectReport.Services
                         WellboreID = section.ID.GetValueOrDefault(),
                         DrillStringOD = 0,
                         TopMD = currentCursor,
-                        BottomMD = sectionBottom
+                        BottomMD = sectionBottom,
+                        SectionType = section.SectionType.ToString(),
+                        Stage = section.Stage?.ToString() ?? string.Empty
                     });
                 }
             }

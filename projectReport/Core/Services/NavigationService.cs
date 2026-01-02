@@ -48,6 +48,22 @@ namespace ProjectReport.Services
             {
                 NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationTarget.WellDashboard, wellId));
             }
+
+            /// <summary>
+            /// Navigate to Report Wizard (Daily Reports)
+            /// </summary>
+            public void NavigateToReportWizard(int wellId)
+            {
+                NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationTarget.ReportWizard, wellId));
+            }
+
+            /// <summary>
+            /// Navigate to Inventory Module
+            /// </summary>
+            public void NavigateToInventory(int wellId)
+            {
+                NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationTarget.Inventory, wellId));
+            }
         /// <summary>
         /// Navigate back to previous module
         /// </summary>
@@ -66,6 +82,8 @@ namespace ProjectReport.Services
         WellData,
         Geometry,
         WellDashboard,
+        ReportWizard,
+        Inventory,
         Back
     }
     

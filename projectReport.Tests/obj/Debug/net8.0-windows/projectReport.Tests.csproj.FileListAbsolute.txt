@@ -160,6 +160,7 @@ c:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\refint\projectRepor
 c:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.pdb
 c:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.genruntimeconfig.cache
 c:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\ref\projectReport.Tests.dll
+<<<<<<< HEAD
 C:\DEV\projectReport.Tests\bin\Debug\net8.0-windows\CoverletSourceRootsMapping_projectReport.Tests
 C:\DEV\projectReport.Tests\bin\Debug\net8.0-windows\testhost.exe
 C:\DEV\projectReport.Tests\bin\Debug\net8.0-windows\testhost.dll
@@ -323,3 +324,6 @@ C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\refint\projectReport.Tests.d
 C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.pdb
 C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.genruntimeconfig.cache
 C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\ref\projectReport.Tests.dll
+=======
+C:\Dev\MudTrack\projectReport.Tests\bin\Debug\net8.0-windows\Data\Lista.xlsx
+>>>>>>> origin/main

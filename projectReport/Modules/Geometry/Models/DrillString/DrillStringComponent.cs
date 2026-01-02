@@ -385,7 +385,7 @@ namespace ProjectReport.Models.Geometry.DrillString
         /// <summary>
         /// Gets whether this component is valid (has no validation errors)
         /// </summary>
-        public bool IsValid => !HasErrors && !HasValidationError;
+        public override bool IsValid => !HasErrors && !HasValidationError;
 
         // Sync with standard validation
         protected override void OnErrorsChanged(string propertyName)

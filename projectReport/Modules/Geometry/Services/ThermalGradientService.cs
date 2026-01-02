@@ -346,6 +346,15 @@ namespace ProjectReport.Services
                 var p2 = sortedPoints[i + 1];
 
                 double segmentGradient = CalculateGradient(p1.TVD, p1.Temperature, p2.TVD, p2.Temperature);
+
+                // Check for negative gradient (Temperature drop) - Always anomalous
+                if (segmentGradient < 0)
+                {
+                    if (!anomalousIds.Contains(p2.Id))
+                        anomalousIds.Add(p2.Id);
+                    continue; 
+                }
+
                 double difference = Math.Abs(segmentGradient - avgGradient);
                 double percentDifference = difference / Math.Abs(avgGradient);
 
@@ -402,6 +411,30 @@ namespace ProjectReport.Services
             // Last point has no gradient to next point
             if (sortedPoints.Count > 0)
                 sortedPoints[sortedPoints.Count - 1].CalculatedGradient = null;
+        }
+
+        /// <summary>
+        /// Predicts temperature at TD based on the last known gradient
+        /// </summary>
+        public double PredictTemperatureAtTD(List<ThermalGradientPoint> points, double td)
+        {
+            if (points == null || points.Count == 0) return 0;
+            if (td <= points.Max(p => p.TVD)) return InterpolateTemperature(points, td);
+
+            var sortedPoints = points.OrderBy(p => p.TVD).ToList();
+            if (sortedPoints.Count < 2)
+            {
+                // If only one point, we can't project unless we assume a default gradient
+                // Let's assume a default of 1.0 °F/100ft if only one point
+                return sortedPoints.Last().Temperature + (1.0 / 100.0) * (td - sortedPoints.Last().TVD);
+            }
+
+            // Project from the last two points (last segment gradient)
+            var p1 = sortedPoints[sortedPoints.Count - 2];
+            var p2 = sortedPoints[sortedPoints.Count - 1];
+            double gradient = CalculateGradient(p1.TVD, p1.Temperature, p2.TVD, p2.Temperature);
+            
+            return p2.Temperature + (gradient / 100.0) * (td - p2.TVD);
         }
     }
 }

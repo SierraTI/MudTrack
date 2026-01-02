@@ -19,6 +19,7 @@ namespace ProjectReport.Models
         private readonly Dictionary<string, List<string>> _errors = new();
 
         public bool HasErrors => _errors.Count > 0;
+        public virtual bool IsValid => !HasErrors;
 
         public IEnumerable GetErrors(string? propertyName)
         {

@@ -24,7 +24,6 @@ namespace ProjectReport.Views
     public partial class GeometryView : UserControl
     {
         private GeometryViewModel? _viewModel;
-        private WellboreVisualizer _visualizer;
         private object? _draggedItem;
         private int _draggedIndex = -1;
         private Point _dragStartPoint;
@@ -51,8 +50,7 @@ namespace ProjectReport.Views
                     _viewModel = vm;
                 }
 
-                // Initialize Visualizer
-                _visualizer = new WellboreVisualizer(VisualSchemeCanvas);
+                // Note: Visual rendering is handled by WellboreSchematicView. We'll invoke its draw when needed.
 
                 // Subscribe to events
                 Loaded += GeometryView_Loaded;
@@ -181,19 +179,25 @@ namespace ProjectReport.Views
 
         private void UpdateVisualization()
         {
-            if (_viewModel.SelectedTabIndex == 5 && VisualSchemeCanvas != null)
+            // Use WellboreSchematicView's DrawSchematic instead of a separate canvas visualizer
+            if (_viewModel == null) return;
+
+            if (_viewModel.SelectedTabIndex == 1)
             {
                 try
                 {
-                    _visualizer.Draw(
-                        _viewModel.WellboreComponents,
-                        _viewModel.DrillStringComponents,
-                        _viewModel.TotalWellboreMD > 0 ? _viewModel.TotalWellboreMD : 1000);
+                    this.BhaVisualizer?.DrawSchematic();
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error updating visualization: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Error updating BHA visualization: {ex.Message}");
                 }
+            }
+
+            if (_viewModel.SelectedTabIndex == 5)
+            {
+                // Summary tab visual schematic was removed. 
+                // Any other summary-specific visualization logic would go here.
             }
         }
 
@@ -713,4 +717,4 @@ namespace ProjectReport.Views
             }
         }
     }
-}
+    }

@@ -75,6 +75,13 @@ namespace ProjectReport.Models
             set => SetProperty(ref _otherActiveFluids, value);
         }
 
+        private double? _mudDensity;
+        public double? MudDensity
+        {
+            get => _mudDensity;
+            set => SetProperty(ref _mudDensity, value);
+        }
+
         private bool _operationalIssues;
         public bool OperationalIssues
         {

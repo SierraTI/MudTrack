@@ -21,6 +21,11 @@ using ProjectReport.Services.Wellbore;
 using ProjectReport.Services.Survey;
 using ProjectReport.Views.Geometry;
 using ProjectReport.Services.DrillString;
+using ProjectReport.ViewModels.Geometry.ThermalGradient;
+using LiveCharts;
+using LiveCharts.Wpf;
+using LiveCharts.Defaults;
+using System.Windows.Media; // added for Brushes
 
 namespace ProjectReport.ViewModels.Geometry
 {
@@ -32,6 +37,9 @@ namespace ProjectReport.ViewModels.Geometry
         private readonly ThermalGradientService _thermalService;
         private readonly SurveyCalculationService _surveyCalculationService; // Survey trajectory calculations
         private const double DepthTolerance = 0.01;
+        private SeriesCollection _surveySeriesCollection = new();
+        private SeriesCollection _safetySeriesCollection = new();
+        private SeriesCollection _lotSeriesCollection = new();
         private Well? _currentWell; // Reference to the current well being edited
         private string _wellName = string.Empty;
         private string _reportNumber = string.Empty;
@@ -62,6 +70,10 @@ namespace ProjectReport.ViewModels.Geometry
             // Initialize Sub-ViewModels
             ThermalGradientViewModel = new ThermalGradientViewModel(_thermalService);
             
+            // Connect to Global Context
+            WellContextService.Instance.WellChanged += OnWellContextChanged;
+            WellContextService.Instance.DepthUpdated += OnGlobalDepthUpdated;
+            
             // Initialize collections
             WellboreComponents = new ObservableCollection<WellboreComponent>();
             DrillStringComponents = new ObservableCollection<DrillStringComponent>();
@@ -70,11 +82,18 @@ namespace ProjectReport.ViewModels.Geometry
             AnnularVolumeDetails = new ObservableCollection<AnnularVolumeDetail>();
 
             // Initialize dropdown options
-            WellboreSectionTypes = new ObservableCollection<WellboreSectionType>(
-                Enum.GetValues(typeof(WellboreSectionType)).Cast<WellboreSectionType>());
+            // Include null for "Select..." state
+            var sectionTypes = new List<WellboreSectionType?> { null };
+            sectionTypes.AddRange(Enum.GetValues(typeof(WellboreSectionType)).Cast<WellboreSectionType?>());
+            WellboreSectionTypes = new ObservableCollection<WellboreSectionType?>(sectionTypes);
+
+            var stages = new List<WellboreStage?> { null };
+            stages.AddRange(Enum.GetValues(typeof(WellboreStage)).Cast<WellboreStage?>());
+            WellboreStages = new ObservableCollection<WellboreStage?>(stages);
             
             ComponentTypes = new ObservableCollection<ComponentType>(
                 Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>());
+
 
             WellTestTypes = new ObservableCollection<string> 
             { 
@@ -100,12 +119,64 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 point.PropertyChanged += OnSurveyPointChanged;
             }
+
+            InitializeSurveyChart();
+            
+            WellContextService.Instance.MudDensityUpdated += OnMudDensityUpdated;
+            _currentMudWeight = 10.0; // Default
+            SafetySeriesCollection = new SeriesCollection();
+
+            WellTests.CollectionChanged += OnWellTestsCollectionChanged;
+            foreach (var test in WellTests)
+            {
+                test.PropertyChanged += OnWellTestPropertyChanged;
+            }
+        }
+
+        private void InitializeSurveyChart()
+        {
+            SurveySeriesCollection = new SeriesCollection
+            {
+                new LineSeries
+                {
+                    Title = "Trajectory (Vertical Section)",
+                    Values = new ChartValues<ObservablePoint>(),
+                    PointGeometry = DefaultGeometries.Circle,
+                    PointGeometrySize = 8,
+                    Stroke = Brushes.SlateBlue,
+                    Fill = Brushes.Transparent,
+                    LabelPoint = point => $"VS: {point.X:N1} ft | TVD: {Math.Abs(point.Y):N1} ft"
+                }
+            };
+            UpdateSurveyChart();
+        }
+
+        private void OnWellContextChanged(object? sender, Well well)
+        {
+            if (well != null && well.Id != (_currentWell?.Id ?? 0))
+            {
+                LoadWell(well);
+            }
+        }
+
+        private void OnMudDensityUpdated(object? sender, double density)
+        {
+            CurrentMudWeight = density;
+        }
+
+        private void OnGlobalDepthUpdated(object? sender, double newMD)
+        {
+             // If we want to auto-extend the last wellbore section or just alert?
+             // For now, let's just toast
+             ToastNotificationService.Instance.ShowInfo($"Global Depth Updated to {newMD} ft");
         }
 
 
 
         // Dropdown options
-        public ObservableCollection<WellboreSectionType> WellboreSectionTypes { get; }
+        public ObservableCollection<WellboreSectionType?> WellboreSectionTypes { get; }
+        public ObservableCollection<WellboreStage?> WellboreStages { get; }
+
         public ObservableCollection<ComponentType> ComponentTypes { get; }
         public ObservableCollection<string> WellTestTypes { get; }
 
@@ -172,6 +243,8 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void OnDrillStringCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_isProcessingCollectionChange) return;
+
             if (e.NewItems != null)
             {
                 foreach (DrillStringComponent component in e.NewItems)
@@ -186,7 +259,29 @@ namespace ProjectReport.ViewModels.Geometry
                     component.PropertyChanged -= OnDrillStringComponentChanged;
                 }
             }
+            
+            RenumberDrillStringSections();
             RecalculateTotals();
+        }
+
+        private void RenumberDrillStringSections()
+        {
+            _isProcessingCollectionChange = true;
+            try
+            {
+                int idCounter = 1;
+                // Drill string is typically top-down, so just order by list index effectively
+                // But since it's an ObservableCollection, the index is the order.
+                // If we want to accept drag-drop reordering, we should rely on the Collection order.
+                foreach (var component in DrillStringComponents)
+                {
+                    component.Id = idCounter++;
+                }
+            }
+            finally
+            {
+                _isProcessingCollectionChange = false;
+            }
         }
 
         private void OnWellboreComponentChanged(object? sender, PropertyChangedEventArgs e)
@@ -232,6 +327,27 @@ namespace ProjectReport.ViewModels.Geometry
                             {
                                 WellboreComponents.Remove(component);
                             });
+                        }
+                    }
+
+                    // DEPTH CHAINING: Update next component's TopMD if BottomMD changed
+                    if (e.PropertyName == nameof(WellboreComponent.BottomMD))
+                    {
+                        var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
+                        if (next != null)
+                        {
+                            next.SetPreviousBottomMD(component.BottomMD);
+                        }
+                    }
+
+                    // VOLUME CASCADING: If this ID changes, the NEXT component's annular volume might change.
+                    if (e.PropertyName == nameof(WellboreComponent.ID) || e.PropertyName == nameof(WellboreComponent.OD)) // OD can also affect next if we ever support complex annulus
+                    {
+                        var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
+                        if (next != null)
+                        {
+                             // Recalculate next component volume with THIS component as 'previous'
+                            _geometryService.CalculateWellboreComponentVolume(next, "Imperial", component);
                         }
                     }
                 }
@@ -331,6 +447,7 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 ValidateSurveyPoint(point);
             }
+            UpdateSurveyChart();
         }
 
         private void OnSurveyPointChanged(object? sender, PropertyChangedEventArgs e)
@@ -346,8 +463,25 @@ namespace ProjectReport.ViewModels.Geometry
                     // Recalculate trajectory for this point and all subsequent points
                     RecalculateSurveyTrajectory(point);
                     ValidateSurveyPoint(point);
+                    UpdateSurveyChart();
                 }
             }
+        }
+
+        private void UpdateSurveyChart()
+        {
+            if (SurveySeriesCollection == null || SurveySeriesCollection.Count == 0) return;
+
+            var vsValues = new ChartValues<ObservablePoint>();
+            var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
+
+            foreach (var p in sorted)
+            {
+                // X = Vertical Section (Horizontal Displacement), Y = TVD (Inverted)
+                vsValues.Add(new ObservablePoint(p.VerticalSection, -p.TVD));
+            }
+
+            SurveySeriesCollection[0].Values = vsValues;
         }
 
         /// <summary>
@@ -438,6 +572,50 @@ namespace ProjectReport.ViewModels.Geometry
         public ObservableCollection<WellTest> WellTests { get; }
         public ObservableCollection<AnnularVolumeDetail> AnnularVolumeDetails { get; }
 
+        public Func<double, string> YAxisLabelFormatter => value => Math.Abs(value).ToString("N0");
+
+        public double AnnularVolumePercent => TotalCirculationVolume > 0 ? (TotalAnnularVolume / TotalCirculationVolume) * 100 : 0;
+        public double StringVolumePercent => TotalCirculationVolume > 0 ? (TotalDrillStringVolume / TotalCirculationVolume) * 100 : 0;
+
+        public SeriesCollection SurveySeriesCollection
+        {
+            get => _surveySeriesCollection;
+            set => SetProperty(ref _surveySeriesCollection, value);
+        }
+
+        public SeriesCollection SafetySeriesCollection
+        {
+            get => _safetySeriesCollection;
+            set => SetProperty(ref _safetySeriesCollection, value);
+        }
+
+        private double _currentMudWeight;
+        public double CurrentMudWeight
+        {
+            get => _currentMudWeight;
+            set
+            {
+                if (SetProperty(ref _currentMudWeight, value))
+                {
+                    RecalculateSafetyMetrics();
+                }
+            }
+        }
+
+        private double _maasp;
+        public double MAASP
+        {
+            get => _maasp;
+            set => SetProperty(ref _maasp, value);
+        }
+
+        private double _kickTolerance;
+        public double KickTolerance
+        {
+            get => _kickTolerance;
+            set => SetProperty(ref _kickTolerance, value);
+        }
+
 
 
         #region Commands
@@ -446,7 +624,103 @@ namespace ProjectReport.ViewModels.Geometry
         public ICommand LoadCommand => new RelayCommand(async _ => await LoadProjectAsync());
         public ICommand ExportToCsvCommand => new RelayCommand(ExportToCsv);
         public ICommand ShowVisualizationCommand => new RelayCommand(ShowVisualization);
+
         public ICommand ForceToBottomCommand => new RelayCommand(_ => ExecuteForceToBottom(), _ => CanForceToBottom);
+
+        private WellTest? _selectedWellTest;
+        public WellTest? SelectedWellTest
+        {
+            get => _selectedWellTest;
+            set
+            {
+                if (SetProperty(ref _selectedWellTest, value))
+                {
+                    UpdateLotChart();
+                }
+            }
+        }
+
+        public SeriesCollection LotSeriesCollection
+        {
+            get => _lotSeriesCollection;
+            set => SetProperty(ref _lotSeriesCollection, value);
+        }
+
+        public ICommand ImportPumpDataCommand => new RelayCommand(_ => ExecuteImportPumpData(), _ => SelectedWellTest != null && SelectedWellTest.Type == WellTestType.LeakOff);
+        
+        // Navigation Commands
+        public ICommand SaveAndNextCommand => new RelayCommand(async _ => await SaveAndNextAsync());
+        public ICommand FinalizeGeometryCommand => new RelayCommand(async _ => await FinalizeGeometryAsync());
+
+        private async Task SaveAndNextAsync()
+        {
+            // 1. Validation for current tab
+            if (!ValidateCurrentTab()) return;
+
+            // 2. Save
+            await SaveProjectAsync();
+
+            // 3. Move to next tab
+            if (SelectedTabIndex < 5) // Assuming 6 tabs (0-5)
+            {
+                SelectedTabIndex++;
+            }
+        }
+
+        private bool ValidateCurrentTab()
+        {
+            // Simple validation based on current tab index
+            switch (SelectedTabIndex)
+            {
+                case 0: // Wellbore
+                    if (WellboreComponents.Any(c => !c.IsValid)) {
+                        ToastNotificationService.Instance.ShowError("Fix Wellbore errors first.");
+                        return false;
+                    }
+                    return true;
+                case 1: // DrillString
+                    if (DrillStringComponents.Any(c => !c.IsValid)) {
+                        ToastNotificationService.Instance.ShowError("Fix Drill String errors first.");
+                        return false;
+                    }
+                    return true;
+                case 2: // Survey
+                     if (SurveyPoints.Any(c => !c.IsValid)) {
+                        ToastNotificationService.Instance.ShowError("Fix Survey errors first.");
+                        return false;
+                    }
+                    return true;
+                case 3: // Thermal Gradient
+                    if (ThermalGradientViewModel.ThermalGradientPoints.Any(c => !c.IsValid)) {
+                        ToastNotificationService.Instance.ShowError("Fix Thermal Gradient errors first.");
+                        return false;
+                    }
+                    return true;
+                case 4: // Well Test
+                    if (WellTests.Any(c => !c.IsValid)) {
+                        ToastNotificationService.Instance.ShowError("Fix Well Test errors first.");
+                        return false;
+                    }
+                    return true;
+            }
+            return true;
+        }
+
+        private async Task FinalizeGeometryAsync()
+        {
+             // 1. Validate All
+             if (WellboreComponents.Any(c => !c.IsValid) || DrillStringComponents.Any(c => !c.IsValid))
+             {
+                 ToastNotificationService.Instance.ShowError("Cannot finalize. Fix validation errors.");
+                 return;
+             }
+
+             // 2. Save
+             await SaveProjectAsync();
+
+             // 3. Navigate to Inventory
+             NavigationService.Instance.NavigateToInventory(_currentWell?.Id ?? 0);
+        }
 
         // Wellbore Commands
         public ICommand AddWellboreSectionCommand => new RelayCommand(AddWellboreSection);
@@ -1365,6 +1639,13 @@ namespace ProjectReport.ViewModels.Geometry
             }
         }
 
+        private double _shoeDepth;
+        public double ShoeDepth
+        {
+            get => _shoeDepth;
+            set => SetProperty(ref _shoeDepth, value);
+        }
+
         /// <summary>
         /// Checks if drill string exceeds well MD (should block save)
         /// </summary>
@@ -1385,6 +1666,8 @@ namespace ProjectReport.ViewModels.Geometry
                 return TotalDrillStringLength - TotalWellboreMD;
             }
         }
+
+        public bool IsOnBottom => BitToBottom != null && Math.Abs(BitToBottom.Value) < 0.1;
 
         /// <summary>
         /// Gets suggested BHA components when last component is DrillPipe
@@ -1579,6 +1862,14 @@ namespace ProjectReport.ViewModels.Geometry
             TotalAnnularVolume = _geometryService.CalculateTotalAnnularVolume(TotalWellboreVolume, TotalDrillStringVolume);
             TotalCirculationVolume = TotalAnnularVolume + TotalDrillStringVolume;
             TotalWellboreMD = WellboreComponents.Count > 0 ? WellboreComponents.Max(w => w.BottomMD ?? 0) : 0;
+            
+            // Calculate Shoe Depth: BottomMD of the deepest Casing or Liner section
+            var lastCasing = WellboreComponents
+                .Where(c => c.SectionType == WellboreSectionType.Casing || c.SectionType == WellboreSectionType.Liner)
+                .OrderByDescending(c => c.BottomMD)
+                .FirstOrDefault();
+            ShoeDepth = lastCasing?.BottomMD ?? 0;
+            
             // Update Thermal Gradient context with survey depth information
             var maxSurveyTvd = SurveyPoints.Count > 0 ? SurveyPoints.Max(p => p.TVD) : 0;
             ThermalGradientViewModel.MaxWellboreTVD = (maxSurveyTvd > 0 ? maxSurveyTvd : TotalWellboreMD);
@@ -1598,6 +1889,8 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(TotalAnnularVolume));
             OnPropertyChanged(nameof(TotalCirculationVolume));
             OnPropertyChanged(nameof(TotalWellboreMD));
+            OnPropertyChanged(nameof(AnnularVolumePercent));
+            OnPropertyChanged(nameof(StringVolumePercent));
             UpdateAnnularVolumeDetails();
             
             // Update drill string depth properties
@@ -1623,6 +1916,9 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(DrillStringErrorCount));
             OnPropertyChanged(nameof(SurveyErrorCount));
             OnPropertyChanged(nameof(WellTestErrorCount));
+
+            // Update Safety Metrics (MAASP, Kick Tolerance)
+            RecalculateSafetyMetrics();
         }
 
 
@@ -1860,6 +2156,217 @@ namespace ProjectReport.ViewModels.Geometry
             return true; // No errors
         }
 
+
+        private void OnWellTestsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (ProjectReport.Models.Geometry.WellTest.WellTest test in e.NewItems)
+                    test.PropertyChanged += OnWellTestPropertyChanged;
+            }
+            if (e.OldItems != null)
+            {
+                foreach (ProjectReport.Models.Geometry.WellTest.WellTest test in e.OldItems)
+                    test.PropertyChanged -= OnWellTestPropertyChanged;
+            }
+            RecalculateSafetyMetrics();
+        }
+
+        private void OnWellTestPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "TestValue" || e.PropertyName == "TVD")
+            {
+                RecalculateSafetyMetrics();
+            }
+            else if (e.PropertyName == "TestPressurePsi")
+            {
+                if (sender is ProjectReport.Models.Geometry.WellTest.WellTest test && test.TVD > 0 && test.TestPressurePsi > 0)
+                {
+                    // Automatic Conversion: PSI to PPG
+                    // EMW = MW + (PSI / (0.052 * TVD))
+                    double emw = CurrentMudWeight + (test.TestPressurePsi / (0.052 * test.TVD));
+                    
+                    // Update TestValue only if it's different to prevent loops
+                    if (Math.Abs(test.TestValue - emw) > 0.001)
+                    {
+                        test.TestValue = Math.Round(emw, 2);
+                    }
+                }
+            }
+        }
+
+        private void RecalculateSafetyMetrics()
+        {
+            // 1. Calculate MAASP
+            var latestLot = WellTests?
+                .Where(t => t.Type == ProjectReport.Models.Geometry.WellTest.WellTestType.LeakOff || t.Type == ProjectReport.Models.Geometry.WellTest.WellTestType.FormationIntegrity)
+                .OrderByDescending(t => t.TVD)
+                .FirstOrDefault();
+
+            if (latestLot != null && CurrentMudWeight > 0)
+            {
+                double lotEmu = latestLot.TestValue; // ppb
+                MAASP = (lotEmu - CurrentMudWeight) * 0.052 * latestLot.TVD;
+                if (MAASP < 0) MAASP = 0;
+            }
+            else
+            {
+                MAASP = 0;
+            }
+
+            // 2. Calculate Kick Tolerance (Volume)
+            double influxGradient = 0.1; // psi/ft (Standard assumptions)
+            double currentMudGradient = CurrentMudWeight * 0.052;
+            
+            if (MAASP > 0 && currentMudGradient > influxGradient)
+            {
+                double kickHeight = MAASP / (currentMudGradient - influxGradient);
+                
+                // Get annular capacity at bit/bottom
+                var detailsAtBottom = AnnularVolumeDetails.LastOrDefault();
+                if (detailsAtBottom != null && detailsAtBottom.Volume > 0 && (detailsAtBottom.BottomMD - detailsAtBottom.TopMD) > 0)
+                {
+                    double bblPerFt = detailsAtBottom.Volume / (detailsAtBottom.BottomMD - detailsAtBottom.TopMD);
+                    KickTolerance = kickHeight * bblPerFt;
+                }
+                else
+                {
+                    KickTolerance = 0;
+                }
+            }
+            else
+            {
+                KickTolerance = 0;
+            }
+
+            UpdateSafetyChart();
+        }
+
+        private void UpdateSafetyChart()
+        {
+            if (SafetySeriesCollection == null) SafetySeriesCollection = new SeriesCollection();
+            else SafetySeriesCollection.Clear();
+
+            double maxTVD = TotalWellboreMD > 0 ? TotalWellboreMD : 10000; 
+
+            // 1. Hydrostatic Line (Standard Mud Gradient)
+            var hydrostaticValues = new ChartValues<ObservablePoint>
+            {
+                new ObservablePoint(CurrentMudWeight, 0),
+                new ObservablePoint(CurrentMudWeight, -maxTVD)
+            };
+
+            SafetySeriesCollection.Add(new LineSeries
+            {
+                Title = "Hydrostatic (Current MW)",
+                Values = hydrostaticValues,
+                Stroke = Brushes.DodgerBlue,
+                StrokeThickness = 3,
+                PointGeometry = null,
+                Fill = Brushes.Transparent
+            });
+
+            // 2. Leak-Off Tests / Integrity Points
+            var lotPoints = WellTests?
+                .Where(t => t.Type == ProjectReport.Models.Geometry.WellTest.WellTestType.LeakOff || t.Type == ProjectReport.Models.Geometry.WellTest.WellTestType.FormationIntegrity)
+                .Select(t => new ObservablePoint(t.TestValue, -t.TVD))
+                .ToList();
+
+            if (lotPoints != null && lotPoints.Any())
+            {
+                SafetySeriesCollection.Add(new ScatterSeries
+                {
+                    Title = "Formation Integrity (LOT)",
+                    Values = new ChartValues<ObservablePoint>(lotPoints),
+                    PointGeometry = DefaultGeometries.Diamond,
+                    MaxPointShapeDiameter = 12,
+                    Fill = Brushes.Crimson
+                });
+            }
+
+            // 3. Pore Pressure Line (Theoretical - for diagnostic)
+            // Let's assume a default pore pressure of 9.0 ppg as a reference
+            var porePressureValues = new ChartValues<ObservablePoint>
+            {
+                new ObservablePoint(9.0, 0),
+                new ObservablePoint(9.0, -maxTVD)
+            };
+
+            SafetySeriesCollection.Add(new LineSeries
+            {
+                Title = "Pore Pressure (Ref)",
+                Values = porePressureValues,
+                Stroke = Brushes.SlateGray,
+                StrokeThickness = 1,
+                StrokeDashArray = new DoubleCollection { 4, 4 },
+                PointGeometry = null,
+                Fill = Brushes.Transparent
+            });
+        }
+
+        private void UpdateLotChart()
+        {
+            if (LotSeriesCollection == null) LotSeriesCollection = new SeriesCollection();
+            else LotSeriesCollection.Clear();
+
+            if (SelectedWellTest == null || SelectedWellTest.PumpDataPoints == null || !SelectedWellTest.PumpDataPoints.Any())
+                return;
+
+            var pressureValues = new ChartValues<ObservablePoint>(
+                SelectedWellTest.PumpDataPoints.Select(p => new ObservablePoint(p.Volume > 0 ? p.Volume : p.Time, p.Pressure)));
+
+            LotSeriesCollection.Add(new LineSeries
+            {
+                Title = "Pump Pressure",
+                Values = pressureValues,
+                Stroke = Brushes.OrangeRed,
+                StrokeThickness = 2,
+                PointGeometry = DefaultGeometries.Circle,
+                PointGeometrySize = 6,
+                Fill = Brushes.Transparent
+            });
+        }
+
+        private void ExecuteImportPumpData()
+        {
+            if (SelectedWellTest == null)
+            {
+                ToastNotificationService.Instance.ShowWarning("Please select a Well Test of type 'Leak Off' first.");
+                return;
+            }
+
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    var points = new List<PumpDataPoint>();
+                    string[] lines = File.ReadAllLines(openFileDialog.FileName);
+                    
+                    // Basic CSV support: Time,Pressure or Volume,Pressure
+                    foreach (var line in lines.Skip(1)) // Skip header
+                    {
+                        var parts = line.Split(',');
+                        if (parts.Length >= 2 && double.TryParse(parts[0], out double x) && double.TryParse(parts[1], out double y))
+                        {
+                            points.Add(new PumpDataPoint { Time = x, Volume = x, Pressure = y });
+                        }
+                    }
+
+                    if (points.Any())
+                    {
+                        SelectedWellTest.PumpDataPoints = new ObservableCollection<PumpDataPoint>(points);
+                        UpdateLotChart();
+                        ToastNotificationService.Instance.ShowSuccess($"Imported {points.Count} data points for LOT.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ToastNotificationService.Instance.ShowError($"Error importing CSV: {ex.Message}");
+                }
+            }
+        }
 
         #endregion
     }

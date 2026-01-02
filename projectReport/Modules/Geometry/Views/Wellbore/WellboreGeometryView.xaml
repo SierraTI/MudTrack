@@ -12,6 +12,7 @@
         <!-- Converters -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:CollectionToVisibilityConverter x:Key="CollectionToVis"/>
+        <converters:StringIsNullOrEmptyConverter x:Key="StringIsNullOrEmptyConverter"/>
 
         <!-- Brushes -->
         <SolidColorBrush x:Key="Surface" Color="White"/>
@@ -89,7 +90,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header with Totals and Add Button -->
+        <!-- Header with Add Button -->
         <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -99,27 +100,10 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Total Wellbore MD:"
-                                   Foreground="{StaticResource TextMuted}"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding TotalWellboreMD, StringFormat=' {0:F2} ft '}"
-                                   Foreground="{StaticResource BrandOrange}"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                    
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Total Volume:"
-                                   Foreground="{StaticResource TextMuted}"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding TotalWellboreVolume, StringFormat=' {0:F2} bbl'}"
-                                   Foreground="{StaticResource BrandOrange}"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <TextBlock Text="Wellbore Configuration" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource TextStrong}"/>
                 </StackPanel>
 
                 <TextBlock Grid.Column="1"
@@ -136,129 +120,264 @@
             </Grid>
         </Border>
 
-        <!-- Wellbore Components DataGrid -->
-        <DataGrid Grid.Row="1"
-                  Style="{StaticResource ModernDataGrid}"
-                  ItemsSource="{Binding WellboreComponents}"
-                  AutoGenerateColumns="False"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  SelectionMode="Single">
+        <!-- Main Content: DataGrid + Visualizer -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
 
-            <DataGrid.Columns>
-                <!-- ID Column -->
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" IsReadOnly="True"/>
+            <!-- Wellbore Components DataGrid -->
+            <DataGrid Grid.Column="0"
+                      Style="{StaticResource ModernDataGrid}"
+                      ItemsSource="{Binding WellboreComponents}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionMode="Single">
 
-                <!-- Section Type Column -->
-                <DataGridTemplateColumn Header="Section Type" Width="130">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding SectionType}" VerticalAlignment="Center" Padding="10,6"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                      SelectedItem="{Binding SectionType, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="."
-                                      Padding="8,6"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
+                <DataGrid.Columns>
+                    <!-- No. Column (Renamed from ID) -->
+                    <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
+                                        Foreground="{StaticResource TextMuted}"/>
 
-                <!-- OD Column -->
-                <DataGridTextColumn Header="OD (in)" 
-                                    Binding="{Binding OD, StringFormat=F3, TargetNullValue=''}" 
-                                    Width="100"/>
+                    <!-- Name / Description Column -->
+                    <DataGridTemplateColumn Header="Name / Descripción" Width="200">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <TextBlock Text="Ej: Intermediate Casing"
+                                               Foreground="{StaticResource DisabledText}"
+                                               FontStyle="Italic"
+                                               VerticalAlignment="Center"
+                                               Margin="10,0,0,0"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Name, Converter={StaticResource StringIsNullOrEmptyConverter}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6"/>
+                                </Grid>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <!-- Placeholder handled by CellTemplate usually, but in editing mode we just show TextBox -->
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
-                <!-- ID Column -->
-                <DataGridTextColumn Header="ID (in)" 
-                                    Binding="{Binding ID, StringFormat=F3, TargetNullValue=''}" 
-                                    Width="100"/>
+                    <!-- Section Type Column -->
+                    <DataGridTemplateColumn Header="Section Type" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SectionType}" VerticalAlignment="Center" Padding="10,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                          SelectedItem="{Binding SectionType, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="."
+                                          Padding="8,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
-                <!-- Top MD Column - Read-only for continuity -->
-                <DataGridTemplateColumn Header="Top MD (ft)" Width="110">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
-                                       VerticalAlignment="Center" 
-                                       Padding="10,6"
-                                       Foreground="{StaticResource DisabledText}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox Text="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
-                                     IsEnabled="{Binding IsTopMDEditable}"
-                                     Style="{StaticResource DisabledTextBox}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
+                    <!-- Stage (Logistics) Column -->
+                    <DataGridTemplateColumn Header="Stage / Etapa" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Stage}" VerticalAlignment="Center" Padding="10,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.WellboreStages, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                          SelectedItem="{Binding Stage, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="."
+                                          Padding="8,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
-                <!-- Bottom MD Column -->
-                <DataGridTextColumn Header="Bottom MD (ft)" 
-                                    Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" 
-                                    Width="120"/>
+                    <!-- OD Column -->
+                    <DataGridTextColumn Header="OD (in)" 
+                                        Binding="{Binding OD, StringFormat=F3, TargetNullValue=''}" 
+                                        Width="80"/>
 
-                <!-- Washout Column - Enabled only for OpenHole -->
-                <DataGridTemplateColumn Header="Washout (%)" Width="100">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Washout, StringFormat=F2, TargetNullValue='-'}" 
-                                       VerticalAlignment="Center" 
-                                       Padding="10,6"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate>
-                        <DataTemplate>
-                            <TextBox Text="{Binding Washout, StringFormat=F2, TargetNullValue=''}" 
-                                     IsEnabled="{Binding IsWashoutEnabled}"
-                                     Style="{StaticResource DisabledTextBox}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellEditingTemplate>
-                </DataGridTemplateColumn>
+                    <!-- ID Column -->
+                    <DataGridTextColumn Header="ID (in)" 
+                                        Binding="{Binding ID, StringFormat=F3, TargetNullValue=''}" 
+                                        Width="80"/>
 
-                <!-- Volume Column -->
-                <DataGridTextColumn Header="Volume (bbl)" 
-                                    Binding="{Binding Volume, StringFormat=F2, TargetNullValue=''}" 
-                                    Width="110" 
-                                    IsReadOnly="True"/>
+                    <!-- Top MD Column - Read-only for continuity -->
+                    <DataGridTemplateColumn Header="Top MD (ft)" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
+                                           VerticalAlignment="Center" 
+                                           Padding="10,6"
+                                           Foreground="{StaticResource DisabledText}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" 
+                                         IsEnabled="{Binding IsTopMDEditable}"
+                                         Style="{StaticResource DisabledTextBox}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
-                <!-- Actions Column -->
-                <DataGridTemplateColumn Header="Actions" Width="100">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Content="↑" Padding="8,4" MinWidth="25" ToolTip="Move Up" Margin="1,0"/>
-                                <Button Content="↓" Padding="8,4" MinWidth="25" ToolTip="Move Down" Margin="1,0"/>
-                                <Button Content="×" Padding="8,4" MinWidth="25" ToolTip="Delete" 
-                                        Foreground="{StaticResource Danger}" Margin="1,0"
-                                        Command="{Binding DataContext.DeleteWellboreSectionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                        CommandParameter="{Binding}"/>
+                    <!-- Bottom MD Column -->
+                    <DataGridTextColumn Header="Bottom MD (ft)" 
+                                        Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" 
+                                        Width="100"/>
+
+                    <!-- Washout Column - Enabled only for OpenHole -->
+                    <DataGridTemplateColumn Header="Washout (%)" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Washout, StringFormat=F2, TargetNullValue='-'}" 
+                                           VerticalAlignment="Center" 
+                                           Padding="10,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Washout, StringFormat=F2, TargetNullValue=''}" 
+                                         IsEnabled="{Binding IsWashoutEnabled}"
+                                         Style="{StaticResource DisabledTextBox}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Volume Column -->
+                    <DataGridTextColumn Header="Volume (bbl)" 
+                                        Binding="{Binding Volume, StringFormat=F2, TargetNullValue=''}" 
+                                        Width="90" 
+                                        IsReadOnly="True"/>
+
+                    <!-- Actions Column -->
+                    <DataGridTemplateColumn Header="Actions" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Content="×" Padding="6,2" MinWidth="20" ToolTip="Delete" 
+                                            Foreground="{StaticResource Danger}" Margin="1,0"
+                                            Command="{Binding DataContext.DeleteWellboreSectionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- Visualizer Column -->
+            <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="Schematic" 
+                               Grid.Row="0"
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource TextStrong}" 
+                               Margin="10,10,0,0"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <Canvas x:Name="WellboreCanvas" 
+                                Margin="10" 
+                                HorizontalAlignment="Stretch" 
+                                VerticalAlignment="Top"
+                                MinHeight="400"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Footer: Summary Table & Notes -->
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Summary Table -->
+            <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="Technical Summary" FontWeight="Bold" Margin="0,0,0,8"/>
+                    
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Total MD -->
+                        <Border Grid.Column="0" Margin="0,0,4,0" Background="#F9FAFB" CornerRadius="6" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="Total MD" FontSize="10" Foreground="{StaticResource TextMuted}"/>
+                                <TextBlock Text="{Binding TotalWellboreMD, StringFormat='{}{0:F2} ft'}" 
+                                           FontWeight="Bold" FontSize="14" Foreground="{StaticResource BrandOrange}"/>
                             </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+                        </Border>
 
-        <!-- Footer with Legend and Notes -->
-        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Margin="0,12,0,0">
-            <StackPanel>
-                <TextBlock Text="Legend &amp; Notes" FontWeight="Bold" Foreground="{StaticResource TextStrong}" Margin="0,0,0,8"/>
-                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
-                    <Run Text="• Top MD is auto-linked to the previous section's Bottom MD (cannot be edited manually)."/>
-                </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
-                    <Run Text="• Washout (%) is only enabled for Open Hole sections."/>
-                </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
-                    <Run Text="• Volume (bbl) is calculated automatically based on ID, Bottom MD, Top MD, and Washout."/>
-                </TextBlock>
-                <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11">
-                    <Run Text="• Ensure ID ≤ OD for all sections to maintain telescopic progression."/>
-                </TextBlock>
-            </StackPanel>
-        </Border>
+                        <!-- Shoe Depth -->
+                        <Border Grid.Column="1" Margin="4,0,4,0" Background="#F9FAFB" CornerRadius="6" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="Shoe Depth" FontSize="10" Foreground="{StaticResource TextMuted}"/>
+                                <TextBlock Text="{Binding ShoeDepth, StringFormat='{}{0:F2} ft'}" 
+                                           FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextStrong}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Total Volume -->
+                        <Border Grid.Column="2" Margin="4,0,0,0" Background="#F9FAFB" CornerRadius="6" Padding="8">
+                            <StackPanel>
+                                <TextBlock Text="Total Volume" FontSize="10" Foreground="{StaticResource TextMuted}"/>
+                                <TextBlock Text="{Binding TotalWellboreVolume, StringFormat='{}{0:F2} bbl'}" 
+                                           FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextStrong}"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Legend & Notes -->
+            <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                <StackPanel>
+                    <TextBlock Text="Legend &amp; Notes" FontWeight="Bold" Foreground="{StaticResource TextStrong}" Margin="0,0,0,8"/>
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
+                        <Run Text="• Top MD is auto-linked (continuity enforced)."/>
+                    </TextBlock>
+                    <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11" Margin="0,0,0,4">
+                        <Run Text="• Washout enabled for Open Hole only."/>
+                    </TextBlock>
+                     <TextBlock Foreground="{StaticResource TextMuted}" FontSize="11">
+                        <Run Text="• Volume auto-calculated."/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

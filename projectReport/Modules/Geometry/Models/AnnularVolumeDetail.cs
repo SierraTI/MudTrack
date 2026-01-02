@@ -11,7 +11,9 @@ namespace ProjectReport.Models.Geometry
         public double WellboreID { get; set; }  // Inner diameter of wellbore section
         public double DrillStringOD { get; set; }  // Outer diameter of drill string component
         public double TopMD { get; set; }  // Top measured depth
-        public double BottomMD { get; set; }  // Bottom measured depth
+        public double BottomMD { get; set; }  // Bottom depth
+        public string SectionType { get; set; } = string.Empty; // Casing, Liner, OpenHole
+        public string Stage { get; set; } = string.Empty; // Surface, Intermediate, etc.
         
         // Calculated property for depth range display
         public string DepthRange => $"{TopMD:F2} - {BottomMD:F2} ft";

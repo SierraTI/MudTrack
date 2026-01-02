@@ -14,7 +14,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("projectReport.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+<<<<<<< HEAD
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+28802c2028708543da4290ca37ac05139f3f0930")]
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b4f72a1ea3847e73b480185531e7f81ca69e478a")]
+>>>>>>> origin/main
 [assembly: System.Reflection.AssemblyProductAttribute("projectReport.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("projectReport.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

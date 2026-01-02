@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\DEV\\ProjectReport\\ProjectReport.csproj": {}
+    "C:\\DEV\\projectReport\\ProjectReport.csproj": {}
   },
   "projects": {
-    "C:\\DEV\\ProjectReport\\ProjectReport.csproj": {
+    "C:\\DEV\\projectReport\\ProjectReport.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\DEV\\ProjectReport\\ProjectReport.csproj",
+        "projectUniqueName": "C:\\DEV\\projectReport\\ProjectReport.csproj",
         "projectName": "ProjectReport",
-        "projectPath": "C:\\DEV\\ProjectReport\\ProjectReport.csproj",
+        "projectPath": "C:\\DEV\\projectReport\\ProjectReport.csproj",
         "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
-        "outputPath": "C:\\DEV\\ProjectReport\\obj\\",
+        "outputPath": "C:\\DEV\\projectReport\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

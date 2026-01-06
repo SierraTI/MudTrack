@@ -173,18 +173,21 @@ namespace ProjectReport.Views
         {
             SaveGeometryDataIfNeeded();
 
-            _inventoryService ??= new InventoryService(new JsonInventoryRepository());
+            // Use the shared singleton InventoryService so all views share the same instance
+            _inventoryService ??= ProjectReport.Services.ServiceLocator.InventoryService;
 
             if (_inventoryDashboardView == null)
             {
                 _inventoryDashboardView = new InventoryDashboardView();
 
+                // Use the shared service instance for the dashboard VM
                 var vm = new InventoryProductsDashboardViewModel(_inventoryService);
 
                 // Aquí conectamos los botones del dashboard para abrir pantallas
                 vm.RequestOpenReceived += () =>
                 {
                     var view = new TicketReceivedView();
+                    // Use the same shared service for the ticket VM
                     var vmr = new TicketReceivedViewModel(_inventoryService);
                     view.DataContext = vmr;
 

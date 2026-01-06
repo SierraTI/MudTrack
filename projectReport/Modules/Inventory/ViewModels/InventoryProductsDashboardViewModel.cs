@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
+using ProjectReport.Services;
 
 namespace ProjectReport.ViewModels.Inventory
 {
@@ -11,18 +12,21 @@ namespace ProjectReport.ViewModels.Inventory
     {
         private readonly InventoryService _service;
 
-        // ======= NAV EVENTS (MainWindow listens) =======
+        // NAV EVENTS
         public event Action? RequestOpenReceived;
         public event Action? RequestOpenReturned;
         public event Action? RequestOpenHistory;
 
-        // ======= COMMANDS (buttons in dashboard) =======
+        // COMMANDS
         public RelayCommand OpenTicketReceivedCommand { get; }
         public RelayCommand OpenTicketReturnedCommand { get; }
         public RelayCommand OpenHistoryCommand { get; }
         public RelayCommand RefreshCommand { get; }
 
-        // ======= TABLE DATA =======
+        // Delete command per ticket
+        public RelayCommand DeleteRowCommand { get; }
+
+        // TABLE DATA
         public ObservableCollection<ProductSummaryRow> Rows { get; } = new();
 
         private ProductSummaryRow? _selectedRow;
@@ -33,7 +37,6 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 if (SetProperty(ref _selectedRow, value))
                 {
-                    // Hace que WPF re-evalúe CanExecute de los comandos
                     CommandManager.InvalidateRequerySuggested();
                 }
             }
@@ -62,6 +65,19 @@ namespace ProjectReport.ViewModels.Inventory
             OpenHistoryCommand = new RelayCommand(_ => RequestOpenHistory?.Invoke());
             RefreshCommand = new RelayCommand(_ => LoadForDate(SelectedDate));
 
+            DeleteRowCommand = new RelayCommand(param =>
+            {
+                if (param is string ticketId && !string.IsNullOrWhiteSpace(ticketId))
+                {
+                    var confirm = System.Windows.MessageBox.Show("¿Eliminar este ticket y sus movimientos? Esta acción no se puede deshacer.", "Confirmar eliminación", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
+                    if (confirm == System.Windows.MessageBoxResult.Yes)
+                    {
+                        _service.DeleteMovementsForTicket(ticketId);
+                        LoadForDate(SelectedDate);
+                    }
+                }
+            });
+
             // Subscribe to inventory updates to refresh dashboard in real time
             _service.InventoryUpdated += () =>
             {
@@ -80,6 +96,8 @@ namespace ProjectReport.ViewModels.Inventory
             LoadForDate(SelectedDate);
         }
 
+        public InventoryProductsDashboardViewModel() : this(ServiceLocator.InventoryService) { }
+
         public void LoadForDate(DateTime date)
         {
             Rows.Clear();
@@ -91,40 +109,46 @@ namespace ProjectReport.ViewModels.Inventory
                 .OrderBy(m => m.Date)
                 .ToList();
 
-            // Build a lookup of movements by product code for the selected date
-            var byProduct = movements.GroupBy(m => m.ProductCode)
-                                     .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+            // net change por producto (case-insensitive)
+            var netByProduct = movements
+                .GroupBy(m => (m.ProductCode ?? "").ToUpperInvariant())
+                .ToDictionary(g => g.Key, g => g.Sum(x => (x.Type == TicketType.Received || x.Type == TicketType.Returned) ? x.Quantity : 0.0));
 
-            foreach (var p in products.OrderBy(pp => pp.Name))
+            // Agrupar por ProductCode normalizado + TicketId (clave anónima con ProductCode en mayúscula)
+            var groups = movements.GroupBy(m => new { ProductCode = (m.ProductCode ?? "").ToUpperInvariant(), TicketId = m.TicketId });
+
+            foreach (var g in groups.OrderBy(g => g.Key.ProductCode))
             {
-                byProduct.TryGetValue(p.Code, out var list);
-                list ??= new System.Collections.Generic.List<InventoryMovement>();
+                // Buscar producto por código (case-insensitive)
+                var prod = products.FirstOrDefault(p => string.Equals(p.Code, g.Key.ProductCode, StringComparison.OrdinalIgnoreCase));
+                var productName = prod?.Name ?? g.Key.ProductCode;
+                var productUnit = prod?.Unit ?? "";
 
-                double received = list.Where(x => x.Type == TicketType.Received).Sum(x => x.Quantity);
-                double used = 0; // consumed removed
-                double returned = list.Where(x => x.Type == TicketType.Returned).Sum(x => x.Quantity);
+                double received = g.Where(x => x.Type == TicketType.Received).Sum(x => x.Quantity);
+                double returned = g.Where(x => x.Type == TicketType.Returned).Sum(x => x.Quantity);
+                double used = g.Where(x => x.Type != TicketType.Received && x.Type != TicketType.Returned).Sum(x => x.Quantity);
 
-                double dailyCost = 0; // no consumed cost
+                double netChangeToday = 0;
+                netByProduct.TryGetValue(g.Key.ProductCode, out netChangeToday);
+                double initialQty = (prod?.StockQty ?? 0) - netChangeToday;
 
-                double unitAvg = 0; // no consumed data
-
-                // Assume current product.StockQty reflects stock AFTER today's movements.
-                // Compute initial as current stock minus today's net change (received - used + returned)
-                double netChangeToday = received - used + returned;
-                double initialQty = p.StockQty - netChangeToday;
+                var requisition = g.Select(x => x.Requisition).FirstOrDefault() ?? "";
+                var ticketId = g.Key.TicketId ?? "";
 
                 Rows.Add(new ProductSummaryRow
                 {
-                    ProductCode = p.Code,
-                    ProductName = p.Name,
-                    Unit = p.Unit ?? "",
+                    ProductCode = g.Key.ProductCode,
+                    ProductName = productName,
+                    Unit = productUnit,
                     InitialQty = initialQty,
                     Received = received,
                     Used = used,
                     Returned = returned,
-                    RemainingStock = p.StockQty,
-                    UnitCostAvg = unitAvg,
-                    DailyCost = dailyCost
+                    RemainingStock = prod?.StockQty ?? 0,
+                    UnitCostAvg = 0,
+                    DailyCost = 0,
+                    TicketId = ticketId,
+                    Requisition = requisition
                 });
             }
 

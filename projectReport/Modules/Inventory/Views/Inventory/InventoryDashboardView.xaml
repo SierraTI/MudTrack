@@ -5,23 +5,19 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Tabs -->
             <RowDefinition Height="Auto"/>
-            <!-- Buttons -->
             <RowDefinition Height="*"/>
-            <!-- Table -->
             <RowDefinition Height="Auto"/>
-            <!-- Total -->
         </Grid.RowDefinitions>
 
-        <!-- 1?? Tabs -->
+        <!-- 1) Tabs -->
         <TabControl Grid.Row="0" Margin="0,0,0,8">
             <TabItem Header="Products"/>
             <TabItem Header="Whole Fluids"/>
             <TabItem Header="Additional Charge"/>
         </TabControl>
 
-        <!-- 2?? Ticket buttons -->
+        <!-- 2) Ticket buttons -->
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     Margin="0,0,0,10">
@@ -39,28 +35,49 @@
             <Button Content="Importar Excel" Command="{Binding ImportExcelCommand}" Margin="4" />
         </StackPanel>
 
-        <!-- 3?? Table -->
+        <!-- 3) Table -->
         <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Items}"
+                  ItemsSource="{Binding Rows}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserAddRows="False"
                   Margin="0,0,0,10"
-                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
+                  SelectedItem="{Binding SelectedRow, Mode=TwoWay}">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Product" Binding="{Binding Name}" Width="2*"/>
-                <DataGridTextColumn Header="Initial" Binding="{Binding QuantityAvailable}" Width="*"/>
+                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="2*"/>
+                <DataGridTextColumn Header="Requisition" Binding="{Binding Requisition}" Width="150"/>
+                <DataGridTextColumn Header="Initial" Binding="{Binding InitialQty}" Width="*"/>
                 <DataGridTextColumn Header="Received" Binding="{Binding Received}" Width="*"/>
                 <DataGridTextColumn Header="Used" Binding="{Binding Used}" Width="*"/>
                 <DataGridTextColumn Header="Return" Binding="{Binding Returned}" Width="*"/>
                 <DataGridTextColumn Header="Final" Binding="{Binding FinalQty}" Width="*"/>
                 <DataGridTextColumn Header="Remaining Stock" Binding="{Binding RemainingStock}" Width="*"/>
                 <DataGridTextColumn Header="Daily Cost" Binding="{Binding DailyCost}" Width="*"/>
+
+                <!-- Delete column: ancho fijo y boton centrado para que sea visible -->
+                <DataGridTemplateColumn Header=" " Width="60" CanUserSort="False" IsReadOnly="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="X"
+                                    Width="36"
+                                    Height="24"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    Background="#D9534F"
+                                    BorderBrush="#8B2323"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    ToolTip="Delete ticket and its movements"
+                                    Command="{Binding DataContext.DeleteRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding TicketId}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- 4?? Total cost -->
+        <!-- 4) Total cost -->
         <Border Grid.Row="3"
                 Padding="12"
                 BorderThickness="1"

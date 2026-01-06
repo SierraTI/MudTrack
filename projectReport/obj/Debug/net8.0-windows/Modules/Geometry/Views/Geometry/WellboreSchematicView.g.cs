@@ -59,7 +59,7 @@ namespace ProjectReport.Views.Geometry {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/geometry/views/geometry/wellboreschematicview.xa" +
+            System.Uri resourceLocater = new System.Uri(("/projectReport;component/modules/geometry/views/geometry/wellboreschematicview.xa" +
                     "ml"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Geometry\Views\Geometry\WellboreSchematicView.xaml"

@@ -11,8 +11,8 @@
       "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\views\\geometryview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\views\\thermalgradientview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\views\\thermalgradientview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\viewmodels\\geometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\viewmodels\\geometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -27,13 +27,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "ThermalGradientView.xaml",
-              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\ThermalGradientView.xaml",
-              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Views\\ThermalGradientView.xaml",
-              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\ThermalGradientView.xaml",
-              "RelativeToolTip": "projectReport\\Modules\\Geometry\\Views\\ThermalGradientView.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-30T04:02:42.311Z",
+              "Title": "GeometryViewModel.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
+              "ViewState": "AgIAAMQIAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-30T04:29:07.466Z",
               "EditorCaption": ""
             },
             {
@@ -44,9 +45,9 @@
               "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml.cs",
               "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml.cs",
               "RelativeToolTip": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAxwMsCAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAM8CAAAAAAAAAABhwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-30T03:52:36.553Z",
+              "WhenOpened": "2025-12-30T04:28:23.431Z",
               "EditorCaption": ""
             },
             {
@@ -58,7 +59,7 @@
               "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml",
               "RelativeToolTip": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-30T03:26:40.454Z",
+              "WhenOpened": "2025-12-30T04:26:45.958Z",
               "EditorCaption": ""
             }
           ]

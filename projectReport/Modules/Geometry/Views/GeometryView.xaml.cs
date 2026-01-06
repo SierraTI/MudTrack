@@ -628,6 +628,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is WellboreComponent section)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.WellboreComponents.IndexOf(section);
                 if (index > 0) _viewModel.WellboreComponents.Move(index, index - 1);
             }
@@ -637,6 +638,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is WellboreComponent section)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.WellboreComponents.IndexOf(section);
                 if (index < _viewModel.WellboreComponents.Count - 1) _viewModel.WellboreComponents.Move(index, index + 1);
             }
@@ -646,7 +648,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is DrillStringComponent component)
             {
-                _viewModel.DrillStringComponents.Remove(component);
+                _viewModel?.DrillStringComponents.Remove(component);
             }
         }
 
@@ -654,6 +656,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is DrillStringComponent component)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.DrillStringComponents.IndexOf(component);
                 if (index > 0) _viewModel.DrillStringComponents.Move(index, index - 1);
             }
@@ -663,6 +666,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is DrillStringComponent component)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.DrillStringComponents.IndexOf(component);
                 if (index < _viewModel.DrillStringComponents.Count - 1) _viewModel.DrillStringComponents.Move(index, index + 1);
             }
@@ -673,13 +677,14 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is SurveyPoint point)
             {
-                _viewModel.SurveyPoints.Remove(point);
+                _viewModel?.SurveyPoints.Remove(point);
             }
         }
         private void MoveSurveyUp_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is SurveyPoint point)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.SurveyPoints.IndexOf(point);
                 if (index > 0) _viewModel.SurveyPoints.Move(index, index - 1);
             }
@@ -688,6 +693,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is SurveyPoint point)
             {
+                 if (_viewModel == null) return;
                 int index = _viewModel.SurveyPoints.IndexOf(point);
                 if (index < _viewModel.SurveyPoints.Count - 1) _viewModel.SurveyPoints.Move(index, index + 1);
             }
@@ -697,13 +703,14 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is WellTest test)
             {
-                _viewModel.WellTests.Remove(test);
+                _viewModel?.WellTests.Remove(test);
             }
         }
         private void MoveWellTestUp_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is WellTest test)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.WellTests.IndexOf(test);
                 if (index > 0) _viewModel.WellTests.Move(index, index - 1);
             }
@@ -712,6 +719,7 @@ namespace ProjectReport.Views
         {
             if (sender is Button button && button.Tag is WellTest test)
             {
+                if (_viewModel == null) return;
                 int index = _viewModel.WellTests.IndexOf(test);
                 if (index < _viewModel.WellTests.Count - 1) _viewModel.WellTests.Move(index, index + 1);
             }

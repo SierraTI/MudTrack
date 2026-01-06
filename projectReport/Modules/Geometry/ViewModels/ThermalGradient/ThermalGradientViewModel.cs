@@ -23,6 +23,25 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
         private int _nextId = 1;
         private const double SurfaceTempMin = 32.0;
         private const double SurfaceTempMax = 120.0;
+        
+        // Added IsLoading property to suppress chart updates during bulk loading
+        private bool _isLoading;
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    if (!value)
+                    {
+                        ValidateAllPoints();
+                        RecalculateSummaryStatistics();
+                        UpdateChart();
+                    }
+                }
+            }
+        }
 
         public ThermalGradientViewModel(ThermalGradientService thermalService)
         {
@@ -33,6 +52,9 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             ThermalGradientPoints.CollectionChanged += OnThermalPointsCollectionChanged;
             
             Formations.CollectionChanged += OnFormationsCollectionChanged;
+
+            // Subscribe to WellContextService for dynamic depth updates (Rule B)
+            WellContextService.Instance.DepthUpdated += OnGlobalDepthUpdated;
 
             // Ensure a default Surface point (ID=1, TVD=0)
             if (ThermalGradientPoints.Count == 0)
@@ -138,7 +160,12 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
         public SeriesCollection SeriesCollection { get; set; } = new();
         public VisualElementsCollection VisualElements { get; set; } = new();
-        public SectionsCollection AxisSections { get; set; } = new();
+        private SectionsCollection _axisSections = new();
+        public SectionsCollection AxisSections 
+        { 
+            get => _axisSections; 
+            set => SetProperty(ref _axisSections, value); 
+        }
         public ObservableCollection<Formation> Formations { get; } = new();
 
         public Func<double, string> YFormatter { get; set; } = value => value.ToString();
@@ -300,6 +327,26 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             }
         }
 
+        // Rule B: Dynamic Y-axis scaling based on current depth
+        private double _currentDepth;
+        public double CurrentDepth
+        {
+            get => _currentDepth;
+            set
+            {
+                if (SetProperty(ref _currentDepth, value))
+                {
+                    OnPropertyChanged(nameof(YAxisMinValue));
+                    OnPropertyChanged(nameof(YAxisMaxValue));
+                    UpdateChart();
+                }
+            }
+        }
+
+        // Rule A: Inverted Y-axis (0 at top, depth increases downward)
+        public double YAxisMinValue => -Math.Max(CurrentDepth, MaxWellboreTVD > 0 ? MaxWellboreTVD : 10000);
+        public double YAxisMaxValue => 0;
+
         #endregion
 
         #region Commands
@@ -451,6 +498,8 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
         private void OnThermalPointsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_isLoading) return;
+
             if (e.NewItems != null)
             {
                 foreach (ThermalGradientPoint point in e.NewItems)
@@ -475,11 +524,16 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
         private void OnFormationsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_isLoading) return;
+
             if (e.NewItems != null)
             {
                 foreach (Formation f in e.NewItems)
                 {
-                    f.PropertyChanged += (s, ev) => UpdateChart();
+                    f.PropertyChanged += (s, ev) => 
+                    {
+                        if (!_isLoading) UpdateChart();
+                    };
                 }
             }
             if (e.OldItems != null)
@@ -744,22 +798,50 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 var values = new ChartValues<ObservablePoint>();
                 
                 // Clear existing visual elements (labels) and sections
+                
+                // Clear existing visual elements (labels) and sections
                 if (VisualElements != null) VisualElements.Clear();
-                if (AxisSections != null) AxisSections.Clear();
+                
+                // Create NEW collection for sections to avoid LiveCharts threading/update crash on Clear()
+                var newSections = new SectionsCollection();
                 
                 // Add formations shading to AxisSections
                 foreach (var formation in Formations)
                 {
-                    AxisSections.Add(new AxisSection
+                    double topY = -formation.TopTVD;
+                    double bottomY = -formation.BottomTVD;
+                    double midY = (topY + bottomY) / 2;
+
+                    // Add shading section
+                    newSections.Add(new AxisSection
                     {
-                        Label = formation.Name,
+                        // Label removed (Obsolete)
                         Value = -formation.BottomTVD,
                         SectionWidth = Math.Abs(formation.BottomTVD - formation.TopTVD),
                         Fill = (Brush)new BrushConverter().ConvertFrom(formation.Color),
                         Opacity = 0.4,
-                        DataLabel = true,
-                        DataLabelForeground = (Brush)new BrushConverter().ConvertFrom("#4B5563")
+                        DataLabel = false
                     });
+
+                    // Add text label as VisualElement
+                    if (VisualElements != null)
+                    {
+                        VisualElements.Add(new VisualElement
+                        {
+                            X = 40, // Position on left/middle of chart roughly
+                            Y = midY,
+                            HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                            VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                            UIElement = new System.Windows.Controls.TextBlock
+                            {
+                                Text = formation.Name,
+                                FontSize = 10,
+                                Foreground = (Brush)new BrushConverter().ConvertFrom("#4B5563"),
+                                FontWeight = System.Windows.FontWeights.SemiBold,
+                                Opacity = 0.8
+                            }
+                        });
+                    }
                 }
 
                 var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
@@ -884,17 +966,56 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 // Total Depth Line Section
                 if (MaxWellboreTVD > 0 && AxisSections != null)
                 {
-                     AxisSections.Add(new AxisSection
+                     newSections.Add(new AxisSection
                      {
                          Value = -MaxWellboreTVD,
                          Stroke = (Brush)new BrushConverter().ConvertFrom("#EF4444"), // Red-500
                          StrokeThickness = 2,
                          StrokeDashArray = new System.Windows.Media.DoubleCollection { 4, 2 },
-                         DataLabel = true,
-                         DataLabelForeground = Brushes.Red,
-                         Label = "Total Depth"
+                         DataLabel = false
                      });
+
+                    if (VisualElements != null)
+                    {
+                        VisualElements.Add(new VisualElement
+                        {
+                            X = 40, 
+                            Y = -MaxWellboreTVD,
+                            HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                            VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
+                            UIElement = new System.Windows.Controls.TextBlock
+                            {
+                                Text = "Total Depth",
+                                FontSize = 10,
+                                Foreground = Brushes.Red,
+                                FontWeight = System.Windows.FontWeights.Bold,
+                                Background = Brushes.White,
+                                Padding = new System.Windows.Thickness(2)
+                            }
+                        });
+                    }
                 }
+
+                // Assign the completely built collection atomically to prevent concurrency crashes
+                AxisSections = newSections;
+            }
+        }
+
+        #endregion
+
+        #region WellContextService Integration
+
+        /// <summary>
+        /// Rule B: Updates Y-axis scaling when current depth changes from Daily Reports
+        /// </summary>
+        private void OnGlobalDepthUpdated(object? sender, double newDepth)
+        {
+            CurrentDepth = newDepth;
+            
+            // If MaxWellboreTVD hasn't been set from Survey, use CurrentDepth as fallback
+            if (MaxWellboreTVD == 0 && newDepth > 0)
+            {
+                MaxWellboreTVD = newDepth;
             }
         }
 

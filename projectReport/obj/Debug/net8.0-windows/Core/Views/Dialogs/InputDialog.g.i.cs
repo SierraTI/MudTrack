@@ -52,7 +52,7 @@ namespace ProjectReport.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ProjectReport;V1.0.0.0;component/core/views/dialogs/inputdialog.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/core/views/dialogs/inputdialog.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Core\Views\Dialogs\InputDialog.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

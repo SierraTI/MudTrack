@@ -1159,153 +1159,7 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Dashboard de Seguridad (MAASP / Kick Tolerance) -->
-                        <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="1.5*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Medidor MAASP -->
-                            <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,10,0" Padding="15">
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="MAASP" Foreground="{StaticResource TextMuted}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                                    <lvc:Gauge Value="{Binding MAASP}"
-                                               From="0" To="3000"
-                                               LabelsVisibility="Collapsed"
-                                               Height="120"
-                                               InnerRadius="45"
-                                               GaugeBackground="{StaticResource BorderSoft}"
-                                               Foreground="{StaticResource BrandBlueGradient}"/>
-                                    <TextBlock Text="{Binding MAASP, StringFormat='{}{0:N0} psi'}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                                    <TextBlock Text="Max Surface Pressure" FontSize="11" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Medidor Kick Tolerance -->
-                            <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="0,0,10,0" Padding="15">
-                                <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Kick Tolerance" Foreground="{StaticResource TextMuted}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                                    <lvc:Gauge Value="{Binding KickTolerance}"
-                                               From="0" To="100"
-                                               LabelsVisibility="Collapsed"
-                                               Height="120"
-                                               InnerRadius="45"
-                                               GaugeBackground="{StaticResource BorderSoft}"
-                                               Foreground="{StaticResource BrandOrangeGradient}"/>
-                                    <TextBlock Text="{Binding KickTolerance, StringFormat='{}{0:N1} bbl'}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                                    <TextBlock Text="Max Influx Volume" FontSize="11" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Entradas y Status -->
-                            <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="15">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-                                    
-                                    <TextBlock Text="Drilling Parameters" FontWeight="Bold" Margin="0,0,0,12"/>
-                                    
-                                    <UniformGrid Grid.Row="1" Columns="2">
-                                        <StackPanel Margin="0,0,10,10">
-                                            <TextBlock Text="Current Mud Weight" Foreground="{StaticResource TextMuted}" FontSize="12"/>
-                                            <TextBox Text="{Binding CurrentMudWeight, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" 
-                                                     FontSize="16" FontWeight="SemiBold" Padding="5"/>
-                                            <TextBlock Text="ppg" FontSize="10" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <StackPanel Margin="0,0,0,10">
-                                            <TextBlock Text="Influx Gradient" Foreground="{StaticResource TextMuted}" FontSize="12"/>
-                                            <TextBlock Text="0.10 psi/ft" FontSize="16" FontWeight="SemiBold" Margin="0,5,0,0"/>
-                                            <TextBlock Text="(Safety Standard)" FontSize="10" Foreground="{StaticResource TextMuted}" HorizontalAlignment="Right"/>
-                                        </StackPanel>
-
-                                        <Button Grid.Column="0"
-                                                Content="+ Add New Well Test"
-                                                Style="{StaticResource BrandPrimaryButton}"
-                                                Click="AddWellTest_Click"
-                                                Height="36"
-                                                Margin="0,5,5,0"/>
-                                        
-                                        <Button Content="Clear All"
-                                                Style="{StaticResource BrandSecondaryButton}"
-                                                Height="36"
-                                                Margin="5,5,0,0"/>
-
-                                        <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                Content="📥 Import LOT CSV Data"
-                                                Style="{StaticResource BrandSecondaryButton}"
-                                                Command="{Binding ImportPumpDataCommand}"
-                                                Height="36"
-                                                Margin="0,10,0,0"
-                                                ToolTip="Import pump pressure data for the selected Leak Off Test"/>
-                                    </UniformGrid>
-                                </Grid>
-                            </Border>
-                        </Grid>
-
-                        <!-- Gráficas de Diagnóstico -->
-                        <Grid Grid.Row="1" Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="3*"/>
-                                <ColumnDefinition Width="2*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- Chart 1: Pressure Profiler -->
-                            <Border Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,6,0" MinHeight="350">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Text="Pressure vs. Depth Profile" FontWeight="Bold" Margin="0,0,0,10"/>
-                                    
-                                    <lvc:CartesianChart Grid.Row="1" Series="{Binding SafetySeriesCollection}" LegendLocation="Bottom">
-                                        <lvc:CartesianChart.AxisX>
-                                            <lvc:Axis Title="Equivalent Mud Weight (ppg)" MinValue="8" MaxValue="22">
-                                                <lvc:Axis.Separator>
-                                                    <lvc:Separator Step="1"/>
-                                                </lvc:Axis.Separator>
-                                            </lvc:Axis>
-                                        </lvc:CartesianChart.AxisX>
-                                        <lvc:CartesianChart.AxisY>
-                                            <lvc:Axis Title="True Vertical Depth (ft)" LabelFormatter="{Binding YAxisLabelFormatter}"/>
-                                        </lvc:CartesianChart.AxisY>
-                                    </lvc:CartesianChart>
-                                </Grid>
-                            </Border>
-
-                            <!-- Chart 2: LOT Pump Curve -->
-                            <Border Grid.Column="1" Style="{StaticResource CardBorder}" Margin="6,0,0,0">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                        <TextBlock Text="LOT: Pump Pressure" FontWeight="Bold"/>
-                                        <TextBlock Text=" (Selected Test)" FontSize="10" Foreground="{StaticResource TextMuted}" VerticalAlignment="Bottom" Margin="5,0,0,0"/>
-                                    </StackPanel>
-                                    
-                                    <lvc:CartesianChart Grid.Row="1" Series="{Binding LotSeriesCollection}">
-                                        <lvc:CartesianChart.AxisX>
-                                            <lvc:Axis Title="Volume / Time" />
-                                        </lvc:CartesianChart.AxisX>
-                                        <lvc:CartesianChart.AxisY>
-                                            <lvc:Axis Title="Pump Pressure (psi)" />
-                                        </lvc:CartesianChart.AxisY>
-                                    </lvc:CartesianChart>
-
-                                    <TextBlock Grid.Row="1" Text="Select a Leak Off row and import CSV to see the plot" 
-                                               Foreground="{StaticResource TextMuted}" 
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                                               Visibility="{Binding LotSeriesCollection.Count, Converter={StaticResource CollectionToVis}, ConverterParameter=Inverse}"/>
-                                </Grid>
-                            </Border>
-                        </Grid>
+                        <!-- Dashboard and diagnostic charts removed per request -->
 
                         <DataGrid Grid.Row="2"
                                   x:Name="WellTestDataGrid"
@@ -1398,7 +1252,45 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <GroupBox Grid.Row="0" Header="Volume Summary">
+                        <!-- Missing Steps Warning Banner -->
+                        <Border Grid.Row="0" 
+                                Background="#FEF3C7" 
+                                BorderBrush="#F59E0B" 
+                                BorderThickness="2" 
+                                CornerRadius="8" 
+                                Padding="15" 
+                                Margin="0,0,0,12"
+                                Visibility="{Binding MissingStepsWarning, Converter={StaticResource NullToVis}, ConverterParameter=Inverse}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚠️" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding MissingStepsWarning}" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="#92400E"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Depth Consistency Warning Banner -->
+                        <Border Grid.Row="1" 
+                                Background="#FEE2E2" 
+                                BorderBrush="#DC2626" 
+                                BorderThickness="2" 
+                                CornerRadius="8" 
+                                Padding="15" 
+                                Margin="0,0,0,12"
+                                Visibility="{Binding DepthConsistencyWarning, Converter={StaticResource NullToVis}, ConverterParameter=Inverse}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚠️" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding DepthConsistencyWarning}" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="#7F1D1D"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <GroupBox Grid.Row="2" Header="Volume Summary">
                             <Grid Margin="10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1442,10 +1334,40 @@
                                     <TextBlock Text="{Binding TotalCirculationVolume, StringFormat='{}{0:F2} bbl'}"
                                                FontSize="22" FontWeight="Bold" Foreground="{StaticResource BrandOrange}"/>
                                 </StackPanel>
+
+                                <!-- Annular Capacity Formula Documentation -->
+                                <Border Grid.Row="1" Grid.ColumnSpan="4" 
+                                        Background="#F0F9FF" 
+                                        BorderBrush="#0EA5E9" 
+                                        BorderThickness="1" 
+                                        CornerRadius="6" 
+                                        Padding="12" 
+                                        Margin="10,15,10,0">
+                                    <StackPanel>
+                                        <TextBlock Text="📐 Annular Capacity Formula" 
+                                                   FontWeight="Bold" 
+                                                   Foreground="#0369A1" 
+                                                   Margin="0,0,0,8"/>
+                                        <TextBlock Foreground="#075985" FontFamily="Consolas" FontSize="13">
+                                            <Run Text="V"/><Run Text="ann" FontSize="10" BaselineAlignment="Subscript"/>
+                                            <Run Text=" (bbl) = "/>
+                                            <Run Text="("/>
+                                            <Run Text="ID"/><Run Text="wellbore" FontSize="10" BaselineAlignment="Subscript"/>
+                                            <Run Text="² - "/>
+                                            <Run Text="OD"/><Run Text="drillpipe" FontSize="10" BaselineAlignment="Subscript"/>
+                                            <Run Text="²) / 1029.4 × Length (ft)"/>
+                                        </TextBlock>
+                                        <TextBlock Text="This formula ensures calculations match physical reality of the wellbore" 
+                                                   FontSize="11" 
+                                                   Foreground="#64748B" 
+                                                   FontStyle="Italic" 
+                                                   Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </Border>
                             </Grid>
                         </GroupBox>
 
-                        <GroupBox Grid.Row="1" Header="Annular Volume Details">
+                        <GroupBox Grid.Row="2" Header="Annular Volume Details">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>

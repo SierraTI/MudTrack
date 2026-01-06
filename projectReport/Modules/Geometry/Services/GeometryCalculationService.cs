@@ -9,7 +9,10 @@ namespace ProjectReport.Services
 {
     public class GeometryCalculationService
     {
-        private const double BblVolumeConstant = 1029.4; // bbl = (dia_in)^2 * length_ft / 1029.4
+        // Annular Capacity Formula (per MudTrack Master Flow Specification):
+        // V_ann (bbl) = (ID_wellbore² - OD_drillpipe²) / 1029.4 × Length (ft)
+        // This constant ensures calculations match physical reality of the wellbore
+        private const double BblVolumeConstant = 1029.4;
 
         /// <summary>
         /// Calculates the volume of a cylinder given diameter and length

@@ -25,9 +25,9 @@ namespace ProjectReport.Services.Wellbore
 
         public class ValidationError
         {
-            public string ComponentId { get; set; }
-            public string ComponentName { get; set; }
-            public string Message { get; set; }
+            public required string ComponentId { get; set; }
+            public required string ComponentName { get; set; }
+            public required string Message { get; set; }
             public ValidationSeverity Severity { get; set; }
         }
 

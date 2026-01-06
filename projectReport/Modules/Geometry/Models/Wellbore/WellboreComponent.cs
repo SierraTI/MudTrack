@@ -329,6 +329,23 @@ namespace ProjectReport.Models.Geometry.Wellbore
         }
 
         /// <summary>
+        /// Auto-links this component's Top MD to the previous component's Bottom MD.
+        /// Used for automatic continuity enforcement.
+        /// </summary>
+        public void AutoLinkTopMD(double previousBottomMD)
+        {
+            if (!_isFirstRow)
+            {
+                _topMD = previousBottomMD;
+                _previousBottomMD = previousBottomMD;
+                OnPropertyChanged(nameof(TopMD));
+                OnPropertyChanged(nameof(Length));
+                OnPropertyChanged(nameof(Volume));
+                OnPropertyChanged(nameof(IsTopMDEditable));
+            }
+        }
+
+        /// <summary>
         /// Gets whether Top MD is editable (false if first row or linked to previous).
         /// </summary>
         public bool IsTopMDEditable => !_isFirstRow && _previousBottomMD == null;

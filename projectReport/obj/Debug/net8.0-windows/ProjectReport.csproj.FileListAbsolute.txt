@@ -383,7 +383,6 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.AssemblyInf
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.AssemblyInfo.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.csproj.CoreCompileInputs.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.sourcelink.json
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectR.53A52C41.Up2Date
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.dll
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport.dll
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
@@ -529,3 +528,4 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Ge
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreSchematicView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\BhaSchematicView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\BhaSchematicView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectR.53A52C41.Up2Date

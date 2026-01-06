@@ -51,7 +51,7 @@ namespace ProjectReport.Views.Inventory {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/inventory/views/inventory/inventoryhistoryview.x" +
+            System.Uri resourceLocater = new System.Uri(("/projectReport;component/modules/inventory/views/inventory/inventoryhistoryview.x" +
                     "aml"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Inventory\Views\Inventory\InventoryHistoryView.xaml"

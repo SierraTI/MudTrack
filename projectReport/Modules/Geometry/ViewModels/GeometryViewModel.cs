@@ -47,6 +47,8 @@ namespace ProjectReport.ViewModels.Geometry
         private string _operator = string.Empty;
         private string _location = string.Empty;
         private string _rigName = string.Empty;
+        private string _rigType = string.Empty;
+        private string _contractor = string.Empty;
         private int _selectedTabIndex;
         private bool _depthOverrunToastShown;
         private string _drillStringDepthErrorMessage = string.Empty;
@@ -606,6 +608,18 @@ namespace ProjectReport.ViewModels.Geometry
             set => SetProperty(ref _rigName, value);
         }
 
+        public string RigType
+        {
+            get => _rigType;
+            set => SetProperty(ref _rigType, value);
+        }
+
+        public string Contractor
+        {
+            get => _contractor;
+            set => SetProperty(ref _contractor, value);
+        }
+
         // Collections
         public ObservableCollection<WellboreComponent> WellboreComponents { get; }
         public ObservableCollection<DrillStringComponent> DrillStringComponents { get; }
@@ -667,6 +681,18 @@ namespace ProjectReport.ViewModels.Geometry
         public ICommand ShowVisualizationCommand => new RelayCommand(ShowVisualization);
 
         public ICommand ForceToBottomCommand => new RelayCommand(_ => ExecuteAutoAdjustToBottom(), _ => CanAutoAdjustToBottom);
+        public ICommand AddWellTestCommand => new RelayCommand(AddWellTest);
+        public ICommand SyncWellTestDataCommand => new RelayCommand(SyncWellTestData, _ => SelectedWellTest != null);
+
+        // Dashboard Commands
+        private ICommand? _exportToPdfCommand;
+        public ICommand ExportToPdfCommand => _exportToPdfCommand ??= new RelayCommand(ExecuteExportToPdf);
+        
+        private ICommand? _editGeometryCommand;
+        public ICommand EditGeometryCommand => _editGeometryCommand ??= new RelayCommand(_ => SelectedTabIndex = 0);
+        
+        private ICommand? _editStringCommand; 
+        public ICommand EditStringCommand => _editStringCommand ??= new RelayCommand(_ => SelectedTabIndex = 1);
 
         public bool CanAutoAdjustToBottom
         {
@@ -727,7 +753,7 @@ namespace ProjectReport.ViewModels.Geometry
                         return false;
                     }
                     // Depth consistency validation (Rule: Wellbore cannot be deeper than current drilling depth)
-                    var deepestWellbore = WellboreComponents.Where(c => c.BottomMD.HasValue).Max(c => c.BottomMD.Value);
+                    var deepestWellbore = WellboreComponents.Where(c => c.BottomMD.HasValue).Max(c => c.BottomMD) ?? 0;
                     var depthError = WellContextService.Instance.ValidateDepthConsistency(deepestWellbore);
                     if (depthError != null) {
                         ToastNotificationService.Instance.ShowError(depthError);
@@ -785,37 +811,59 @@ namespace ProjectReport.ViewModels.Geometry
         private void AddWellboreSection(object? parameter)
         {
             var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
-            var lastSection = sorted.FirstOrDefault(c => c.TopMD.HasValue);
+            var lastSection = sorted.LastOrDefault();
             
-            // Create completely empty section - user must fill all fields
+            double? initialTopMD = null;
+            if (lastSection != null)
+            {
+                initialTopMD = lastSection.BottomMD;
+            }
+            else if (_currentWell?.RigProfile != null)
+            {
+                // Rule 11: Connect Top MD with Wellhead
+                // Offset = RKB - Wellhead (Casing Head)
+                double rkb = _currentWell.RigProfile.RkbElevation;
+                double wh = _currentWell.RigProfile.CasingHeadElevation;
+                if (rkb > 0 && wh > 0 && rkb > wh)
+                {
+                    initialTopMD = rkb - wh;
+                }
+                else
+                {
+                    initialTopMD = 0;
+                }
+            }
+            else
+            {
+                initialTopMD = 0;
+            }
+
+            // Create section
             var newSection = new WellboreComponent
             {
                 Id = GetNextWellboreId(),
-                Name = string.Empty,          // Empty name - user must enter
-                SectionType = default,        // null - user must select from dropdown
-                TopMD = null,                 // Will be auto-set
-                BottomMD = null,              // Empty - user must enter
-                OD = null,                    // Empty - user must enter
-                ID = null,                    // Empty - user must enter
-                Washout = null                // Empty - optional for OpenHole
+                Name = string.Empty,
+                SectionType = default,
+                TopMD = initialTopMD,
+                BottomMD = initialTopMD.HasValue ? initialTopMD.Value + 100 : null,
+                OD = null,
+                ID = null,
+                Washout = null
             };
-
-            // Auto-link TopMD logic:
+            
+            // First row logic
             if (WellboreComponents.Count == 0)
             {
-                // First row always starts at TopMD = 0
                 newSection.SetAsFirstRow(true);
-                newSection.TopMD = 0;
             }
             else if (lastSection != null && lastSection.BottomMD.HasValue)
             {
                 // Subsequent rows: TopMD = previous row's BottomMD (auto-linked)
                 newSection.SetPreviousBottomMD(lastSection.BottomMD.Value);
             }
-            
+
             WellboreComponents.Add(newSection);
             newSection.PropertyChanged += OnWellboreComponentChanged;
-            
             RecalculateTotals();
         }
 
@@ -942,10 +990,20 @@ namespace ProjectReport.ViewModels.Geometry
                 // BR-TG-001, BR-TG-002, BR-TG-003, BR-TG-004: Check for Thermal Gradient validation issues
                 if (ThermalGradientViewModel.HasValidationError)
                 {
-                    // Some thermal gradient issues are warnings (overrideable), some are errors.
-                    // We'll ask the user for confirmation.
+                    // Check if there are hard errors (containing "Error:" or "excede")
+                    bool hasHardError = ThermalGradientViewModel.ValidationMessage.Contains("Error:") || 
+                                       ThermalGradientViewModel.ValidationMessage.Contains("excede") ||
+                                       ThermalGradientViewModel.ValidationMessage.Contains("ordering");
+
+                    if (hasHardError)
+                    {
+                        ToastNotificationService.Instance.ShowError($"Cannot save project. Thermal Gradient has critical errors:\n\n{ThermalGradientViewModel.ValidationMessage}");
+                        return;
+                    }
+
+                    // Otherwise, treat as warnings and ask for confirmation
                     var result = MessageBox.Show(
-                        $"Thermal Gradient module has validation issues:\n\n{ThermalGradientViewModel.ValidationMessage}\n\nDo you want to save anyway?",
+                        $"Thermal Gradient module has validation warnings:\n\n{ThermalGradientViewModel.ValidationMessage}\n\nDo you want to save anyway?",
                         "Thermal Gradient Validation",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Warning);
@@ -1005,6 +1063,11 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 _currentWell = well; // Store reference to the well
                 WellName = well.WellName;
+                RigName = well.RigName;
+                RigType = well.RigType;
+                Contractor = well.Contractor;
+                Location = well.Location;
+                Operator = well.Operator;
 
                 // Load Wellbore Components
                 WellboreComponents.Clear();
@@ -1597,6 +1660,8 @@ namespace ProjectReport.ViewModels.Geometry
         public double TotalDrillStringVolume { get; private set; }
         public double TotalAnnularVolume { get; private set; }
         public double TotalCirculationVolume { get; private set; }
+        public double TotalSurfaceVolume { get; private set; }
+        public double TotalSystemVolume { get; private set; }
         public double TotalWellboreMD { get; private set; }
         public string ContinuityError { get; private set; } = string.Empty;
 
@@ -1704,7 +1769,17 @@ namespace ProjectReport.ViewModels.Geometry
             get
             {
                 double totalDrillStringLength = DrillStringComponents.Sum(c => c.Length.GetValueOrDefault());
-                return TotalWellboreMD - totalDrillStringLength;
+                
+                // Target Depth Logic (Rule 6: Subtract RKB)
+                double targetDepth = TotalWellboreMD;
+                var rig = WellContextService.Instance.CurrentWell?.RigProfile;
+                if (rig != null && rig.RkbElevation > 0)
+                {
+                    // If TotalWellboreMD matches Report MD, we subtract RKB
+                    targetDepth = Math.Max(0, TotalWellboreMD - rig.RkbElevation);
+                }
+                
+                return targetDepth - totalDrillStringLength;
             }
         }
 
@@ -1717,6 +1792,18 @@ namespace ProjectReport.ViewModels.Geometry
         }
 
         public bool CanForceToBottom => !HasDrillStringDepthError && TotalWellboreMD > 0 && DrillStringComponents.Count > 0;
+
+        private void ExecuteExportToPdf(object? parameter)
+        {
+            ToastNotificationService.Instance.ShowInfo("Export to PDF functionality will be implemented in the next patch.");
+        }
+
+        // Dashboard Data
+        public IEnumerable<ProjectReport.Models.Rig.RigPit> ActivePits => 
+            _currentWell?.RigProfile?.Pits.Where(p => p.IsActive) ?? Enumerable.Empty<ProjectReport.Models.Rig.RigPit>();
+
+        public IEnumerable<ProjectReport.Models.Rig.RigSurfaceEquipment> ServiceLines => 
+            _currentWell?.RigProfile?.SurfaceEquipment ?? Enumerable.Empty<ProjectReport.Models.Rig.RigSurfaceEquipment>();
 
         /// <summary>
         /// Gets the total drill string length (sum of all component lengths)
@@ -1964,6 +2051,14 @@ namespace ProjectReport.ViewModels.Geometry
         {
             // Get current bit depth from Daily Report
             var bitDepth = WellContextService.Instance.CurrentDepth;
+            
+            // Adjust for RKB (Rule 6)
+            var rig = WellContextService.Instance.CurrentWell?.RigProfile;
+            if (rig != null && rig.RkbElevation > 0)
+            {
+                bitDepth = Math.Max(0, bitDepth - rig.RkbElevation);
+            }
+
             if (bitDepth <= 0)
             {
                 MessageBox.Show(
@@ -2070,8 +2165,31 @@ namespace ProjectReport.ViewModels.Geometry
         public void RecalculateTotals()
         {
             TotalWellboreVolume = _geometryService.CalculateTotalWellboreVolume(WellboreComponents, "Imperial");
-            TotalDrillStringVolume = _geometryService.CalculateTotalDrillStringVolume(DrillStringComponents, false, "Imperial");
+            TotalDrillStringVolume = _geometryService.CalculateTotalDrillStringVolume(DrillStringComponents, false, "Imperial"); // Internal Volume
             TotalAnnularVolume = _geometryService.CalculateTotalAnnularVolume(TotalWellboreVolume, TotalDrillStringVolume);
+            
+            // Calculate Surface Volume
+            double surfaceVol = 0;
+            var rig = _currentWell?.RigProfile;
+            if (rig != null)
+            {
+                // Active Pits
+                surfaceVol += rig.Pits.Where(p => p.IsActive).Sum(p => p.CurrentVolume);
+                
+                // Service Lines
+                foreach (var line in rig.SurfaceEquipment)
+                {
+                    if (line.InternalDiameter > 0 && line.Length > 0)
+                    {
+                        surfaceVol += _geometryService.CalculateCylindricalVolume(line.InternalDiameter, line.Length, "Imperial");
+                    }
+                }
+            }
+            TotalSurfaceVolume = surfaceVol;
+            
+            // The Golden Number
+            TotalSystemVolume = TotalAnnularVolume + TotalDrillStringVolume + TotalSurfaceVolume;
+            
             TotalCirculationVolume = TotalAnnularVolume + TotalDrillStringVolume;
             TotalWellboreMD = WellboreComponents.Count > 0 ? WellboreComponents.Max(w => w.BottomMD ?? 0) : 0;
             
@@ -2129,10 +2247,13 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(SurveyErrorCount));
             OnPropertyChanged(nameof(WellTestErrorCount));
 
-            // Update Safety Metrics (MAASP, Kick Tolerance)
+            OnPropertyChanged(nameof(TotalSystemVolume));
+            OnPropertyChanged(nameof(ActivePits));
+            OnPropertyChanged(nameof(ServiceLines));
+            OnPropertyChanged(nameof(AnnularVolumePercent));
+            OnPropertyChanged(nameof(StringVolumePercent));
             RecalculateSafetyMetrics();
         }
-
 
         private void UpdateAnnularVolumeDetails()
         {
@@ -2580,6 +2701,63 @@ namespace ProjectReport.ViewModels.Geometry
                 {
                     ToastNotificationService.Instance.ShowError($"Error importing CSV: {ex.Message}");
                 }
+            }
+        }
+
+        private void AddWellTest(object? parameter)
+        {
+            var newTest = new WellTest
+            {
+                Id = GetNextWellTestId(),
+                Section = WellboreSectionNames.LastOrDefault() ?? "Open Hole",
+                Type = WellTestType.LeakOff,
+                TestValue = 0,
+                MD = 0,
+                TVD = 0
+            };
+
+            WellTests.Add(newTest);
+            newTest.PropertyChanged += OnWellTestPropertyChanged;
+            SelectedWellTest = newTest;
+        }
+
+        private void SyncWellTestData(object? parameter)
+        {
+            if (SelectedWellTest == null) return;
+
+            // Strategy: 
+            // 1. If LOT/Integrity, sync with the 'Shoe Depth' (last casing/liner bottom)
+            // 2. Otherwise sync with the deepest point available (Survey or Wellbore Bottom)
+            
+            double targetTvd = 0;
+            if (SelectedWellTest.Type == WellTestType.LeakOff || SelectedWellTest.Type == WellTestType.FormationIntegrity)
+            {
+                targetTvd = ShoeDepth;
+            }
+            else
+            {
+                targetTvd = ThermalGradientViewModel.MaxWellboreTVD;
+            }
+
+            if (targetTvd > 0)
+            {
+                SelectedWellTest.TVD = targetTvd;
+                // Update MD if we have survey data to be consistent
+                var point = SurveyPoints.OrderBy(p => Math.Abs(p.TVD - targetTvd)).FirstOrDefault();
+                if (point != null)
+                {
+                    SelectedWellTest.MD = point.MD;
+                }
+                else
+                {
+                    SelectedWellTest.MD = targetTvd; // fallback
+                }
+                
+                ToastNotificationService.Instance.ShowSuccess($"Sync complete: TVD set to {targetTvd:F0} ft.");
+            }
+            else
+            {
+                ToastNotificationService.Instance.ShowWarning("No target depth found for synchronization.");
             }
         }
 

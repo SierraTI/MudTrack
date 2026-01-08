@@ -23,9 +23,7 @@ namespace ProjectReport.Services.DrillString
             if (bitDepth <= 0)
                 return 0;
 
-            var bhaLength = bhaComponents
-                .Where(c => c.Length.HasValue)
-                .Sum(c => c.Length.Value);
+            var bhaLength = bhaComponents.Sum(c => c.Length.GetValueOrDefault());
 
             var requiredDrillPipeLength = bitDepth - bhaLength;
 
@@ -43,9 +41,7 @@ namespace ProjectReport.Services.DrillString
             if (bitDepth <= 0)
                 return "Bit depth not set in Daily Report";
 
-            var bhaLength = bhaComponents
-                .Where(c => c.Length.HasValue)
-                .Sum(c => c.Length.Value);
+            var bhaLength = bhaComponents.Sum(c => c.Length.GetValueOrDefault());
 
             if (bhaLength > bitDepth)
             {
@@ -92,9 +88,7 @@ namespace ProjectReport.Services.DrillString
         /// </summary>
         public double GetBHATotalLength(List<DrillStringComponent> bhaComponents)
         {
-            return bhaComponents
-                .Where(c => c.Length.HasValue)
-                .Sum(c => c.Length.Value);
+            return bhaComponents.Sum(c => c.Length.GetValueOrDefault());
         }
 
         /// <summary>

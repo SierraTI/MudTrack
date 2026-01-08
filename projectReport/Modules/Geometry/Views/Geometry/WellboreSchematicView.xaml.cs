@@ -71,7 +71,7 @@ namespace ProjectReport.Views.Geometry
 
         private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => DrawSchematic();
 
-        private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "TotalWellboreMD" || e.PropertyName == "SelectedTabIndex" || e.PropertyName == "TotalDrillStringLength")
             {
@@ -107,7 +107,7 @@ namespace ProjectReport.Views.Geometry
             {
                 Width = maxWbWidth,
                 Height = maxDepth * BaseScale,
-                Fill = (Brush)new BrushConverter().ConvertFrom("#EFF6FF"), // Very light blue
+                Fill = (Brush?)new BrushConverter().ConvertFrom("#EFF6FF") ?? Brushes.AliceBlue, // Very light blue
                 Opacity = 0.5
             };
             Canvas.SetLeft(fluidRect, (CanvasWidth - maxWbWidth) / 2);
@@ -130,16 +130,17 @@ namespace ProjectReport.Views.Geometry
                 switch (section.SectionType)
                 {
                     case WellboreSectionType.Casing:
-                        fill = (Brush)new BrushConverter().ConvertFrom("#9CA3AF"); // Gray-400
-                        stroke = (Brush)new BrushConverter().ConvertFrom("#374151"); // Gray-700
+                        var converter = new BrushConverter();
+                        fill = (Brush?)converter.ConvertFrom("#9CA3AF") ?? Brushes.Gray; // Gray-400
+                        stroke = (Brush?)converter.ConvertFrom("#374151") ?? Brushes.DarkGray; // Gray-700
                         break;
                     case WellboreSectionType.Liner:
-                        fill = (Brush)new BrushConverter().ConvertFrom("#60A5FA"); // Blue-400
-                        stroke = (Brush)new BrushConverter().ConvertFrom("#1D4ED8"); // Blue-700
+                        fill = (Brush?)new BrushConverter().ConvertFrom("#60A5FA") ?? Brushes.Blue; // Blue-400
+                        stroke = (Brush?)new BrushConverter().ConvertFrom("#1D4ED8") ?? Brushes.DarkBlue; // Blue-700
                         break;
                     default: // OpenHole
-                        fill = (Brush)new BrushConverter().ConvertFrom("#FCD34D"); // Amber-300
-                        stroke = (Brush)new BrushConverter().ConvertFrom("#B45309"); // Amber-700
+                        fill = (Brush?)new BrushConverter().ConvertFrom("#FCD34D") ?? Brushes.Orange; // Amber-300
+                        stroke = (Brush?)new BrushConverter().ConvertFrom("#B45309") ?? Brushes.DarkOrange; // Amber-700
                         break;
                 }
 
@@ -184,9 +185,11 @@ namespace ProjectReport.Views.Geometry
                     {
                         Width = width,
                         Height = height,
-                        Fill = comp.ComponentType == ComponentType.Bit ? (Brush)new BrushConverter().ConvertFrom("#EF4444") : (Brush)new BrushConverter().ConvertFrom("#F97316"),
-                        Stroke = Brushes.Black,
-                        StrokeThickness = 0.5,
+                        Fill = comp.ComponentType == ComponentType.Bit 
+                            ? ((Brush?)new BrushConverter().ConvertFrom("#EF4444") ?? Brushes.Red) 
+                            : ((Brush?)new BrushConverter().ConvertFrom("#EEF2FF") ?? Brushes.AliceBlue),
+                        Stroke = (Brush?)new BrushConverter().ConvertFrom("#C7D2FE") ?? Brushes.LightBlue,
+                        StrokeThickness = 1,
                         ToolTip = $"{comp.Name}\nOD: {comp.OD}\"\nLen: {comp.Length} ft"
                     };
 
@@ -196,10 +199,10 @@ namespace ProjectReport.Views.Geometry
 
                     if (comp.ComponentType == ComponentType.Bit)
                     {
-                        AddMarkerLabel($"Bit: {currentTop + comp.Length} ft", currentTop + comp.Length.Value, Brushes.Red, true);
+                        AddMarkerLabel($"Bit: {currentTop + (comp.Length ?? 0)} ft", currentTop + (comp.Length ?? 0), Brushes.Red, true);
                     }
 
-                    currentTop += comp.Length.Value;
+                    currentTop += (comp.Length ?? 0);
                 }
             }
             

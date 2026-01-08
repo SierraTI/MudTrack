@@ -125,6 +125,8 @@ namespace ProjectReport.Views
 
         private void GeometryView_KeyDown(object sender, KeyEventArgs e)
         {
+            if (_viewModel == null) return;
+
             // Ctrl+S: Save
             if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
@@ -139,7 +141,10 @@ namespace ProjectReport.Views
                     case 0: AddWellboreSection_Click(this, new RoutedEventArgs()); break;
                     case 1: AddDrillStringComponent_Click(this, new RoutedEventArgs()); break;
                     case 2: AddSurveyPoint_Click(this, new RoutedEventArgs()); break;
-                    case 4: AddWellTest_Click(this, new RoutedEventArgs()); break;
+                    case 4: 
+                        if (_viewModel.AddWellTestCommand.CanExecute(null))
+                            _viewModel.AddWellTestCommand.Execute(null); 
+                        break;
                 }
                 e.Handled = true;
             }
@@ -164,7 +169,10 @@ namespace ProjectReport.Views
 
         private void GeometryView_Loaded(object sender, RoutedEventArgs e)
         {
-            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            if (_viewModel != null)
+            {
+                _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            }
             UpdateVisualization();
         }
 
@@ -211,6 +219,8 @@ namespace ProjectReport.Views
 
         private void AddDrillStringComponent_Click(object sender, RoutedEventArgs e)
         {
+            if (_viewModel == null) return;
+
             var newComponent = new DrillStringComponent
             {
                 Id = _viewModel.GetNextDrillStringId(),
@@ -284,12 +294,13 @@ namespace ProjectReport.Views
                         break;
                 }
 
-                _viewModel.RecalculateTotals();
+                _viewModel?.RecalculateTotals();
             }
         }
 
         private void AddSurveyPoint_Click(object sender, RoutedEventArgs e)
         {
+            if (_viewModel == null) return;
             var newPoint = new SurveyPoint
             {
                 Id = _viewModel.GetNextSurveyId(),
@@ -305,6 +316,7 @@ namespace ProjectReport.Views
 
         private void AddWellTest_Click(object sender, RoutedEventArgs e)
         {
+            if (_viewModel == null) return;
             var newTest = new WellTest
             {
                 Id = _viewModel.GetNextWellTestId(),
@@ -358,6 +370,8 @@ namespace ProjectReport.Views
 
         private void WellboreDataGrid_Drop(object sender, DragEventArgs e)
         {
+            if (_viewModel == null) return;
+
             if (sender is DataGrid dataGrid && _draggedItem is WellboreComponent draggedItem)
             {
                 var row = GetDataGridRow(dataGrid, e.GetPosition(dataGrid));
@@ -391,6 +405,8 @@ namespace ProjectReport.Views
 
         private void DrillStringDataGrid_Drop(object sender, DragEventArgs e)
         {
+            if (_viewModel == null) return;
+
             if (sender is DataGrid dataGrid && _draggedItem is DrillStringComponent draggedItem)
             {
                 var row = GetDataGridRow(dataGrid, e.GetPosition(dataGrid));
@@ -450,7 +466,8 @@ namespace ProjectReport.Views
         private void UpdateWellboreContinuity()
         {
             // Validate continuity after drag-and-drop reordering
-            var sorted = _viewModel.WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            var sorted = _viewModel?.WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            if (sorted == null) return;
 
             for (int i = 0; i < sorted.Count - 1; i++)
             {
@@ -470,7 +487,7 @@ namespace ProjectReport.Views
                         if (result == true)
                         {
                             // User fixed the error, recalculate totals
-                            _viewModel.RecalculateTotals();
+                            _viewModel?.RecalculateTotals();
                             return;
                         }
                         else
@@ -482,7 +499,7 @@ namespace ProjectReport.Views
                 }
             }
 
-            _viewModel.RecalculateTotals();
+            _viewModel?.RecalculateTotals();
         }
 
         // Property Changed Handlers
@@ -561,19 +578,22 @@ namespace ProjectReport.Views
                         if (messageResult == MessageBoxResult.Yes)
                         {
                             // Replace: Clear existing data
-                            _viewModel.SurveyPoints.Clear();
+                            _viewModel?.SurveyPoints.Clear();
                         }
 
                         // Add imported points
-                        int nextId = _viewModel.SurveyPoints.Count > 0
-                            ? _viewModel.SurveyPoints.Max(p => p.Id) + 1
+                        int nextId = (_viewModel?.SurveyPoints.Count ?? 0) > 0
+                            ? _viewModel?.SurveyPoints.Max(p => p.Id) + 1 ?? 1
                             : 1;
 
-                        foreach (var point in result.SurveyPoints)
+                        if (result.SurveyPoints != null)
                         {
-                            point.Id = nextId++;
-                            point.PropertyChanged += SurveyPoint_PropertyChanged;
-                            _viewModel.SurveyPoints.Add(point);
+                            foreach (var point in result.SurveyPoints)
+                            {
+                                point.Id = nextId++;
+                                point.PropertyChanged += SurveyPoint_PropertyChanged;
+                                _viewModel?.SurveyPoints.Add(point);
+                            }
                         }
 
                         // Show success message with errors if any

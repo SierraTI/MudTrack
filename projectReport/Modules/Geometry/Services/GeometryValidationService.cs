@@ -68,7 +68,7 @@ namespace ProjectReport.Services
             }
 
             // B5: Primera Sección Comienza en 0.00
-            if (list[0].TopMD.HasValue && list[0].TopMD.Value != 0)
+            if (list[0].TopMD.GetValueOrDefault() != 0)
             {
                 result.Items.Add(new ValidationError { ComponentId = list[0].Id.ToString(), ComponentName = list[0].Name, Message = "La primera sección debe comenzar en 0.00 ft", Severity = ValidationSeverity.Warning });
             }
@@ -202,15 +202,15 @@ namespace ProjectReport.Services
                     {
                         result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "Washout is required for Open Hole.", Severity = ValidationSeverity.Error });
                     }
-                    else if (cur.Washout.GetValueOrDefault() < 0 || cur.Washout.GetValueOrDefault() > 100)
+                    else if (cur.Washout.Value < 0 || cur.Washout.Value > 100)
                     {
                         result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "Washout must be between 0% and 100%.", Severity = ValidationSeverity.Error });
                     }
-                    else if (cur.Washout.GetValueOrDefault() > 50)
+                    else if (cur.Washout.Value > 50)
                     {
                         result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "Excessive washout (>50%) detected - verify measurement.", Severity = ValidationSeverity.Warning });
                     }
-                    else if (cur.Washout.GetValueOrDefault() > 30)
+                    else if (cur.Washout.Value > 30)
                     {
                         result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "High washout (>30%) may affect cementing operations.", Severity = ValidationSeverity.Warning });
                     }

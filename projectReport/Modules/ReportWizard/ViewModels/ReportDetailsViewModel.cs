@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows.Input;
 using ProjectReport.Models;
+using ProjectReport.Models.Rig;
 
 namespace ProjectReport.ViewModels
 {
@@ -32,12 +33,30 @@ namespace ProjectReport.ViewModels
                 Report.WellSection = last.WellSection ?? string.Empty;
                 Report.MaxBHT = last.MaxBHT;
                 Report.OperationalIssues = last.OperationalIssues;
+                
+                Report.RigName = last.RigName ?? _well.RigName;
+                Report.Contractor = last.Contractor ?? _well.Contractor;
+                Report.RigType = last.RigType ?? _well.RigType;
 
                 InheritedFields = true;
             }
             else
             {
+                Report.RigName = _well.RigName;
+                Report.Contractor = _well.Contractor;
+                Report.RigType = _well.RigType;
                 InheritedFields = false;
+            }
+
+            // Always initialize Pumps from Rig Profile if empty
+            if (Report.Pumps.Count == 0 && _well.RigProfile?.Pumps != null)
+            {
+                foreach (var rigPump in _well.RigProfile.Pumps)
+                {
+                    var op = new ReportPumpOperation { No = rigPump.No };
+                    op.UpdateFromRigPump(rigPump);
+                    Report.Pumps.Add(op);
+                }
             }
 
             ClearInheritedFieldCommand = new RelayCommand(_ => ClearInheritedFields());
@@ -82,7 +101,11 @@ namespace ProjectReport.ViewModels
                 PrimaryFluidSet = Report.PrimaryFluidSet,
                 OtherActiveFluids = Report.OtherActiveFluids,
                 OperationalIssues = Report.OperationalIssues,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                Pumps = new ObservableCollection<ReportPumpOperation>(Report.Pumps),
+                RigName = Report.RigName,
+                Contractor = Report.Contractor,
+                RigType = Report.RigType
             };
         }
     }
@@ -102,6 +125,11 @@ namespace ProjectReport.ViewModels
         private string _primaryFluidSet = string.Empty;
         private string _otherActiveFluids = string.Empty;
         private bool _operationalIssues;
+        private string _rigName = string.Empty;
+        private string _contractor = string.Empty;
+        private string _rigType = string.Empty;
+
+        public ObservableCollection<ReportPumpOperation> Pumps { get; } = new ObservableCollection<ReportPumpOperation>();
 
         public string IntervalNumber
         {
@@ -161,6 +189,24 @@ namespace ProjectReport.ViewModels
         {
             get => _operationalIssues;
             set { _operationalIssues = value; OnPropertyChanged(); }
+        }
+
+        public string RigName
+        {
+            get => _rigName;
+            set { _rigName = value; OnPropertyChanged(); }
+        }
+
+        public string Contractor
+        {
+            get => _contractor;
+            set { _contractor = value; OnPropertyChanged(); }
+        }
+
+        public string RigType
+        {
+            get => _rigType;
+            set { _rigType = value; OnPropertyChanged(); }
         }
 
         // IDataErrorInfo

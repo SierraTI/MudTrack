@@ -51,8 +51,7 @@ namespace ProjectReport.Views.Geometry {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;V1.0.0.0;component/modules/geometry/views/continuityerrordialog.xa" +
-                    "ml"), System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ProjectReport;component/modules/geometry/views/continuityerrordialog.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\Modules\Geometry\Views\ContinuityErrorDialog.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

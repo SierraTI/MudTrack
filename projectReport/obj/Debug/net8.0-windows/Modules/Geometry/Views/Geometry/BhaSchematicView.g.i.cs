@@ -9,6 +9,9 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using LiveCharts.Wpf;
+using ProjectReport.Converters;
+using ProjectReport.Models.Geometry.Wellbore;
 using ProjectReport.Views.Geometry;
 using System;
 using System.Diagnostics;

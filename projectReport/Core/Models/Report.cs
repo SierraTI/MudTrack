@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using ProjectReport.Models.Rig;
 
 namespace ProjectReport.Models
 {
@@ -10,6 +11,27 @@ namespace ProjectReport.Models
         {
             get => _intervalNumber;
             set => SetProperty(ref _intervalNumber, value);
+        }
+
+        private string _rigName = string.Empty;
+        public string RigName
+        {
+            get => _rigName;
+            set => SetProperty(ref _rigName, value);
+        }
+
+        private string _contractor = string.Empty;
+        public string Contractor
+        {
+            get => _contractor;
+            set => SetProperty(ref _contractor, value);
+        }
+
+        private string _rigType = string.Empty;
+        public string RigType
+        {
+            get => _rigType;
+            set => SetProperty(ref _rigType, value);
         }
 
         private DateTime _reportDateTime = DateTime.Now;
@@ -89,11 +111,27 @@ namespace ProjectReport.Models
             set => SetProperty(ref _operationalIssues, value);
         }
 
+        public ObservableCollection<ReportPumpOperation> Pumps { get; set; } = new ObservableCollection<ReportPumpOperation>();
+        public ObservableCollection<ReportScreenUsage> Screens { get; set; } = new ObservableCollection<ReportScreenUsage>();
         public ObservableCollection<string> OperatorReps { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<string> ContractorReps { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<string> BaroidReps { get; set; } = new ObservableCollection<string>();
 
 
+
+        private double _totalGpm;
+        public double TotalGpm
+        {
+            get => _totalGpm;
+            set => SetProperty(ref _totalGpm, value);
+        }
+
+        private double _surfacePressureLoss;
+        public double SurfacePressureLoss
+        {
+            get => _surfacePressureLoss;
+            set => SetProperty(ref _surfacePressureLoss, value);
+        }
 
         private bool _isDraft = false;
         public bool IsDraft
@@ -154,7 +192,7 @@ namespace ProjectReport.Models
         {
             var clone = new Report
             {
-                IntervalNumber = this.IntervalNumber + " (Copy)", // Or explicit logic
+                IntervalNumber = this.IntervalNumber + " (Copy)",
                 ReportDateTime = DateTime.Now,
                 MD = this.MD,
                 TVD = this.TVD,
@@ -164,6 +202,10 @@ namespace ProjectReport.Models
                 PresentActivity = this.PresentActivity,
                 PrimaryFluidSet = this.PrimaryFluidSet,
                 OtherActiveFluids = this.OtherActiveFluids,
+                MudDensity = this.MudDensity,
+                RigName = this.RigName,
+                Contractor = this.Contractor,
+                RigType = this.RigType,
                 OperationalIssues = this.OperationalIssues,
                 CreatedDate = DateTime.Now,
                 IsDraft = true,
@@ -171,6 +213,33 @@ namespace ProjectReport.Models
                 ContractorReps = new ObservableCollection<string>(this.ContractorReps),
                 BaroidReps = new ObservableCollection<string>(this.BaroidReps)
             };
+
+            // Clone Equipment
+            foreach (var p in this.Pumps)
+            {
+                clone.Pumps.Add(new ReportPumpOperation
+                {
+                    No = p.No,
+                    PumpName = p.PumpName,
+                    LinerSize = p.LinerSize,
+                    StrokeLength = p.StrokeLength,
+                    Efficiency = p.Efficiency,
+                    Spm = p.Spm,
+                    Pressure = p.Pressure
+                });
+            }
+
+            foreach (var s in this.Screens)
+            {
+                clone.Screens.Add(new ReportScreenUsage
+                {
+                    ShakerName = s.ShakerName,
+                    ScreenType = s.ScreenType,
+                    Quantity = s.Quantity,
+                    IsDeducted = false // New report, fresh deduction
+                });
+            }
+
             return clone;
         }
     }

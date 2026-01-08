@@ -188,7 +188,7 @@ namespace ProjectReport.Services
                         DrillStringOD = 0,
                         TopMD = section.TopMD ?? 0,
                         BottomMD = section.BottomMD ?? 0,
-                        SectionType = section.SectionType.ToString(),
+                        SectionType = section.SectionType?.ToString() ?? string.Empty,
                         Stage = section.Stage?.ToString() ?? string.Empty
                     });
                 }
@@ -315,7 +315,7 @@ namespace ProjectReport.Services
                             DrillStringOD = comp.OD.GetValueOrDefault(),
                             TopMD = start,
                             BottomMD = end,
-                            SectionType = section.SectionType.ToString(),
+                            SectionType = section.SectionType?.ToString() ?? string.Empty,
                             Stage = section.Stage?.ToString() ?? string.Empty
                         });
                         
@@ -337,7 +337,7 @@ namespace ProjectReport.Services
                         DrillStringOD = 0,
                         TopMD = currentCursor,
                         BottomMD = sectionBottom,
-                        SectionType = section.SectionType.ToString(),
+                        SectionType = section.SectionType?.ToString() ?? string.Empty,
                         Stage = section.Stage?.ToString() ?? string.Empty
                     });
                 }

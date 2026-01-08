@@ -163,11 +163,20 @@ namespace ProjectReport.Services
             if (points == null || points.Count == 0)
                 return errors;
 
+            if (maxWellboreTVD <= 0)
+                return errors; // No survey data available, skip validation
+
+            var maxTVD = points.Max(p => p.TVD);
+            if (maxTVD > maxWellboreTVD)
+            {
+                errors.Add($"Error: El TVD final de la gráfica ({maxTVD:F2} ft) es mayor al TVD del Survey ({maxWellboreTVD:F2} ft). No se puede guardar hasta corregir este valor.");
+            }
+
             foreach (var point in points)
             {
                 if (point.TVD > maxWellboreTVD)
                 {
-                    errors.Add($"Point ID {point.Id}: TVD ({point.TVD:F2} ft) exceeds total wellbore depth ({maxWellboreTVD:F2} ft)");
+                    errors.Add($"Punto ID {point.Id}: TVD ({point.TVD:F2} ft) excede la profundidad total del Survey ({maxWellboreTVD:F2} ft)");
                 }
             }
 

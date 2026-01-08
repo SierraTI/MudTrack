@@ -78,10 +78,6 @@ namespace ProjectReport.Models.Geometry.Wellbore
             get
             {
                 var errors = new HashSet<string>(_validationErrors);
-                foreach (var err in GetErrors(null).Cast<string>())
-                {
-                    errors.Add(err);
-                }
                 return errors.Count > 0 ? string.Join(Environment.NewLine, errors) : string.Empty;
             }
         }
@@ -601,7 +597,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             get
             {
                 if (ID.GetValueOrDefault() > 0 && OD.GetValueOrDefault() > 0 && Length > 0)
-                    return ((ID.Value * ID.Value) - (OD.Value * OD.Value)) * Length / 1029.4;
+                    return ((ID.GetValueOrDefault() * ID.GetValueOrDefault()) - (OD.GetValueOrDefault() * OD.GetValueOrDefault())) * Length / 1029.4;
 
                 return 0;
             }

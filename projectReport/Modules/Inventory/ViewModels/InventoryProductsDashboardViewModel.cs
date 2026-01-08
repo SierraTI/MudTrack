@@ -11,6 +11,7 @@ namespace ProjectReport.ViewModels.Inventory
     public class InventoryProductsDashboardViewModel : BaseViewModel
     {
         private readonly InventoryService _service;
+        private readonly WellContextService _contextService = WellContextService.Instance;
 
         // NAV EVENTS
         public event Action? RequestOpenReceived;
@@ -28,6 +29,18 @@ namespace ProjectReport.ViewModels.Inventory
 
         // TABLE DATA
         public ObservableCollection<ProductSummaryRow> Rows { get; } = new();
+        public ObservableCollection<ProductSummaryRow> FilteredRows { get; } = new();
+
+        private bool _isRigFilterEnabled;
+        public bool IsRigFilterEnabled
+        {
+            get => _isRigFilterEnabled;
+            set
+            {
+                if (SetProperty(ref _isRigFilterEnabled, value))
+                    ApplyFilter();
+            }
+        }
 
         private ProductSummaryRow? _selectedRow;
         public ProductSummaryRow? SelectedRow
@@ -153,7 +166,52 @@ namespace ProjectReport.ViewModels.Inventory
             }
 
             OnPropertyChanged(nameof(TotalProductsCost));
+            ApplyFilter();
             CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void ApplyFilter()
+        {
+            FilteredRows.Clear();
+            var allRows = Rows.ToList();
+
+            if (!IsRigFilterEnabled)
+            {
+                foreach (var r in allRows) FilteredRows.Add(r);
+                return;
+            }
+
+            var rig = _contextService.CurrentWell?.RigProfile;
+            var shakerKeywords = new List<string>();
+            if (rig != null)
+            {
+                shakerKeywords = rig.SolidsControl
+                    .Where(sc => sc.Type?.IndexOf("Shaker", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .SelectMany(sc => new[] { sc.Manufacturer, sc.Model })
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Distinct()
+                    .ToList();
+            }
+
+            foreach (var row in allRows)
+            {
+                // Simple heuristic: if it's a screen, only show if it matches rig shakers
+                bool isScreen = row.ProductName.IndexOf("Screen", StringComparison.OrdinalIgnoreCase) >= 0 || 
+                                row.ProductCode.IndexOf("Screen", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                if (isScreen)
+                {
+                    bool isMatch = shakerKeywords.Any(k => 
+                        row.ProductName.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0 || 
+                        row.ProductCode.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
+                    
+                    if (isMatch) FilteredRows.Add(row);
+                }
+                else
+                {
+                    FilteredRows.Add(row);
+                }
+            }
         }
     }
 }

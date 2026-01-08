@@ -9,6 +9,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using LiveCharts.Wpf;
+using ProjectReport.Converters;
 using System;
 using System.Diagnostics;
 using System.Windows;

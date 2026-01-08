@@ -8,6 +8,9 @@ using ProjectReport.Models;
 using ProjectReport.Models.Geometry;
 using ProjectReport.Services;
 using ProjectReport.ViewModels.Geometry;
+using ProjectReport.Services.Inventory;
+using ProjectReport.Models.Inventory;
+using ProjectReport.Models.Rig;
 
 namespace ProjectReport.ViewModels
 {
@@ -19,6 +22,8 @@ namespace ProjectReport.ViewModels
         private Project _project;
         private readonly Report? _originalReport; // For edit mode tracking
         private bool _isEditMode;
+        private readonly InventoryService _inventoryService;
+        private readonly HydraulicsCalculationService _hydraulicsService;
 
         public ReportWizardViewModel(Well well, Project project, Report? reportToEdit = null)
         {
@@ -29,6 +34,10 @@ namespace ProjectReport.ViewModels
 
             _originalReport = reportToEdit;
             _isEditMode = reportToEdit != null;
+
+            // Initialize Services
+            _inventoryService = new InventoryService(new JsonInventoryRepository());
+            _hydraulicsService = new HydraulicsCalculationService();
 
             // Initialize Report
             InitializeReport();
@@ -42,6 +51,9 @@ namespace ProjectReport.ViewModels
 
             // Inherited Fields visibility: Only relevant for NEW reports using Jalar
             InheritedFields = !_isEditMode && _well.Reports != null && _well.Reports.Count > 0;
+
+            // Initial calculation
+            UpdateHydraulics();
         }
 
         #region Properties
@@ -70,6 +82,7 @@ namespace ProjectReport.ViewModels
 
         public bool IsStep1Active => CurrentStep == 1;
         public bool IsStep2Active => CurrentStep == 2;
+        public bool IsStep3Active => CurrentStep == 3;
 
         public bool InheritedFields { get; private set; }
         public bool IsEditMode => _isEditMode;
@@ -122,9 +135,99 @@ namespace ProjectReport.ViewModels
                     foreach(var op in lastReport.OperatorReps) newReport.OperatorReps.Add(op);
                     foreach(var c in lastReport.ContractorReps) newReport.ContractorReps.Add(c);
                     foreach(var b in lastReport.BaroidReps) newReport.BaroidReps.Add(b);
+
+                    // Inherit Equipment if possible, or fresh from Rig Profile
+                    if (lastReport.Pumps.Count > 0)
+                    {
+                        foreach(var p in lastReport.Pumps) newReport.Pumps.Add(new ReportPumpOperation 
+                        { 
+                            No = p.No, PumpName = p.PumpName, LinerSize = p.LinerSize, 
+                            StrokeLength = p.StrokeLength, Efficiency = p.Efficiency,
+                            Pressure = p.Pressure // Maybe SPM too? Usually it changes daily, but keep for convenience
+                        });
+                    }
+                    if (lastReport.Screens.Count > 0)
+                    {
+                        foreach(var s in lastReport.Screens) newReport.Screens.Add(new ReportScreenUsage 
+                        { 
+                            ShakerName = s.ShakerName, ScreenType = s.ScreenType 
+                        });
+                    }
+                }
+
+                // Populate from Rig Profile
+                if (_well.RigProfile != null)
+                {
+                    newReport.RigName = _well.RigProfile.RigName;
+                    newReport.Contractor = _well.RigProfile.Contractor;
+                    newReport.RigType = _well.RigProfile.RigType;
+                }
+
+                // If still empty, pull from Rig Profile equipment
+                if (newReport.Pumps.Count == 0 && _well.RigProfile?.Pumps != null)
+                {
+                    foreach (var rp in _well.RigProfile.Pumps)
+                    {
+                        var op = new ReportPumpOperation { No = rp.No };
+                        op.UpdateFromRigPump(rp);
+                        newReport.Pumps.Add(op);
+                    }
+                }
+                if (newReport.Screens.Count == 0 && _well.RigProfile?.SolidsControl != null)
+                {
+                    foreach (var sc in _well.RigProfile.SolidsControl)
+                    {
+                        newReport.Screens.Add(new ReportScreenUsage { ShakerName = $"{sc.Manufacturer} {sc.Model}", ScreenType = sc.ScreenType });
+                    }
                 }
 
                 Report = newReport;
+            }
+
+            // Hook up events for real-time hydraulics
+            Report.PropertyChanged += OnReportPropertyChanged;
+            Report.Pumps.CollectionChanged += (s, e) => 
+            {
+                if (e.NewItems != null)
+                    foreach (ReportPumpOperation p in e.NewItems) p.PropertyChanged += OnPumpPropertyChanged;
+                if (e.OldItems != null)
+                    foreach (ReportPumpOperation p in e.OldItems) p.PropertyChanged -= OnPumpPropertyChanged;
+                UpdateHydraulics();
+            };
+
+            foreach (var p in Report.Pumps) p.PropertyChanged += OnPumpPropertyChanged;
+        }
+
+        private void OnReportPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Report.MudDensity))
+                UpdateHydraulics();
+        }
+
+        private void OnPumpPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ReportPumpOperation.Gpm) || e.PropertyName == nameof(ReportPumpOperation.Spm))
+                UpdateHydraulics();
+        }
+
+        private void UpdateHydraulics()
+        {
+            if (Report == null) return;
+
+            // Total GPM
+            Report.TotalGpm = Math.Round(Report.Pumps.Sum(p => p.Gpm), 2);
+
+            // Total Surface Pressure Loss
+            if (_well.RigProfile != null && Report.MudDensity.HasValue)
+            {
+                Report.SurfacePressureLoss = _hydraulicsService.CalculateTotalSurfacePressureLoss(
+                    _well.RigProfile, 
+                    Report.MudDensity.Value, 
+                    Report.TotalGpm);
+            }
+            else
+            {
+                Report.SurfacePressureLoss = 0;
             }
         }
 
@@ -144,7 +247,7 @@ namespace ProjectReport.ViewModels
 
         private void GoNext(object? obj)
         {
-            if (CurrentStep < 2)
+            if (CurrentStep < 3)
             {
                 // Use IDataErrorInfo validation check for Step 1
                 if (CurrentStep == 1 && !ValidateStep1()) return;
@@ -153,7 +256,6 @@ namespace ProjectReport.ViewModels
             }
             else
             {
-                // Should not happen if UI hides "Next" on Step 2, but fail-safe
                 Finish(obj);
             }
         }
@@ -165,7 +267,7 @@ namespace ProjectReport.ViewModels
                 // Optional: Live validation disable
                 // return string.IsNullOrEmpty(Report["IntervalNumber"]) && ...
             }
-            return CurrentStep < 2; 
+            return CurrentStep < 3; 
         }
 
         private void GoBack(object? obj)
@@ -203,6 +305,10 @@ namespace ProjectReport.ViewModels
             if (!ValidateAll()) return;
 
             Report.IsDraft = false;
+            
+            // Deduct from Inventory for Screens
+            DeductScreensFromInventory();
+
             await SaveReportAsync();
             ToastNotificationService.Instance.ShowSuccess("Report completed");
 
@@ -216,6 +322,48 @@ namespace ProjectReport.ViewModels
             NavigationService.Instance.NavigateToGeometry(_well.Id);
 
             RequestClose?.Invoke();
+        }
+
+        private void DeductScreensFromInventory()
+        {
+            if (Report.Screens == null || Report.Screens.Count == 0) return;
+
+            var ticket = new Ticket
+            {
+                Date = Report.ReportDateTime,
+                Type = TicketType.Consumed,
+                User = "System", // Or current user if available
+                Observations = $"Daily Report {Report.IntervalNumber} - Automated Screen Deduction",
+                Lines = new List<TicketLine>()
+            };
+
+            foreach (var screen in Report.Screens)
+            {
+                if (screen.Quantity > 0 && !screen.IsDeducted)
+                {
+                    ticket.Lines.Add(new TicketLine
+                    {
+                        ProductCode = screen.ScreenType, // Using ScreenType as Code
+                        ProductName = $"{screen.ShakerName} Screen",
+                        Quantity = screen.Quantity,
+                        Context = $"Report {Report.IntervalNumber}"
+                    });
+                    screen.IsDeducted = true;
+                }
+            }
+
+            if (ticket.Lines.Count > 0)
+            {
+                try
+                {
+                    _inventoryService.CreateTicketConsumed(ticket);
+                }
+                catch (Exception ex)
+                {
+                    // Log or show error, but don't block report saving
+                    System.Diagnostics.Debug.WriteLine($"Inventory deduction failed: {ex.Message}");
+                }
+            }
         }
 
         private bool CanFinish(object? obj)

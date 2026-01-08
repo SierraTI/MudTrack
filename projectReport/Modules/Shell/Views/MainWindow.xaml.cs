@@ -11,6 +11,7 @@ using ProjectReport.Views.ReportWizard;
 using ProjectReport.ViewModels; // <-- added to reference ReportDetailsViewModel
 using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels.Inventory;
+using ProjectReport.Modules.RigProfile.Views;
 
 
 
@@ -25,6 +26,7 @@ namespace ProjectReport.Views
         private HomeView? _homeView;
         private WellDataView? _wellDataView;
         private Views.WellDashboardView? _wellDashboardView;
+        private RigProfileView? _rigProfileView;
 
 
         public Project CurrentProject { get; set; }
@@ -86,6 +88,11 @@ namespace ProjectReport.Views
                     case NavigationTarget.WellDashboard:
                         if (e.WellId.HasValue)
                             NavigateToWellDashboard(e.WellId.Value);
+                        break;
+
+                    case NavigationTarget.RigProfile:
+                        if (e.WellId.HasValue)
+                            NavigateToRigProfile(e.WellId.Value);
                         break;
                 }
             });
@@ -157,6 +164,28 @@ namespace ProjectReport.Views
 
             ContentTitle.Text = $"Dashboard - {well.WellName}";
             ContentArea.Content = _wellDashboardView;
+
+            GeometrySubmenu.Visibility = Visibility.Collapsed;
+            GeometrySubmenu.Height = 0;
+        }
+
+        private void NavigateToRigProfile(int wellId)
+        {
+            var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
+            if (well == null) return;
+
+             if (_rigProfileView == null)
+                _rigProfileView = new RigProfileView();
+
+             // Ensure ViewModel context is updated if needed (it hooks to WellContext on ctor, but if recycled?)
+             // Use explicit Load/Refresh if ViewModel has it, otherwise WellContext change handles it.
+             
+             // If ViewModel is created once, we might need to ensure it sees the current well.
+             // RigProfileViewModel listens to WellContextService.Instance.WellChanged.
+             // We just need to make sure CurrentWell is set, which happens in WellContextService usually.
+             
+            ContentTitle.Text = $"Rig Profile - {well.WellName}";
+            ContentArea.Content = _rigProfileView;
 
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;

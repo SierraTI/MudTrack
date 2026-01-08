@@ -8,7 +8,7 @@ namespace ProjectReport.Models.Geometry.BitAndJets
     {
         public List<JetSet> JetSets { get; set; } = new List<JetSet>();
 
-        public double TfaTotal => Math.Round(JetSets.Where(s => s.TFACalculated.HasValue).Sum(s => s.TFACalculated.Value), 3);
+        public double TfaTotal => Math.Round(JetSets.Sum(s => s.TFACalculated.GetValueOrDefault()), 3);
 
         public MultiBitJetsConfig()
         {

@@ -199,7 +199,7 @@ namespace ProjectReport.ViewModels
 
                 await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
 
-                // Navigate to Well Data module
+                // Navigate to Well Data (creación del pozo)
                 NavigationService.Instance.NavigateToWellData(newWell.Id);
                 ToastNotificationService.Instance.ShowSuccess($"Created new well: {newWell.WellName}");
             }

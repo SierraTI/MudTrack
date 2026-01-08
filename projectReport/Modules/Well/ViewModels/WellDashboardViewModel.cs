@@ -30,6 +30,7 @@ namespace ProjectReport.ViewModels
 
             // ✅ ESTE ERA EL QUE TE FALTABA
             EditWellDataCommand = new RelayCommand(_ => NavigateToWellData(), _ => CurrentWell != null);
+            NavigateToRigProfileCommand = new RelayCommand(_ => NavigateToRigProfile(), _ => CurrentWell != null);
 
             // Initialize Geometry Services
             var geoService = new GeometryCalculationService();
@@ -81,6 +82,7 @@ namespace ProjectReport.ViewModels
 
         // ✅ Ya lo tenías declarado: ahora sí se usa
         public ICommand EditWellDataCommand { get; }
+        public ICommand NavigateToRigProfileCommand { get; }
 
         public GeometryViewModel GeometryViewModel { get; }
 
@@ -95,13 +97,21 @@ namespace ProjectReport.ViewModels
             NavigationService.Instance.NavigateToHome();
         }
 
-        // ✅ navegación al módulo “Well Data”
+        // ✅ navegación al módulo "Well Data"
         private void NavigateToWellData()
         {
             if (CurrentWell == null) return;
 
             NavigationService.Instance.NavigateToWellData(CurrentWell.Id);
 
+        }
+
+        // ✅ navegación al módulo "Rig Profile"
+        private void NavigateToRigProfile()
+        {
+            if (CurrentWell == null) return;
+
+            NavigationService.Instance.NavigateToRigProfile(CurrentWell.Id);
         }
 
         private void Reports_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

@@ -9,6 +9,8 @@ using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ProjectReport.Services;
+using ProjectReport.Models;
 
 namespace ProjectReport.ViewModels.Inventory
 {
@@ -18,6 +20,17 @@ namespace ProjectReport.ViewModels.Inventory
 
         public ObservableCollection<Product> Products { get; }
         public ObservableCollection<Product> FilteredProducts { get; } = new();
+
+        private bool _isRigFilterEnabled;
+        public bool IsRigFilterEnabled
+        {
+            get => _isRigFilterEnabled;
+            set
+            {
+                if (SetProperty(ref _isRigFilterEnabled, value))
+                    UpdateFilter(ProductSearchText);
+            }
+        }
 
         private Product? _selectedProduct;
         public Product? SelectedProduct
@@ -215,21 +228,44 @@ namespace ProjectReport.ViewModels.Inventory
         private void UpdateFilter(string text)
         {
             FilteredProducts.Clear();
+            
+            var query = (text ?? "").Trim();
+            var allProducts = Products.ToList();
 
-            if (string.IsNullOrWhiteSpace(text))
+            var rig = WellContextService.Instance.CurrentWell?.RigProfile;
+            var shakerKeywords = new List<string>();
+            if (IsRigFilterEnabled && rig != null)
             {
-                foreach (var p in Products) FilteredProducts.Add(p);
-                return;
+                shakerKeywords = rig.SolidsControl
+                    .Where(sc => sc.Type?.IndexOf("Shaker", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .SelectMany(sc => new[] { sc.Manufacturer, sc.Model })
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Distinct()
+                    .ToList();
             }
 
-            var q = text.Trim();
-            var matches = Products.Where(p =>
-                (!string.IsNullOrEmpty(p.Code) && p.Code.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
-                || (!string.IsNullOrEmpty(p.Name) && p.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0))
-                .OrderBy(p => p.Name)
-                .ToList();
+            var matches = allProducts.Where(p => 
+                (string.IsNullOrEmpty(query) || 
+                 p.Code.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 || 
+                 p.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
 
-            foreach (var m in matches) FilteredProducts.Add(m);
+            foreach (var p in matches)
+            {
+                if (IsRigFilterEnabled && shakerKeywords.Count > 0 && 
+                    p.Category?.IndexOf("Screen", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    // Only include screens that match rig keywords
+                    bool isMatch = shakerKeywords.Any(k => 
+                        p.Name.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0 || 
+                        p.Code.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
+                    
+                    if (isMatch) FilteredProducts.Add(p);
+                }
+                else
+                {
+                    FilteredProducts.Add(p);
+                }
+            }
         }
 
         private void Save()
@@ -254,7 +290,7 @@ namespace ProjectReport.ViewModels.Inventory
                     Line = new TicketLine
                     {
                         ProductCode = code,
-                        ProductName = name,
+                        ProductName = name ?? string.Empty,
                         Quantity = Quantity,
                         UnitPrice = UnitPrice,
                         Context = Origin

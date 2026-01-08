@@ -13,7 +13,7 @@ namespace ProjectReport.Views.Geometry
     {
         private const double BaseWidth = 140;
         private const double ODScale = 10.0; // Scale for OD visualization
-        private const double MinHeight = 10;
+        private const double MinComponentHeight = 10;
         private const double MaxHeightPerComponent = 150;
 
         public BhaSchematicView()
@@ -42,7 +42,7 @@ namespace ProjectReport.Views.Geometry
             foreach (var comp in components)
             {
                 double h = (comp.Length ?? 0) * scale;
-                if (h < MinHeight) h = MinHeight;
+                if (h < MinComponentHeight) h = MinComponentHeight;
                 if (h > MaxHeightPerComponent) h = MaxHeightPerComponent;
 
                 double w = (comp.OD ?? 5.0) * ODScale;

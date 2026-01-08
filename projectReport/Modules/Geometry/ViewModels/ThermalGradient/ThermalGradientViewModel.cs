@@ -56,15 +56,31 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             // Subscribe to WellContextService for dynamic depth updates (Rule B)
             WellContextService.Instance.DepthUpdated += OnGlobalDepthUpdated;
 
-            // Ensure a default Surface point (ID=1, TVD=0)
+            // Ensure default points (as per specification)
             if (ThermalGradientPoints.Count == 0)
             {
-                var surface = new ThermalGradientPoint(_nextId++, 0, 70.0);
-                surface.PropertyChanged += OnThermalPointPropertyChanged;
-                ThermalGradientPoints.Add(surface);
+                var p1 = new ThermalGradientPoint(_nextId++, 0, 75.0) { Label = "Surface" };
+                var p2 = new ThermalGradientPoint(_nextId++, 4500, 110.0) { Label = "Mudline" };
+                var p3 = new ThermalGradientPoint(_nextId++, 10000, 180.0) { Label = "BHT" };
+
+                p1.PropertyChanged += OnThermalPointPropertyChanged;
+                p2.PropertyChanged += OnThermalPointPropertyChanged;
+                p3.PropertyChanged += OnThermalPointPropertyChanged;
+
+                ThermalGradientPoints.Add(p1);
+                ThermalGradientPoints.Add(p2);
+                ThermalGradientPoints.Add(p3);
             }
 
             // Initialize Chart
+            var gradientFill = new LinearGradientBrush
+            {
+                StartPoint = new System.Windows.Point(0, 0),
+                EndPoint = new System.Windows.Point(0, 1)
+            };
+            gradientFill.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E0F2FE"), 0.0)); // Light Blue
+            gradientFill.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#FEE2E2"), 1.0)); // Light Red
+
             SeriesCollection = new SeriesCollection
             {
                 new LineSeries
@@ -72,61 +88,32 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     Title = "Temperature",
                     Values = new ChartValues<ObservablePoint>(),
                     PointGeometry = DefaultGeometries.Circle,
-                    PointGeometrySize = 10,
+                    PointGeometrySize = 8,
+                    PointForeground = Brushes.Red,
                     LineSmoothness = 0,
-                    Stroke = (Brush)new BrushConverter().ConvertFrom("#F97316"), // Brand Orange
-                    Fill = Brushes.Transparent,
+                    Stroke = Brushes.Red,
+                    StrokeThickness = 3,
+                    Fill = Brushes.Transparent, // No background fill for professional look
                     LabelPoint = point => $"Depth: {Math.Abs(point.Y):N0} ft | Temp: {point.X:N1} °F"
-                },
-                new LineSeries
-                {
-                    Title = "Regression",
-                    Values = new ChartValues<ObservablePoint>(),
-                    StrokeDashArray = new System.Windows.Media.DoubleCollection { 4, 2 },
-                    Fill = Brushes.Transparent,
-                    PointGeometry = null,
-                    LineSmoothness = 0,
-                    Stroke = Brushes.Gray
                 },
                 new LineSeries
                 {
                     Title = "Reference",
                     Values = new ChartValues<ObservablePoint>(),
-                    StrokeDashArray = new System.Windows.Media.DoubleCollection { 2, 2 },
+                    StrokeDashArray = new DoubleCollection { 2, 2 },
                     Fill = Brushes.Transparent,
                     PointGeometry = null,
                     LineSmoothness = 0,
-                    Stroke = (Brush)new BrushConverter().ConvertFrom("#3B82F6"), // Blue-500
-                    StrokeThickness = 2
-                },
-                new ScatterSeries
-                {
-                    Title = "Anomalies",
-                    Values = new ChartValues<ObservablePoint>(),
-                    PointGeometry = DefaultGeometries.Diamond,
-                    MaxPointShapeDiameter = 15,
-                    MinPointShapeDiameter = 15,
-                    Fill = (Brush)new BrushConverter().ConvertFrom("#DC2626"), // Red-600
-                    Stroke = (Brush)new BrushConverter().ConvertFrom("#DC2626"),
-                    LabelPoint = point => $"⚠ Check Data at {Math.Abs(point.Y):N0} ft"
-                },
-                new LineSeries
-                {
-                    Title = "Diagnostic Alert",
-                    Values = new ChartValues<ObservablePoint>(),
-                    Stroke = (Brush)new BrushConverter().ConvertFrom("#DC2626"), // Bright Red
-                    StrokeThickness = 3,
-                    Fill = Brushes.Transparent,
-                    PointGeometry = null,
-                    LineSmoothness = 0
+                    Stroke = (Brush?)new BrushConverter().ConvertFrom("#3B82F6") ?? Brushes.Blue,
+                    StrokeThickness = 1
                 },
                 new LineSeries
                 {
                     Title = "Prediction (TD)",
                     Values = new ChartValues<ObservablePoint>(),
-                    Stroke = (Brush)new BrushConverter().ConvertFrom("#6B7280"), // Gray-500
-                    StrokeThickness = 2,
-                    StrokeDashArray = new DoubleCollection { 2, 2 },
+                    Stroke = Brushes.Gray,
+                    StrokeThickness = 1.5,
+                    StrokeDashArray = new DoubleCollection { 4, 4 },
                     Fill = Brushes.Transparent,
                     PointGeometry = null,
                     LineSmoothness = 0
@@ -147,6 +134,7 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             ImportDataCommand = new RelayCommand(_ => ImportData());
             ExportDataCommand = new RelayCommand(_ => ExportData());
             ImportFromSurveyCommand = new RelayCommand(_ => ImportFromSurvey(), _ => CanImportFromSurvey);
+            SyncWithSurveyCommand = new RelayCommand(_ => SyncWithSurvey(), _ => CanImportFromSurvey);
             AddFormationCommand = new RelayCommand(_ => AddFormation());
             DeleteFormationCommand = new RelayCommand(DeleteFormation);
             
@@ -277,8 +265,9 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
         public bool CanImportFromSurvey => HasSurveyData && MaxWellboreTVD > 0;
 
-        // Nueva propiedad calculada requerida por el código existente
-        public bool ShowChart => ThermalGradientPoints.Count >= 2 && !HasValidationError;
+        // ShowChart is true if we have enough points, even if there are warnings. 
+        // We only hide it if there's a critical error (which we should define explicitly if needed)
+        public bool ShowChart => ThermalGradientPoints.Count >= 2;
 
         private ObservableCollection<SegmentGradient> _segmentGradients = new ObservableCollection<SegmentGradient>();
         public ObservableCollection<SegmentGradient> SegmentGradients
@@ -357,6 +346,7 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
         public ICommand ImportDataCommand { get; }
         public ICommand ExportDataCommand { get; }
         public ICommand ImportFromSurveyCommand { get; }
+        public ICommand SyncWithSurveyCommand { get; }
         public ICommand AddFormationCommand { get; }
         public ICommand DeleteFormationCommand { get; }
 
@@ -469,11 +459,44 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             }
 
             var newPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, suggestedTemp);
-            newPoint.Label = "BHT (Survey)"; // Auto-label imported point
+            newPoint.Label = "BHT"; // Auto-label imported point
             newPoint.PropertyChanged += OnThermalPointPropertyChanged;
             ThermalGradientPoints.Add(newPoint);
 
             ToastNotificationService.Instance.ShowInfo($"TVD máxima del survey importada ({MaxWellboreTVD:F2} ft). Temperatura sugerida: {suggestedTemp:F1}°F");
+        }
+
+        private void SyncWithSurvey()
+        {
+            if (!CanImportFromSurvey)
+            {
+                ToastNotificationService.Instance.ShowWarning("Advertencia: Imposible sincronizar. Complete el módulo Survey primero.");
+                return;
+            }
+
+            // Remove any existing point that might be the BHT from a previous sync to avoid duplicates
+            var existingBht = ThermalGradientPoints.FirstOrDefault(p => p.Label == "BHT");
+            if (existingBht != null)
+            {
+                ThermalGradientPoints.Remove(existingBht);
+            }
+
+            // Suggest a BHT temperature based on existing data (interpolation) if possible
+            double suggestedTemp = 180.0;
+            if (ThermalGradientPoints.Count >= 2)
+            {
+                suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), MaxWellboreTVD);
+            }
+
+            var newPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, suggestedTemp);
+            newPoint.Label = "BHT"; 
+            newPoint.PropertyChanged += OnThermalPointPropertyChanged;
+            ThermalGradientPoints.Add(newPoint);
+
+            // Auto-sort to ensure correct order
+            AutoSortPoints();
+
+            ToastNotificationService.Instance.ShowSuccess($"Sincronizado con Survey: TVD máxima {MaxWellboreTVD:F0} ft.");
         }
 
         private void AddFormation()
@@ -797,12 +820,8 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             {
                 var values = new ChartValues<ObservablePoint>();
                 
-                // Clear existing visual elements (labels) and sections
-                
-                // Clear existing visual elements (labels) and sections
-                if (VisualElements != null) VisualElements.Clear();
-                
-                // Create NEW collection for sections to avoid LiveCharts threading/update crash on Clear()
+                // Create NEW collections to avoid LiveCharts threading/update crash on Clear()
+                var newVisualElements = new VisualElementsCollection();
                 var newSections = new SectionsCollection();
                 
                 // Add formations shading to AxisSections
@@ -818,30 +837,27 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                         // Label removed (Obsolete)
                         Value = -formation.BottomTVD,
                         SectionWidth = Math.Abs(formation.BottomTVD - formation.TopTVD),
-                        Fill = (Brush)new BrushConverter().ConvertFrom(formation.Color),
+                        Fill = (Brush?)new BrushConverter().ConvertFrom(formation.Color) ?? Brushes.LightGray,
                         Opacity = 0.4,
                         DataLabel = false
                     });
 
                     // Add text label as VisualElement
-                    if (VisualElements != null)
+                    newVisualElements.Add(new VisualElement
                     {
-                        VisualElements.Add(new VisualElement
+                        X = 40, // Position on left/middle of chart roughly
+                        Y = midY,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        UIElement = new System.Windows.Controls.TextBlock
                         {
-                            X = 40, // Position on left/middle of chart roughly
-                            Y = midY,
-                            HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
-                            VerticalAlignment = System.Windows.VerticalAlignment.Center,
-                            UIElement = new System.Windows.Controls.TextBlock
-                            {
-                                Text = formation.Name,
-                                FontSize = 10,
-                                Foreground = (Brush)new BrushConverter().ConvertFrom("#4B5563"),
-                                FontWeight = System.Windows.FontWeights.SemiBold,
-                                Opacity = 0.8
-                            }
-                        });
-                    }
+                            Text = formation.Name,
+                            FontSize = 10,
+                            Foreground = (Brush?)new BrushConverter().ConvertFrom("#4B5563") ?? Brushes.DimGray,
+                            FontWeight = System.Windows.FontWeights.SemiBold,
+                            Opacity = 0.8
+                        }
+                    });
                 }
 
                 var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
@@ -867,9 +883,9 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     }
 // ... (labels logic)
                     // Add label if present
-                    if (!string.IsNullOrEmpty(point.Label) && VisualElements != null)
+                    if (!string.IsNullOrEmpty(point.Label))
                     {
-                        VisualElements.Add(new VisualElement
+                        newVisualElements.Add(new VisualElement
                         {
                             X = point.Temperature,
                             Y = -point.TVD,
@@ -879,7 +895,7 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                             {
                                 Text = point.Label,
                                 FontWeight = System.Windows.FontWeights.Bold,
-                                Foreground = (Brush)new BrushConverter().ConvertFrom("#6366F1"), // Indigo
+                                Foreground = (Brush?)new BrushConverter().ConvertFrom("#6366F1") ?? Brushes.Indigo, // Indigo
                                 Padding = new System.Windows.Thickness(6, 0, 0, 0),
                                 Background = Brushes.Transparent,
                                 IsHitTestVisible = false // prevent interference
@@ -888,28 +904,15 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     }
                 }
 
-                SeriesCollection[0].Values = values;
+                // Mapping to 3-series structure:
+                // [0] Temperature
+                // [1] Reference
+                // [2] Prediction (TD)
 
-                // Regression line
-                if (SeriesCollection.Count > 1)
-                {
-                    var regValues = new ChartValues<ObservablePoint>();
-                    if (ThermalGradientPoints.Count >= 2)
-                    {
-                        double startTemp = RegressionIntercept; // at TVD = 0
-                        double maxTVD = MaxWellboreTVD > 0 ? MaxWellboreTVD : (ThermalGradientPoints.Any() ? ThermalGradientPoints.Max(p => p.TVD) : 10000);
-                        
-                        double endTemp = RegressionSlope * maxTVD + RegressionIntercept;
-                        double endTvd = maxTVD;
-
-                        regValues.Add(new ObservablePoint(startTemp, 0));
-                        regValues.Add(new ObservablePoint(endTemp, -endTvd));
-                    }
-                    SeriesCollection[1].Values = regValues;
-                }
+                if (SeriesCollection.Count > 0) SeriesCollection[0].Values = values;
 
                 // Reference Gradient Line
-                if (SeriesCollection.Count > 2)
+                if (SeriesCollection.Count > 1)
                 {
                     var refValues = new ChartValues<ObservablePoint>();
                     if (ShowReferenceLine && ThermalGradientPoints.Count > 0)
@@ -925,31 +928,11 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                         refValues.Add(new ObservablePoint(startTemp, 0));
                         refValues.Add(new ObservablePoint(endTemp, -maxTVD));
                     }
-                    SeriesCollection[2].Values = refValues;
-                }
-
-                // Anomalies Scatter
-                if (SeriesCollection.Count > 3)
-                {
-                    var anomalyValues = new ChartValues<ObservablePoint>();
-                    foreach (var point in sortedPoints)
-                    {
-                        if (point.IsAnomalous || point.HasValidationWarning)
-                        {
-                            anomalyValues.Add(new ObservablePoint(point.Temperature, -point.TVD));
-                        }
-                    }
-                    SeriesCollection[3].Values = anomalyValues;
-                }
-
-                // Diagnostic Alert Series (Red Segments)
-                if (SeriesCollection.Count > 4)
-                {
-                    SeriesCollection[4].Values = alertValues;
+                    SeriesCollection[1].Values = refValues;
                 }
 
                 // Prediction Line (dotted to TD)
-                if (SeriesCollection.Count > 5)
+                if (SeriesCollection.Count > 2)
                 {
                     var predictionValues = new ChartValues<ObservablePoint>();
                     if (sortedPoints.Count >= 2 && MaxWellboreTVD > sortedPoints.Last().TVD)
@@ -960,43 +943,41 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                         predictionValues.Add(new ObservablePoint(lastPoint.Temperature, -lastPoint.TVD));
                         predictionValues.Add(new ObservablePoint(predictedTempTD, -MaxWellboreTVD));
                     }
-                    SeriesCollection[5].Values = predictionValues;
+                    SeriesCollection[2].Values = predictionValues;
                 }
 
                 // Total Depth Line Section
-                if (MaxWellboreTVD > 0 && AxisSections != null)
+                if (MaxWellboreTVD > 0)
                 {
                      newSections.Add(new AxisSection
                      {
                          Value = -MaxWellboreTVD,
-                         Stroke = (Brush)new BrushConverter().ConvertFrom("#EF4444"), // Red-500
+                         Stroke = (Brush?)new BrushConverter().ConvertFrom("#EF4444") ?? Brushes.Red, // Red-500
                          StrokeThickness = 2,
                          StrokeDashArray = new System.Windows.Media.DoubleCollection { 4, 2 },
                          DataLabel = false
                      });
 
-                    if (VisualElements != null)
+                    newVisualElements.Add(new VisualElement
                     {
-                        VisualElements.Add(new VisualElement
+                        X = 40, 
+                        Y = -MaxWellboreTVD,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
+                        UIElement = new System.Windows.Controls.TextBlock
                         {
-                            X = 40, 
-                            Y = -MaxWellboreTVD,
-                            HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
-                            VerticalAlignment = System.Windows.VerticalAlignment.Bottom,
-                            UIElement = new System.Windows.Controls.TextBlock
-                            {
-                                Text = "Total Depth",
-                                FontSize = 10,
-                                Foreground = Brushes.Red,
-                                FontWeight = System.Windows.FontWeights.Bold,
-                                Background = Brushes.White,
-                                Padding = new System.Windows.Thickness(2)
-                            }
-                        });
-                    }
+                            Text = "Total Depth",
+                            FontSize = 10,
+                            Foreground = Brushes.Red,
+                            FontWeight = System.Windows.FontWeights.Bold,
+                            Background = Brushes.White,
+                            Padding = new System.Windows.Thickness(2)
+                        }
+                    });
                 }
 
-                // Assign the completely built collection atomically to prevent concurrency crashes
+                // Assign the completely built collections atomically to prevent concurrency crashes
+                VisualElements = newVisualElements;
                 AxisSections = newSections;
             }
         }

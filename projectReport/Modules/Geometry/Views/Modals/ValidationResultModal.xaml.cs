@@ -12,8 +12,8 @@ namespace ProjectReport.Views.Modals
     {
         public class ItemViewModel
         {
-            public string Message { get; set; }
-            public Brush SeverityColor { get; set; }
+            public string Message { get; set; } = string.Empty;
+            public Brush SeverityColor { get; set; } = Brushes.Black;
         }
 
         public class GroupViewModel

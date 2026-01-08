@@ -43,6 +43,75 @@ namespace ProjectReport.Services.Inventory
             RaiseInventoryUpdated();
         }
 
+        public void CreateTicketConsumed(Ticket ticket)
+        {
+            if (ticket.Type != TicketType.Consumed) throw new InvalidOperationException("Ticket type mismatch.");
+
+            if (string.IsNullOrWhiteSpace(ticket.TicketId))
+            {
+                ticket.TicketId = Guid.NewGuid().ToString();
+            }
+
+            if (ticket.Lines != null && ticket.Lines.Count > 0)
+            {
+                foreach (var line in ticket.Lines) ProcessConsumedLine(ticket, line);
+            }
+            else
+            {
+                ProcessConsumedLine(ticket, ticket.Line);
+            }
+
+            RaiseInventoryUpdated();
+        }
+
+        private void ProcessConsumedLine(Ticket ticket, TicketLine line)
+        {
+            var products = _repo.LoadProducts();
+            var movements = _repo.LoadMovements();
+
+            var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
+            if (p == null)
+            {
+                // Optionally create product or throw error. Usually for consumption we want it to exist.
+                p = new Product
+                {
+                    Code = line.ProductCode,
+                    Name = string.IsNullOrWhiteSpace(line.ProductName) ? line.ProductCode : line.ProductName,
+                    StockQty = 0,
+                    Status = ProductStatus.Active
+                };
+                products.Add(p);
+            }
+
+            var before = p.StockQty;
+            var qty = line.Quantity;
+            if (qty <= 0) throw new InvalidOperationException("Quantity must be > 0.");
+
+            p.StockQty -= qty; // Deduction
+
+            var mv = new InventoryMovement
+            {
+                TicketId = ticket.TicketId,
+                Date = ticket.Date,
+                ProductCode = p.Code,
+                ProductName = p.Name,
+                Type = TicketType.Consumed,
+                Quantity = qty,
+                UnitPrice = p.CurrentUnitCost,
+                OriginOrUse = line.Context,
+                User = ticket.User,
+                Observations = ticket.Observations,
+                StockBefore = before,
+                StockAfter = p.StockQty,
+                Requisition = ticket.Requisition ?? ""
+            };
+
+            movements.Add(mv);
+
+            _repo.SaveProducts(products);
+            _repo.SaveMovements(movements);
+        }
+
         public void CreateTicketReceived(Ticket ticket)
         {
             if (ticket.Type != TicketType.Received) throw new InvalidOperationException("Ticket type mismatch.");

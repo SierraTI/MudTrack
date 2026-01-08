@@ -33,11 +33,18 @@
 
             <Button Content="Refresh" Width="110" Margin="20,0,0,0" Command="{Binding RefreshCommand}"/>
             <Button Content="Importar Excel" Command="{Binding ImportExcelCommand}" Margin="4" />
-        </StackPanel>
 
+            <CheckBox Content="Rig Filter (Screens)"
+                      IsChecked="{Binding IsRigFilterEnabled}"
+                      VerticalAlignment="Center"
+                      Margin="20,0,0,0"
+                      FontWeight="SemiBold"
+                      Foreground="#EE7E32"/>
+        </StackPanel>
+ 
         <!-- 3) Table -->
         <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Rows}"
+                  ItemsSource="{Binding FilteredRows}"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   CanUserAddRows="False"

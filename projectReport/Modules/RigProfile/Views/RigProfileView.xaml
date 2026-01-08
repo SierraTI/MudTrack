@@ -1,0 +1,344 @@
+<UserControl x:Class="ProjectReport.Modules.RigProfile.Views.RigProfileView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:ProjectReport.Modules.RigProfile.ViewModels"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="BorderBrush" Value="#DDDDDD"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <!-- Button Styles -->
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Foreground" Value="#111827"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F3F4F6"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="BrandPrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#F57C1F"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EF6C00"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header / General Properties -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <GroupBox Header="General Rig Properties" Grid.Column="0">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Rig Name:" VerticalAlignment="Center" Margin="0,5"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding CurrentRigProfile.RigName, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="Contractor:" VerticalAlignment="Center" Margin="0,5"/>
+                    <TextBox Grid.Row="0" Grid.Column="4" Text="{Binding CurrentRigProfile.Contractor, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Rig Type:" VerticalAlignment="Center" Margin="0,5"/>
+                    <ComboBox Grid.Row="1" Grid.Column="1" Text="{Binding CurrentRigProfile.RigType, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Margin="0,5">
+                        <ComboBoxItem Content="Land"/>
+                        <ComboBoxItem Content="Jackup"/>
+                        <ComboBoxItem Content="Semisub"/>
+                        <ComboBoxItem Content="Drillship"/>
+                        <ComboBoxItem Content="Platform"/>
+                    </ComboBox>
+
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="RKB Elevation (ft):" VerticalAlignment="Center" Margin="0,5"/>
+                    <TextBox Grid.Row="1" Grid.Column="4" Text="{Binding CurrentRigProfile.RkbElevation, StringFormat=N2}" Margin="0,5"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Casing Head Elev (ft):" VerticalAlignment="Center" Margin="0,5"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding CurrentRigProfile.CasingHeadElevation, StringFormat=N2}" Margin="0,5"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+
+        <!-- Main Content: 4 Tables -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                
+                <!-- TABLE A: General Properties & Surface Equipment -->
+                <GroupBox Header="Table A: Surface &amp; Service Equipment (Sections 1, 2, 3)">
+                    <StackPanel>
+                        <DataGrid Style="{StaticResource ModernDataGrid}" 
+                                  ItemsSource="{Binding SurfaceEquipment}" 
+                                  AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" 
+                                  Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="No." Binding="{Binding No}" IsReadOnly="True" Width="50"/>
+                                <DataGridTextColumn Header="Component" Binding="{Binding Component}" Width="150">
+                                    <DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Padding" Value="5,2"/>
+                                        </Style>
+                                    </DataGridTextColumn.EditingElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="ID (in)" Binding="{Binding InternalDiameter, StringFormat=N3}" Width="100"/>
+                                <DataGridTextColumn Header="Length (ft)" Binding="{Binding Length, StringFormat=N2}" Width="100"/>
+                                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="*"/>
+                                <DataGridTemplateColumn Header="Actions" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" 
+                                                    Command="{Binding DataContext.RemoveSurfaceEquipmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}"
+                                                    Padding="5,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="Add Component" 
+                                Command="{Binding AddSurfaceEquipmentCommand}" 
+                                HorizontalAlignment="Left" 
+                                Width="150"
+                                Padding="10,5"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- TABLE B: Mud Pumps -->
+                <GroupBox Header="Table B: Mud Pumps">
+                    <StackPanel>
+                        <TextBlock Text="Output (bbl/stk) = 0.000243 × ID² × Stroke × Efficiency" 
+                                   FontSize="11" 
+                                   Foreground="#666" 
+                                   Margin="0,0,0,10"
+                                   FontStyle="Italic"/>
+                        <DataGrid Style="{StaticResource ModernDataGrid}" 
+                                  ItemsSource="{Binding Pumps}" 
+                                  AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" 
+                                  Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="No." Binding="{Binding No}" IsReadOnly="True" Width="50"/>
+                                <DataGridTextColumn Header="Pump Name" Binding="{Binding PumpName}" Width="150"/>
+                                <DataGridTextColumn Header="Liner Size (in)" Binding="{Binding LinerSize, StringFormat=N3}" Width="120"/>
+                                <DataGridTextColumn Header="Stroke (in)" Binding="{Binding StrokeLength, StringFormat=N2}" Width="100"/>
+                                <DataGridTextColumn Header="Efficiency (%)" Binding="{Binding Efficiency, StringFormat=N1}" Width="110"/>
+                                <DataGridTextColumn Header="Output (bbl/stk)" Binding="{Binding Output, StringFormat=N4}" IsReadOnly="True" Width="130">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Background" Value="#F0F0F0"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTemplateColumn Header="Actions" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" 
+                                                    Command="{Binding DataContext.RemovePumpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}"
+                                                    Padding="5,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="Add Pump" 
+                                Command="{Binding AddPumpCommand}" 
+                                HorizontalAlignment="Left" 
+                                Width="150"
+                                Padding="10,5"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- TABLE C: Solids Control Equipment -->
+                <GroupBox Header="Table C: Solids Control Equipment">
+                    <StackPanel>
+                        <DataGrid Style="{StaticResource ModernDataGrid}" 
+                                  ItemsSource="{Binding SolidsControl}" 
+                                  AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" 
+                                  Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="No." Binding="{Binding No}" IsReadOnly="True" Width="50"/>
+                                
+                                <DataGridTemplateColumn Header="Type" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.AvailableTypes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Type, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="True"
+                                                      SelectionChanged="TypeComboBox_SelectionChanged"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                
+                                <DataGridTemplateColumn Header="Manufacturer" Width="150">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.AvailableManufacturers, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Manufacturer, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="True"
+                                                      SelectionChanged="ManufacturerComboBox_SelectionChanged"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn Header="Model" Width="200">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.AvailableModels, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      Text="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="True"
+                                                      LostFocus="ModelComboBox_LostFocus"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Capacity (GPM)" Binding="{Binding GpmCapacity, StringFormat=N0}" IsReadOnly="True" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Background" Value="#F0F0F0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                
+                                <DataGridTextColumn Header="No. of Screens" Binding="{Binding NumberOfScreens}" Width="110"/>
+                                
+                                <DataGridTemplateColumn Header="Actions" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" 
+                                                    Command="{Binding DataContext.RemoveSolidsControlCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}"
+                                                    Padding="5,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="Add Equipment" 
+                                Command="{Binding AddSolidsControlCommand}" 
+                                HorizontalAlignment="Left" 
+                                Width="150"
+                                Padding="10,5"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- TABLE D: Mud Pits (Mud Tanks) -->
+                <GroupBox Header="Table D: Mud Pits">
+                    <StackPanel>
+                        <DataGrid Style="{StaticResource ModernDataGrid}" 
+                                  ItemsSource="{Binding Pits}" 
+                                  AutoGenerateColumns="False" 
+                                  CanUserAddRows="False" 
+                                  Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="No." Binding="{Binding No}" IsReadOnly="True" Width="50"/>
+                                <DataGridTextColumn Header="Pit Name" Binding="{Binding PitName}" Width="150"/>
+                                
+                                <DataGridTemplateColumn Header="Shape" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.AvailablePitShapes, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Shape, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                
+                                <DataGridTextColumn Header="Dimensions" Binding="{Binding Dimensions}" Width="200"/>
+                                <DataGridTextColumn Header="Max Capacity (bbl)" Binding="{Binding MaxCapacity, StringFormat=N2}" Width="140"/>
+                                <DataGridTemplateColumn Header="Actions" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="Remove" 
+                                                    Command="{Binding DataContext.RemovePitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}"
+                                                    Padding="5,2"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Content="Add Pit" 
+                                Command="{Binding AddPitCommand}" 
+                                HorizontalAlignment="Left" 
+                                Width="150"
+                                Padding="10,5"/>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action Buttons -->
+        <Border Grid.Row="2" 
+                Background="White" 
+                BorderBrush="#E6E8EB" 
+                BorderThickness="0,1,0,0" 
+                Padding="14" 
+                Margin="-20,15,-20,-20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Reset to Default" 
+                        Command="{Binding ResetToDefaultCommand}" 
+                        Style="{StaticResource SecondaryButton}" 
+                        Margin="0,0,10,0"
+                        Padding="16,10"/>
+                <Button Content="Save" 
+                        Command="{Binding SaveCommand}" 
+                        Style="{StaticResource SecondaryButton}" 
+                        Margin="0,0,10,0"
+                        Padding="16,10"/>
+                <Button Content="Save &amp; Return" 
+                        Command="{Binding SaveAndReturnCommand}" 
+                        Style="{StaticResource BrandPrimaryButton}"
+                        Padding="20,10"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

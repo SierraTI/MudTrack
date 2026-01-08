@@ -64,6 +64,11 @@ namespace ProjectReport.Services
             {
                 NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationTarget.Inventory, wellId));
             }
+
+            public void NavigateToRigProfile(int wellId)
+            {
+                NavigationRequested?.Invoke(this, new NavigationEventArgs(NavigationTarget.RigProfile, wellId));
+            }
         /// <summary>
         /// Navigate back to previous module
         /// </summary>
@@ -84,6 +89,7 @@ namespace ProjectReport.Services
         WellDashboard,
         ReportWizard,
         Inventory,
+        RigProfile,
         Back
     }
     

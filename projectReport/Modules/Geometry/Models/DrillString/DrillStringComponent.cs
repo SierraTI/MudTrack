@@ -61,7 +61,7 @@ namespace ProjectReport.Models.Geometry.DrillString
                 if (ID.GetValueOrDefault() <= 0 || Length.GetValueOrDefault() <= 0)
                     return 0;
 
-                return (ID.Value * ID.Value / 1029.4) * Length.Value;
+                return (ID.GetValueOrDefault() * ID.GetValueOrDefault() / 1029.4) * Length.GetValueOrDefault();
             }
         }
 
@@ -78,7 +78,7 @@ namespace ProjectReport.Models.Geometry.DrillString
                 // If ID is null/0, it acts as a solid bar (Displacement = Volume of cylinder)
                 // If ID exists, subtract it
                 double validId = ID.GetValueOrDefault();
-                return ((OD.Value * OD.Value) - (validId * validId)) / 1029.4 * Length.Value;
+                return ((OD.GetValueOrDefault() * OD.GetValueOrDefault()) - (validId * validId)) / 1029.4 * Length.GetValueOrDefault();
             }
         }
 
@@ -118,7 +118,7 @@ namespace ProjectReport.Models.Geometry.DrillString
         }
 
         public int NumberOfJoints => (JointLength.GetValueOrDefault() > 0 && Length.GetValueOrDefault() > 0) 
-            ? (int)Math.Ceiling(Length.Value / JointLength.Value) 
+            ? (int)Math.Ceiling(Length.GetValueOrDefault() / JointLength.GetValueOrDefault()) 
             : 0;
 
         public ComponentType ComponentType

@@ -7,6 +7,7 @@ using ProjectReport.Models.Geometry.Survey;
 using ProjectReport.Models.Geometry.WellTest;
 using ProjectReport.Models.Geometry.ThermalGradient;
 using DocumentFormat.OpenXml.Wordprocessing;
+using ProjectReport.Models.Rig;
 
 namespace ProjectReport.Models
 {
@@ -32,6 +33,7 @@ namespace ProjectReport.Models
         private string _wellType = string.Empty;
         private string _rigName = string.Empty;
         private string _rigType = string.Empty;
+        private string _contractor = string.Empty;
 
         // Location Details
         private string _location = string.Empty; // Onshore/Offshore
@@ -158,7 +160,10 @@ namespace ProjectReport.Models
             set
             {
                 if (SetProperty(ref _rigName, value))
+                {
                     UpdateLastModified();
+                    if (RigProfile != null) RigProfile.RigName = value;
+                }
             }
         }
 
@@ -168,7 +173,23 @@ namespace ProjectReport.Models
             set
             {
                 if (SetProperty(ref _rigType, value))
+                {
                     UpdateLastModified();
+                    if (RigProfile != null) RigProfile.RigType = value;
+                }
+            }
+        }
+
+        public string Contractor
+        {
+            get => _contractor;
+            set
+            {
+                if (SetProperty(ref _contractor, value))
+                {
+                    UpdateLastModified();
+                    if (RigProfile != null) RigProfile.Contractor = value;
+                }
             }
         }
 
@@ -418,6 +439,8 @@ namespace ProjectReport.Models
         public ObservableCollection<WellTest> WellTests { get; set; } = new ObservableCollection<WellTest>();
         public ObservableCollection<ThermalGradientPoint> ThermalGradientPoints { get; set; } = new ObservableCollection<ThermalGradientPoint>();
         public ObservableCollection<Report> Reports { get; set; } = new ObservableCollection<Report>();
+        
+        public RigProfile RigProfile { get; set; } = new RigProfile();
 
         #endregion
 

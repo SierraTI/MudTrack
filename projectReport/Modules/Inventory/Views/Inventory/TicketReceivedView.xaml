@@ -54,7 +54,13 @@
                           SelectedItem="{Binding SelectedProduct}"
                           IsEditable="False"
                           MaxHeight="200"
-                          DisplayMemberPath="Name"/>
+                          DisplayMemberPath="Name"
+                          Margin="0,0,0,4"/>
+                
+                <CheckBox Content="Show only relevant screens for this Rig"
+                          IsChecked="{Binding IsRigFilterEnabled}"
+                          FontWeight="SemiBold"
+                          Foreground="#EE7E32"/>
             </StackPanel>
 
             <!-- Origin -->

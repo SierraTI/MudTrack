@@ -206,7 +206,11 @@
                         </WrapPanel>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0">
+                    <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="12,0,0,0" Orientation="Horizontal">
+                        <Button Content="Rig Profile"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding NavigateToRigProfileCommand}"
+                                Margin="0,0,8,0" />
                         <Button Content="Edit Well Data"
                                 Style="{StaticResource SecondaryButton}"
                                 Command="{Binding EditWellDataCommand}" />
@@ -247,6 +251,28 @@
                                    FontSize="14"
                                    Foreground="{StaticResource TextPrimary}"
                                    TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Rig Status Card -->
+                <Border Style="{StaticResource Card}" Margin="0,0,10,10" MinWidth="240">
+                    <StackPanel>
+                        <TextBlock Text="Rig Status" FontSize="11" Style="{StaticResource Muted}" />
+                        
+                        <DockPanel Margin="0,4,0,0">
+                            <TextBlock Text="Pumps Active:" FontSize="12" Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Left"/>
+                            <TextBlock Text="{Binding CurrentWell.RigProfile.Pumps.Count}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Right"/>
+                        </DockPanel>
+
+                        <DockPanel Margin="0,2,0,0">
+                             <TextBlock Text="Solids Control:" FontSize="12" Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Left"/>
+                             <TextBlock Text="{Binding CurrentWell.RigProfile.SolidsControl.Count}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                        
+                         <DockPanel Margin="0,2,0,0">
+                             <TextBlock Text="RKB Elev:" FontSize="12" Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Left"/>
+                             <TextBlock Text="{Binding CurrentWell.RigProfile.RkbElevation, StringFormat=N0 ft}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" DockPanel.Dock="Right"/>
+                        </DockPanel>
                     </StackPanel>
                 </Border>
             </WrapPanel>

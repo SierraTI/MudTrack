@@ -1015,7 +1015,7 @@ namespace ProjectReport.ViewModels.Geometry
         {
             get
             {
-                return WellContextService.Instance.CurrentDepth > 0 && DrillStringComponents.Count > 0;
+                return TotalWellboreMD > 0 && DrillStringComponents.Count > 0;
             }
         }
 
@@ -2535,28 +2535,18 @@ namespace ProjectReport.ViewModels.Geometry
         }
 
         /// <summary>
-        /// Auto-adjusts drill pipe length to match bit depth using DrillStringAutoAdjustService.
-        /// Formula: Length_DP = Bit_Depth - Σ Length_BHA
-        /// Mejorado: Ajusta el primer componente (Drill Pipe) según la diferencia con Report MD
+        /// Adjusts the first component (usually Drill Pipe) to reach the wellbore bottom depth.
         /// </summary>
         private void ExecuteAutoAdjustToBottom()
         {
-            // Get current bit depth from Daily Report (Report MD)
-            var reportMD = WellContextService.Instance.CurrentDepth;
+            // Use Total Wellbore MD as the target depth for bottoming out
+            var reportMD = TotalWellboreMD;
             
-            // Adjust for RKB (Rule 6)
-            var rig = WellContextService.Instance.CurrentWell?.RigProfile;
-            if (rig != null && rig.RkbElevation > 0)
-            {
-                // If TotalWellboreMD matches Report MD, we subtract RKB
-                reportMD = Math.Max(0, reportMD - rig.RkbElevation);
-            }
-
             if (reportMD <= 0)
             {
                 MessageBox.Show(
-                    "Current depth not set in Daily Report. Please set the depth in Daily Report first.",
-                    "Depth Not Set",
+                    "Wellbore bottom depth is not defined. Please add wellbore sections first.",
+                    "Hole Bottom Not Defined",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;

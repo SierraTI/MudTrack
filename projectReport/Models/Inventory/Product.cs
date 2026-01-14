@@ -12,5 +12,8 @@ namespace ProjectReport.Models.Inventory
         public double CurrentUnitCost { get; set; }
 
         public ProductStatus Status { get; set; } = ProductStatus.Active;
+
+        // Nuevo: etiqueta combinada para búsqueda (no rompe serialización simple)
+        public string SearchLabel => $"{Code} {Name} {Category} {Unit}".Trim();
     }
 }

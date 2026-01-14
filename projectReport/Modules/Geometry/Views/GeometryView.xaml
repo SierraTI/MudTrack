@@ -682,7 +682,7 @@
                                             Orientation="Horizontal"
                                             VerticalAlignment="Center">
 
-                                    <Button Content="Ajustar MD al Fondo"
+                                    <Button Content="Adjust to Bottom"
                                             Style="{StaticResource BrandPrimaryButton}"
                                             Command="{Binding ForceToBottomCommand}"
                                             IsEnabled="{Binding CanForceToBottom}"

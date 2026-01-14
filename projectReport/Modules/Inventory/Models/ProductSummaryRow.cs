@@ -14,13 +14,22 @@ namespace ProjectReport.Models.Inventory
         public double Returned { get; set; }
 
         public double FinalQty => InitialQty + Received - Used - Returned;
-        public double RemainingStock { get; set; }  // normalmente igual a stock actual
+        public double RemainingStock { get; set; }
 
-        public double UnitCostAvg { get; set; }     // opcional: promedio del día
-        public double DailyCost { get; set; }       // suma del costo del día
+        public double UnitCostAvg { get; set; }
+        public double DailyCost { get; set; }
 
-        // Nuevo: TicketId y Requisition asociados a esta fila (para borrar)
         public string TicketId { get; set; } = "";
         public string Requisition { get; set; } = "";
+
+        // Nuevo: MovementId para identificar unívocamente el movimiento mostrado
+        public string MovementId { get; set; } = "";
+
+        private string _usedType = "";
+        public string UsedType
+        {
+            get => _usedType;
+            set => SetProperty(ref _usedType, value);
+        }
     }
 }

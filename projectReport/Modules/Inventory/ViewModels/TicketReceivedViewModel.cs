@@ -14,12 +14,15 @@ using ProjectReport.Models;
 
 namespace ProjectReport.ViewModels.Inventory
 {
-    public class TicketReceivedViewModel : BaseViewModel
+    public partial class TicketReceivedViewModel : BaseViewModel
     {
         private readonly InventoryService _service;
 
         public ObservableCollection<Product> Products { get; }
         public ObservableCollection<Product> FilteredProducts { get; } = new();
+
+        // Draft lines stored until Save
+        public ObservableCollection<TicketLine> Lines { get; } = new();
 
         private bool _isRigFilterEnabled;
         public bool IsRigFilterEnabled
@@ -28,7 +31,7 @@ namespace ProjectReport.ViewModels.Inventory
             set
             {
                 if (SetProperty(ref _isRigFilterEnabled, value))
-                    UpdateFilter(ProductSearchText);
+                    UpdateFilter(ProductName);
             }
         }
 
@@ -44,21 +47,22 @@ namespace ProjectReport.ViewModels.Inventory
                     {
                         ProductCode = _selectedProduct.Code;
                         ProductName = _selectedProduct.Name;
-                        ProductSearchText = _selectedProduct.Name;
+                        Category = _selectedProduct.Category ?? string.Empty;
+                        Unit = _selectedProduct.Unit ?? string.Empty;
                     }
                 }
             }
         }
 
-        private string _productSearchText = "";
-        public string ProductSearchText
+        private string _productName = "";
+        public string ProductName
         {
-            get => _productSearchText;
+            get => _productName;
             set
             {
-                if (SetProperty(ref _productSearchText, value))
+                if (SetProperty(ref _productName, value))
                 {
-                    UpdateFilter(_productSearchText);
+                    UpdateFilter(_productName);
                 }
             }
         }
@@ -70,11 +74,12 @@ namespace ProjectReport.ViewModels.Inventory
             set => SetProperty(ref _productCode, value);
         }
 
-        private string _productName = "";
-        public string ProductName
+        // Requisition visible in UI (shared for all lines)
+        private string _requisition = "";
+        public string Requisition
         {
-            get => _productName;
-            set => SetProperty(ref _productName, value);
+            get => _requisition;
+            set => SetProperty(ref _requisition, value);
         }
 
         private string _origin = "";
@@ -96,6 +101,21 @@ namespace ProjectReport.ViewModels.Inventory
         {
             get => _quantity;
             set => SetProperty(ref _quantity, value);
+        }
+
+        // Category & Unit for creating new product when needed
+        private string _category = "";
+        public string Category
+        {
+            get => _category;
+            set => SetProperty(ref _category, value);
+        }
+
+        private string _unit = "";
+        public string Unit
+        {
+            get => _unit;
+            set => SetProperty(ref _unit, value);
         }
 
         private string _observations = "";
@@ -123,6 +143,9 @@ namespace ProjectReport.ViewModels.Inventory
         public RelayCommand CancelCommand { get; }
         public RelayCommand RefreshCommand { get; }
 
+        public RelayCommand AddLineCommand { get; }
+        public RelayCommand RemoveLineCommand { get; }
+
         public event Action? RequestClose;
 
         public TicketReceivedViewModel(InventoryService service)
@@ -135,8 +158,44 @@ namespace ProjectReport.ViewModels.Inventory
             CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
             RefreshCommand = new RelayCommand(_ => LoadProductsFromExcelOrRepo());
 
-            // Carga inicial: intenta desde Data\Lista.xlsx (output) y si no existe usa el repo
+            AddLineCommand = new RelayCommand(_ => AddLine());
+            RemoveLineCommand = new RelayCommand(param => RemoveLine(param as TicketLine));
+
             LoadProductsFromExcelOrRepo();
+        }
+
+        // Nuevo: añade una fila vacía (editable) al borrador y prefill Context con Origin.
+        private void AddLine()
+        {
+            Error = "";
+
+            var line = new TicketLine
+            {
+                ProductCode = string.Empty,
+                ProductName = string.Empty,
+                Quantity = 1,           // valor por defecto para facilitar edición
+                UnitPrice = 0,
+                Context = Origin        // prefill origin desde el campo superior
+            };
+
+            Lines.Add(line);
+
+            // Limpiar sólo inputs de entrada rápida (mantener Requisition y Origin)
+            Quantity = 0;
+            UnitPrice = 0;
+            ProductName = string.Empty;
+            ProductCode = string.Empty;
+            SelectedProduct = null;
+            Category = string.Empty;
+            Unit = string.Empty;
+
+            Error = $"Línea agregada en borrador. Total líneas: {Lines.Count}";
+        }
+
+        private void RemoveLine(TicketLine? line)
+        {
+            if (line == null) return;
+            Lines.Remove(line);
         }
 
         private void LoadProductsFromExcelOrRepo()
@@ -145,16 +204,14 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 Products.Clear();
 
-                // Ruta del fichero copiado al output por el proyecto
                 var excelPath = Path.Combine(AppContext.BaseDirectory, "Data", "Lista.xlsx");
                 if (!File.Exists(excelPath))
                 {
-                    // Fallback: intentar en la raíz del output por si el archivo fue copiado ahí
                     var alt = Path.Combine(AppContext.BaseDirectory, "Lista.xlsx");
                     if (File.Exists(alt)) excelPath = alt;
                 }
 
-                List<Product> loaded = new();
+                var loaded = new List<Product>();
 
                 if (File.Exists(excelPath))
                 {
@@ -179,25 +236,17 @@ namespace ProjectReport.ViewModels.Inventory
                 }
                 else
                 {
-                    // No hay Excel: cargar desde el repositorio (persistido)
                     loaded = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name).ToList();
                 }
 
-                // Añadir a la colección ObservableCollection en el hilo UI
-                var app = System.Windows.Application.Current;
+                var app = Application.Current;
                 if (app != null)
                 {
                     app.Dispatcher.Invoke(() =>
                     {
                         foreach (var p in loaded) Products.Add(p);
-
-                        // Inicializar FilteredProducts y seleccionar el primero
                         UpdateFilter(string.Empty);
-
-                        if (FilteredProducts.Count > 0)
-                        {
-                            SelectedProduct = FilteredProducts.First();
-                        }
+                        if (FilteredProducts.Count > 0) SelectedProduct = FilteredProducts.First();
                     });
                 }
                 else
@@ -207,7 +256,6 @@ namespace ProjectReport.ViewModels.Inventory
                     if (FilteredProducts.Count > 0) SelectedProduct = FilteredProducts.First();
                 }
 
-                // Aviso mínimo para depuración si no hay productos
                 if (loaded.Count == 0)
                 {
                     MessageBox.Show("No products found in Data\\Lista.xlsx or repository.", "No products", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -215,7 +263,6 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch (Exception ex)
             {
-                // Mostrar error y fallback al repo
                 MessageBox.Show($"Error loading list from Excel: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 Products.Clear();
                 var list = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name);
@@ -225,11 +272,20 @@ namespace ProjectReport.ViewModels.Inventory
             }
         }
 
+        // Reemplaza el método UpdateFilter por este para buscar en SearchLabel (case-insensitive)
         private void UpdateFilter(string text)
         {
             FilteredProducts.Clear();
-            
+
             var query = (text ?? "").Trim();
+            if (string.IsNullOrEmpty(query))
+            {
+                foreach (var p in Products) FilteredProducts.Add(p);
+                return;
+            }
+
+            var normalized = query.ToUpperInvariant();
+
             var allProducts = Products.ToList();
 
             var rig = WellContextService.Instance.CurrentWell?.RigProfile;
@@ -244,66 +300,216 @@ namespace ProjectReport.ViewModels.Inventory
                     .ToList();
             }
 
-            var matches = allProducts.Where(p => 
-                (string.IsNullOrEmpty(query) || 
-                 p.Code.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 || 
-                 p.Name.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
-
-            foreach (var p in matches)
+            foreach (var p in allProducts)
             {
-                if (IsRigFilterEnabled && shakerKeywords.Count > 0 && 
+                var label = (p.SearchLabel ?? "").ToUpperInvariant();
+
+                // Si está filtrado por Rig mostrar solo pantallas relevantes
+                if (IsRigFilterEnabled && shakerKeywords.Count > 0 &&
                     p.Category?.IndexOf("Screen", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    // Only include screens that match rig keywords
-                    bool isMatch = shakerKeywords.Any(k => 
-                        p.Name.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0 || 
-                        p.Code.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
-                    
-                    if (isMatch) FilteredProducts.Add(p);
+                    bool isMatchRig = shakerKeywords.Any(k =>
+                        (!string.IsNullOrEmpty(p.Name) && p.Name.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                        (!string.IsNullOrEmpty(p.Code) && p.Code.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0));
+
+                    if (!isMatchRig) continue;
                 }
-                else
-                {
+
+                if (label.IndexOf(normalized, StringComparison.OrdinalIgnoreCase) >= 0)
                     FilteredProducts.Add(p);
-                }
             }
+        }
+
+        private string GenerateCodeFromName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
+
+            // Simple sanitized code: take alphanumerics, replace spaces with underscore, uppercase, truncate
+            var cleaned = new string(name.ToUpperInvariant().Where(c => char.IsLetterOrDigit(c) || char.IsWhiteSpace(c)).ToArray());
+            var parts = cleaned.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var baseCode = string.Join("_", parts).Replace("__", "_");
+            if (baseCode.Length > 20) baseCode = baseCode.Substring(0, 20);
+            // ensure uniqueness suffix
+            var suffix = DateTime.Now.Ticks % 10000;
+            return $"{baseCode}_{suffix}";
+        }
+
+        // Nuevo: Id del ticket que se está editando (si aplica)
+        private string? _editingTicketId;
+        public string? EditingTicketId
+        {
+            get => _editingTicketId;
+            private set => SetProperty(ref _editingTicketId, value);
+        }
+
+        // Nuevo: Requisition por la que se está editando (si aplica)
+        private string? _editingRequisition;
+        public string? EditingRequisition
+        {
+            get => _editingRequisition;
+            private set => SetProperty(ref _editingRequisition, value);
+        }
+
+        // Nuevo: cargar por Requisition (agrupa movimientos Received)
+        public void LoadByRequisition(string requisition)
+        {
+            if (string.IsNullOrWhiteSpace(requisition)) return;
+
+            var movements = _service.GetMovements()
+                .Where(m => !string.IsNullOrWhiteSpace(m.Requisition) &&
+                            string.Equals(m.Requisition, requisition, StringComparison.OrdinalIgnoreCase) &&
+                            m.Type == TicketType.Received)
+                .OrderBy(m => m.Date)
+                .ToList();
+
+            if (movements.Count == 0) return;
+
+            EditingTicketId = null;
+            EditingRequisition = requisition;
+            var first = movements.First();
+            Requisition = first.Requisition ?? string.Empty;
+            Origin = first.OriginOrUse ?? string.Empty;
+            Observations = first.Observations ?? string.Empty;
+            User = first.User ?? Environment.UserName;
+
+            Lines.Clear();
+
+            foreach (var mv in movements)
+            {
+                Lines.Add(new TicketLine
+                {
+                    ProductCode = mv.ProductCode ?? string.Empty,
+                    ProductName = mv.ProductName ?? string.Empty,
+                    Quantity = mv.Quantity,
+                    UnitPrice = mv.UnitPrice,
+                    Context = mv.OriginOrUse ?? string.Empty,
+                    Observations = mv.Observations ?? string.Empty
+                });
+            }
+
+            OnPropertyChanged(nameof(Lines));
         }
 
         private void Save()
         {
             Error = "";
 
-            var code = SelectedProduct?.Code ?? ProductCode?.Trim();
-            var name = SelectedProduct?.Name ?? ProductName?.Trim();
+            if (Lines.Count == 0)
+            {
+                Error = "No hay líneas para guardar.";
+                return;
+            }
 
-            if (string.IsNullOrWhiteSpace(code)) { Error = "Product code is required."; return; }
-            if (Quantity <= 0) { Error = "Quantity must be > 0."; return; }
+            // Validar cada línea antes de persistir
+            for (int i = 0; i < Lines.Count; i++)
+            {
+                var ln = Lines[i];
+                if (string.IsNullOrWhiteSpace(ln.ProductName) && string.IsNullOrWhiteSpace(ln.ProductCode))
+                {
+                    Error = $"Línea {i + 1}: producto requerido.";
+                    return;
+                }
+                if (ln.Quantity <= 0)
+                {
+                    Error = $"Línea {i + 1}: la cantidad debe ser mayor que 0.";
+                    return;
+                }
+            }
+
+            // Ensure all products exist in catalog before creating ticket
+            var currentProducts = _service.GetProducts();
+            foreach (var ln in Lines)
+            {
+                var code = (ln.ProductCode ?? "").Trim();
+                var name = (ln.ProductName ?? "").Trim();
+
+                Product? existing = null;
+                if (!string.IsNullOrEmpty(code))
+                {
+                    existing = currentProducts.FirstOrDefault(p => string.Equals(p.Code, code, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (existing == null && !string.IsNullOrEmpty(name))
+                {
+                    existing = currentProducts.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (existing == null)
+                {
+                    // create new product and persist
+                    var newProd = new Product
+                    {
+                        Code = string.IsNullOrWhiteSpace(code) ? GenerateCodeFromName(name) : code,
+                        Name = string.IsNullOrWhiteSpace(name) ? newProdCodePlaceholder(code) : name,
+                        Description = string.Empty,
+                        Category = Category ?? string.Empty,
+                        Unit = string.IsNullOrWhiteSpace(Unit) ? "Each" : Unit,
+                        StockQty = 0,
+                        CurrentUnitCost = ln.UnitPrice,
+                        Status = ProductStatus.Active
+                    };
+
+                    // Upsert via service
+                    _service.UpsertProduct(newProd);
+
+                    // update local list and assign code to line
+                    currentProducts = _service.GetProducts();
+                    ln.ProductCode = newProd.Code;
+                    ln.ProductName = newProd.Name;
+                }
+                else
+                {
+                    // ensure line has product code set
+                    ln.ProductCode = existing.Code;
+                    ln.ProductName = existing.Name;
+                }
+            }
+
+            var ticket = new Ticket
+            {
+                Type = TicketType.Received,
+                Date = DateTime.Now,
+                User = User,
+                Observations = Observations,
+                Requisition = Requisition ?? string.Empty,
+                Lines = Lines.ToList()
+            };
 
             try
             {
-                var ticket = new Ticket
+                // If editing an existing ticket by TicketId, remove previous movements for that ticket
+                if (!string.IsNullOrWhiteSpace(EditingTicketId))
                 {
-                    Type = TicketType.Received,
-                    Date = DateTime.Now,
-                    User = User,
-                    Observations = Observations,
-                    // Requisition removed from UI — do not set here
-                    Line = new TicketLine
-                    {
-                        ProductCode = code,
-                        ProductName = name ?? string.Empty,
-                        Quantity = Quantity,
-                        UnitPrice = UnitPrice,
-                        Context = Origin
-                    }
-                };
+                    _service.DeleteMovementsForTicket(EditingTicketId, removeLinkedByRequisition: false);
+                    ticket.TicketId = EditingTicketId;
+                }
+                // If editing by requisition (loaded via LoadByRequisition), remove movements with that requisition
+                else if (!string.IsNullOrWhiteSpace(EditingRequisition))
+                {
+                    _service.DeleteMovementsByRequisition(EditingRequisition);
+                    ticket.Requisition = EditingRequisition;
+                }
 
                 _service.CreateTicketReceived(ticket);
+
+                // Clear draft lines and close
+                Lines.Clear();
+                Error = "Ticket guardado correctamente.";
+                EditingTicketId = null;
+                EditingRequisition = null;
                 RequestClose?.Invoke();
             }
             catch (Exception ex)
             {
                 Error = ex.Message;
             }
+        }
+
+        // Helper to provide fallback name when only code provided
+        private string newProdCodePlaceholder(string code)
+        {
+            return string.IsNullOrWhiteSpace(code) ? $"PROD_{DateTime.Now.Ticks % 100000}" : code;
         }
     }
 }

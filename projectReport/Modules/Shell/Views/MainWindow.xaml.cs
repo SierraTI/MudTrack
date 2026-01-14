@@ -12,9 +12,8 @@ using ProjectReport.ViewModels; // <-- added to reference ReportDetailsViewModel
 using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Modules.RigProfile.Views;
-
-
-
+using ProjectReport.Models.Inventory;
+using System.Diagnostics;
 
 namespace ProjectReport.Views
 {
@@ -177,18 +176,11 @@ namespace ProjectReport.Views
              if (_rigProfileView == null)
                 _rigProfileView = new RigProfileView();
 
-             // Ensure ViewModel context is updated if needed (it hooks to WellContext on ctor, but if recycled?)
-             // Use explicit Load/Refresh if ViewModel has it, otherwise WellContext change handles it.
-             
-             // If ViewModel is created once, we might need to ensure it sees the current well.
-             // RigProfileViewModel listens to WellContextService.Instance.WellChanged.
-             // We just need to make sure CurrentWell is set, which happens in WellContextService usually.
-             
-            ContentTitle.Text = $"Rig Profile - {well.WellName}";
-            ContentArea.Content = _rigProfileView;
+             ContentTitle.Text = $"Rig Profile - {well.WellName}";
+             ContentArea.Content = _rigProfileView;
 
-            GeometrySubmenu.Visibility = Visibility.Collapsed;
-            GeometrySubmenu.Height = 0;
+             GeometrySubmenu.Visibility = Visibility.Collapsed;
+             GeometrySubmenu.Height = 0;
         }
 
         //==========================================
@@ -211,6 +203,7 @@ namespace ProjectReport.Views
 
                 // Use the shared service instance for the dashboard VM
                 var vm = new InventoryProductsDashboardViewModel(_inventoryService);
+                Debug.WriteLine($"DEBUG: MainWindow created InventoryProductsDashboardViewModel. Hash: {vm.GetHashCode()} Type: {vm.GetType().FullName}");
 
                 // Aquí conectamos los botones del dashboard para abrir pantallas
                 vm.RequestOpenReceived += () =>
@@ -260,6 +253,127 @@ namespace ProjectReport.Views
 
                     ContentTitle.Text = "Inventory - Ticket Returned";
                     ContentArea.Content = view;
+                };
+
+                // Suscribir edición por remisión (Received / Returned)
+                vm.RequestEditReceivedByRequisition += (requisition) =>
+                {
+                    var view = new TicketReceivedView();
+                    var vmr = new TicketReceivedViewModel(_inventoryService);
+                    view.DataContext = vmr;
+
+                    // Cargar por remisión
+                    vmr.LoadByRequisition(requisition);
+
+                    vmr.RequestClose += () =>
+                    {
+                        ContentTitle.Text = "Inventory";
+                        ContentArea.Content = _inventoryDashboardView;
+                        if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                            dvm.LoadForDate(dvm.SelectedDate);
+                    };
+
+                    ContentTitle.Text = "Inventory - Edit Received (Remisión " + requisition + ")";
+                    ContentArea.Content = view;
+                };
+
+                vm.RequestEditReturnedByRequisition += (requisition) =>
+                {
+                    var view = new TicketReturnedView();
+                    var vmr = new TicketReturnedViewModel(_inventoryService);
+                    view.DataContext = vmr;
+
+                    // Cargar por remisión
+                    vmr.LoadByRequisition(requisition);
+
+                    vmr.RequestClose += () =>
+                    {
+                        ContentTitle.Text = "Inventory";
+                        ContentArea.Content = _inventoryDashboardView;
+                        if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                            dvm.LoadForDate(dvm.SelectedDate);
+                    };
+
+                    ContentTitle.Text = "Inventory - Edit Returned (Remisión " + requisition + ")";
+                    ContentArea.Content = view;
+                };
+
+                // Suscribir edición por TicketId
+                vm.RequestEditReturnedByTicketId += (ticketId) =>
+                {
+                    var view = new TicketReturnedView();
+                    var vmr = new TicketReturnedViewModel(_inventoryService);
+                    view.DataContext = vmr;
+
+                    // Cargar por TicketId (esto rellenará Requisition y Lines correctamente)
+                    vmr.LoadTicket(ticketId);
+
+                    vmr.RequestClose += () =>
+                    {
+                        ContentTitle.Text = "Inventory";
+                        ContentArea.Content = _inventoryDashboardView;
+
+                        if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                            dvm.LoadForDate(dvm.SelectedDate);
+                    };
+
+                    ContentTitle.Text = "Inventory - Edit Returned (Remisión " + (vmr.Requisition ?? ticketId) + ")";
+                    ContentArea.Content = view;
+                };
+
+                // Suscribir Used -> Fluido: abrir diálogo de consumo
+                vm.RequestUsedAsFluido += (row) =>
+                {
+                    Debug.WriteLine("DEBUG: MainWindow RequestUsedAsFluido received. ProductCode: " + (row?.ProductCode ?? "<null>"));
+
+                    if (row == null) return;
+
+                    var dlg = new ProjectReport.Views.Inventory.ReportConsumedDialog();
+                    var vmc = new ProjectReport.ViewModels.Inventory.ReportConsumedViewModel(_inventoryService);
+
+                    // preseleccionar el producto correspondiente si existe
+                    var prod = _inventoryService.GetProducts()
+                        .FirstOrDefault(p => string.Equals(p.Code, row.ProductCode, StringComparison.OrdinalIgnoreCase));
+                    if (prod != null) vmc.SelectedProduct = prod;
+
+                    dlg.DataContext = vmc;
+                    vmc.RequestClose += () =>
+                    {
+                        if (dlg.IsVisible) dlg.Close();
+                        // refrescar dashboard
+                        if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                            dvm.LoadForDate(dvm.SelectedDate);
+                    };
+
+                    dlg.Owner = this;
+                    dlg.Topmost = true; // temporal: forzar encima
+                    dlg.Show();        // usar Show para ver si aparece como ventana no modal
+                    // (quita Topmost/Show y restaura ShowDialog() cuando confirmes)
+                };
+
+                vm.RequestUsedAsOther += (row) =>
+                {
+                    try
+                    {
+                        var dlg = new ProjectReport.Views.Inventory.ReportOtherDialog();
+                        var vmr = new ProjectReport.ViewModels.Inventory.ReportOtherViewModel(_inventoryService);
+                        dlg.DataContext = vmr;
+
+                        vmr.RequestClose += () =>
+                        {
+                            if (dlg.IsVisible) dlg.Close();
+                            if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
+                                dvm.LoadForDate(dvm.SelectedDate);
+                        };
+
+                        dlg.Owner = this;
+                        dlg.ShowDialog();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.WriteLine("Error opening ReportOtherDialog: " + ex);
+                        MessageBox.Show("ERROR al abrir Otras Actividades:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 };
 
                 _inventoryDashboardView.DataContext = vm;

@@ -116,17 +116,20 @@ namespace ProjectReport.Services.Inventory
         {
             if (ticket.Type != TicketType.Received) throw new InvalidOperationException("Ticket type mismatch.");
 
-            // Asegurar TicketId único si no se proporcionó (evita agrupaciones accidentales)
             if (string.IsNullOrWhiteSpace(ticket.TicketId))
             {
                 ticket.TicketId = Guid.NewGuid().ToString();
             }
 
-            try
+            // Solo asignar nueva requisición si NO se proporcionó desde UI
+            if (string.IsNullOrWhiteSpace(ticket.Requisition))
             {
-                ticket.Requisition = _repo.GetNextRequisition();
+                try
+                {
+                    ticket.Requisition = _repo.GetNextRequisition();
+                }
+                catch { }
             }
-            catch { }
 
             if (ticket.Lines != null && ticket.Lines.Count > 0)
             {
@@ -239,6 +242,27 @@ namespace ProjectReport.Services.Inventory
 
             if (line.UnitPrice > 0) p.CurrentUnitCost = line.UnitPrice;
 
+            // Determinar UnitPrice para el movimiento de devolución:
+            // 1) Si la línea trae UnitPrice (>0) se usa.
+            // 2) Si no, buscar el último movimiento Received para este producto y usar su UnitPrice (si >0).
+            // 3) Si no hay Received con precio, usar p.CurrentUnitCost (fallback).
+            double unitPriceToUse;
+            if (line.UnitPrice > 0)
+            {
+                unitPriceToUse = line.UnitPrice;
+            }
+            else
+            {
+                var lastReceived = movements
+                    .Where(m => string.Equals(m.ProductCode, line.ProductCode, StringComparison.OrdinalIgnoreCase)
+                                && m.Type == TicketType.Received
+                                && m.UnitPrice > 0)
+                    .OrderByDescending(m => m.Date)
+                    .FirstOrDefault();
+
+                unitPriceToUse = lastReceived != null ? lastReceived.UnitPrice : p.CurrentUnitCost;
+            }
+
             var mv = new InventoryMovement
             {
                 TicketId = ticket.TicketId,
@@ -247,7 +271,7 @@ namespace ProjectReport.Services.Inventory
                 ProductName = p.Name,
                 Type = TicketType.Returned,
                 Quantity = qty,
-                UnitPrice = line.UnitPrice > 0 ? line.UnitPrice : p.CurrentUnitCost,
+                UnitPrice = unitPriceToUse,
                 OriginOrUse = line.Context,
                 User = ticket.User,
                 Observations = ticket.Observations,
@@ -262,29 +286,34 @@ namespace ProjectReport.Services.Inventory
             _repo.SaveMovements(movements);
         }
 
-        // Eliminar movimientos para un ticket (por TicketId) y recalcular stocks desde movimientos
-        public void DeleteMovementsForTicket(string ticketId)
+        // Eliminar movimientos para un ticket (por TicketId).
+        // Si removeLinkedByRequisition == true también elimina movimientos con la misma requisición (comportamiento legacy).
+        public void DeleteMovementsForTicket(string ticketId, bool removeLinkedByRequisition = true)
         {
             if (string.IsNullOrWhiteSpace(ticketId)) return;
 
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
-                var toRemove = movements.Where(m => string.Equals(m.TicketId, ticketId, StringComparison.OrdinalIgnoreCase)).ToList();
+            var toRemove = movements.Where(m => string.Equals(m.TicketId, ticketId, StringComparison.OrdinalIgnoreCase)).ToList();
             if (toRemove.Count == 0) return;
 
-            // Capturar requisiciones asociadas
-            var removedRequisitions = toRemove
-                .Select(m => m.Requisition)
-                .Where(r => !string.IsNullOrWhiteSpace(r))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            // Capturar requisiciones asociadas (solo si se va a eliminar vinculados)
+            var removedRequisitions = new List<string>();
+            if (removeLinkedByRequisition)
+            {
+                removedRequisitions = toRemove
+                    .Select(m => m.Requisition)
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
 
             // Eliminar movimientos del ticket
             movements = movements.Except(toRemove).ToList();
 
-            // Además eliminar movimientos vinculados por requisición (si existen)
-            if (removedRequisitions.Count > 0)
+            // Además eliminar movimientos vinculados por requisición (si removeLinkedByRequisition == true)
+            if (removeLinkedByRequisition && removedRequisitions.Count > 0)
             {
                 var linked = movements
                     .Where(m => !string.IsNullOrWhiteSpace(m.Requisition) && removedRequisitions.Contains(m.Requisition, StringComparer.OrdinalIgnoreCase))
@@ -303,6 +332,37 @@ namespace ProjectReport.Services.Inventory
             RecalculateAllProductStock();
 
             // Recompactar requisiciones y notificar
+            try { _repo.CompactRequisitions(); } catch { }
+            RaiseInventoryUpdated();
+        }
+
+        // Eliminar movimientos para una línea concreta de un ticket (TicketId + ProductCode)
+        // No elimina otros movimientos con la misma requisición.
+        public void DeleteMovementsForTicketLine(string ticketId, string productCode)
+        {
+            if (string.IsNullOrWhiteSpace(ticketId) || string.IsNullOrWhiteSpace(productCode)) return;
+
+            var products = _repo.LoadProducts();
+            var movements = _repo.LoadMovements();
+
+            // Buscar movimientos que coincidan exactamente con ticketId + productCode
+            var toRemove = movements.Where(m =>
+                string.Equals(m.TicketId, ticketId, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(m.ProductCode, productCode, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (toRemove.Count == 0) return;
+
+            // Eliminar solo esos movimientos
+            movements = movements.Except(toRemove).ToList();
+
+            // Persistir movimientos actualizados
+            _repo.SaveMovements(movements);
+
+            // Recalcular stocks a partir de movimientos restantes
+            RecalculateAllProductStock();
+
+            // Recompactar requisiciones (si aplica) y notificar
             try { _repo.CompactRequisitions(); } catch { }
             RaiseInventoryUpdated();
         }
@@ -327,6 +387,27 @@ namespace ProjectReport.Services.Inventory
 
             _repo.SaveProducts(products);
 
+            // Remove orphaned products: products with no movements and zero stock (clean-up)
+            try
+            {
+                var orphaned = products
+                    .Where(p => !movements.Any(m => string.Equals(m.ProductCode, p.Code, StringComparison.OrdinalIgnoreCase))
+                                && p.StockQty == 0
+                                && p.Status == ProductStatus.Active)
+                    .ToList();
+
+                if (orphaned.Count > 0)
+                {
+                    var remaining = products.Except(orphaned).ToList();
+                    _repo.SaveProducts(remaining);
+                    products = remaining;
+                }
+            }
+            catch
+            {
+                // don't break recalculation on cleanup failure
+            }
+
             // Notificar a la UI que los productos han cambiado
             try { RaiseInventoryUpdated(); } catch { }
         }
@@ -350,6 +431,72 @@ namespace ProjectReport.Services.Inventory
             {
                 InventoryUpdated?.Invoke();
             }
+        }
+
+        // Añadir este método a InventoryService (mantén el resto sin cambios)
+        public void DeleteMovementById(string movementId)
+        {
+            if (string.IsNullOrWhiteSpace(movementId)) return;
+
+            var movements = _repo.LoadMovements();
+            var toRemove = movements.Where(m => string.Equals(m.MovementId, movementId, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (toRemove.Count == 0) return;
+
+            movements = movements.Except(toRemove).ToList();
+
+            _repo.SaveMovements(movements);
+
+            // Recalcular stocks desde movimientos restantes
+            RecalculateAllProductStock();
+
+            try { _repo.CompactRequisitions(); } catch { }
+            RaiseInventoryUpdated();
+        }
+
+        // New: explicit remove product from catalog by code (used when user wants to delete product entirely)
+        public void DeleteProductByCode(string productCode)
+        {
+            if (string.IsNullOrWhiteSpace(productCode)) return;
+
+            var products = _repo.LoadProducts();
+            var movements = _repo.LoadMovements();
+
+            // Prevent deleting if there are still movements referencing this product
+            bool hasMovements = movements.Any(m => string.Equals(m.ProductCode, productCode, StringComparison.OrdinalIgnoreCase));
+            if (hasMovements) return;
+
+            var toRemove = products.Where(p => string.Equals(p.Code, productCode, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (toRemove.Count == 0) return;
+
+            var remaining = products.Except(toRemove).ToList();
+            _repo.SaveProducts(remaining);
+
+            try { _repo.CompactRequisitions(); } catch { }
+            RaiseInventoryUpdated();
+        }
+
+        // New: remove all movements that match a given requisition
+        public void DeleteMovementsByRequisition(string requisition)
+        {
+            if (string.IsNullOrWhiteSpace(requisition)) return;
+
+            var movements = _repo.LoadMovements();
+            var toRemove = movements
+                .Where(m => !string.IsNullOrWhiteSpace(m.Requisition) &&
+                            string.Equals(m.Requisition, requisition, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (toRemove.Count == 0) return;
+
+            movements = movements.Except(toRemove).ToList();
+
+            _repo.SaveMovements(movements);
+
+            // Recalculate stocks from remaining movements
+            RecalculateAllProductStock();
+
+            try { _repo.CompactRequisitions(); } catch { }
+            RaiseInventoryUpdated();
         }
     }
 }

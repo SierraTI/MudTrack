@@ -1,17 +1,102 @@
-﻿namespace ProjectReport.Models.Inventory
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace ProjectReport.Models.Inventory
 {
-    public class TicketLine
+    public class TicketLine : INotifyPropertyChanged
     {
-        public string ProductCode { get; set; } = "";
-        public double Quantity { get; set; }
+        private string _productCode = "";
+        public string ProductCode
+        {
+            get => _productCode;
+            set
+            {
+                if (_productCode != value)
+                {
+                    _productCode = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private double _quantity;
+        public double Quantity
+        {
+            get => _quantity;
+            set
+            {
+                if (_quantity != value)
+                {
+                    _quantity = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         // Optional product name when creating a product from a ticket
-        public string ProductName { get; set; } = "";
+        private string _productName = "";
+        public string ProductName
+        {
+            get => _productName;
+            set
+            {
+                if (_productName != value)
+                {
+                    _productName = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         // Solo aplica fuerte en Received (histórico)
-        public double UnitPrice { get; set; }
+        private double _unitPrice;
+        public double UnitPrice
+        {
+            get => _unitPrice;
+            set
+            {
+                if (_unitPrice != value)
+                {
+                    _unitPrice = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         // Contexto (origen o uso)
-        public string Context { get; set; } = ""; // proveedor/área/proyecto o "pozo/fluid/proyecto/otro"
+        private string _context = "";
+        public string Context
+        {
+            get => _context;
+            set
+            {
+                if (_context != value)
+                {
+                    _context = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        // Nuevo: Observaciones por línea
+        private string _observations = "";
+        public string Observations
+        {
+            get => _observations;
+            set
+            {
+                if (_observations != value)
+                {
+                    _observations = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string? propName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
     }
 }

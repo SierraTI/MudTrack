@@ -13,6 +13,9 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:CollectionToVisibilityConverter x:Key="CollectionToVis"/>
         <converters:StringIsNullOrEmptyConverter x:Key="StringIsNullOrEmptyConverter"/>
+        <converters:EnumToStringConverter x:Key="EnumToStringConverter"/>
+        <converters:NullToPlaceholderConverter x:Key="NullToPlaceholder"/>
+        <converters:BoolToToolTipConverter x:Key="BoolToToolTipConverter"/>
 
         <!-- Brushes -->
         <SolidColorBrush x:Key="Surface" Color="White"/>
@@ -142,6 +145,28 @@
                     <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
                                         Foreground="{StaticResource TextMuted}"/>
 
+                    <!-- Well Section Column (Riser, Conductor Casing, etc.) -->
+                    <DataGridTemplateColumn Header="Well Section" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding WellSection, Converter={StaticResource EnumToStringConverter}}" VerticalAlignment="Center" Padding="10,6"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.WellSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                          SelectedItem="{Binding WellSection, UpdateSourceTrigger=PropertyChanged}"
+                                          Padding="8,6">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource NullToPlaceholder}, ConverterParameter='Select section...'}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
                     <!-- Name / Description Column -->
                     <DataGridTemplateColumn Header="Name / Descripción" Width="200">
                         <DataGridTemplateColumn.CellTemplate>
@@ -175,19 +200,25 @@
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Section Type Column -->
-                    <DataGridTemplateColumn Header="Section Type" Width="130">
+                    <!-- Component Column (Casing, Liner, OpenHole) -->
+                    <DataGridTemplateColumn Header="Component" Width="130">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding SectionType}" VerticalAlignment="Center" Padding="10,6"/>
+                                <TextBlock Text="{Binding Component}" VerticalAlignment="Center" Padding="10,6"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.CellEditingTemplate>
                             <DataTemplate>
                                 <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                          SelectedItem="{Binding SectionType, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedItem="{Binding Component, UpdateSourceTrigger=PropertyChanged}"
                                           DisplayMemberPath="."
-                                          Padding="8,6"/>
+                                          Padding="8,6">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource NullToPlaceholder}, ConverterParameter='Select component...'}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
@@ -210,14 +241,42 @@
                     </DataGridTemplateColumn>
 
                     <!-- OD Column -->
-                    <DataGridTextColumn Header="OD (in)" 
-                                        Binding="{Binding OD, StringFormat=F3, TargetNullValue=''}" 
-                                        Width="80"/>
+                    <DataGridTemplateColumn Width="80">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="OD (in)" ToolTip="For OpenHole: Hole diameter. For Casing/Liner: Outer diameter." />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding OD, StringFormat=F3, TargetNullValue=''}" VerticalAlignment="Center" Padding="6,4" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding OD, StringFormat=F3, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding IsODEnabled}"
+                                         ToolTip="{Binding IsODEnabled, Converter={StaticResource BoolToToolTipConverter}, ConverterParameter='OD disabled for this component'}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
                     <!-- ID Column -->
-                    <DataGridTextColumn Header="ID (in)" 
-                                        Binding="{Binding ID, StringFormat=F3, TargetNullValue=''}" 
-                                        Width="80"/>
+                    <DataGridTemplateColumn Width="80">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="ID (in)" ToolTip="For OpenHole: always 0.000. For Casing/Liner: Inner diameter." />
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ID, StringFormat=F3, TargetNullValue=''}" VerticalAlignment="Center" Padding="6,4" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding ID, StringFormat=F3, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding IsIDEnabled}"
+                                         ToolTip="{Binding IsIDEnabled, Converter={StaticResource BoolToToolTipConverter}, ConverterParameter='ID is read-only for Open Hole (always 0.000)'}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
 
                     <!-- Top MD Column - Read-only for continuity -->
                     <DataGridTemplateColumn Header="Top MD (ft)" Width="90">

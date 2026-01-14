@@ -17,7 +17,8 @@ namespace ProjectReport
 
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show($"Unhandled exception: {e.Exception.Message}\n\n{e.Exception.StackTrace}", 
+            LogException(e.Exception, "DispatcherUnhandledException");
+            MessageBox.Show($"Unhandled exception: {e.Exception.Message}\n\nSee log file for details.", 
                 "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             e.Handled = true;
         }
@@ -26,9 +27,25 @@ namespace ProjectReport
         {
             if (e.ExceptionObject is Exception ex)
             {
-                MessageBox.Show($"Unhandled exception: {ex.Message}\n\n{ex.StackTrace}", 
+                LogException(ex, "CurrentDomain_UnhandledException");
+                MessageBox.Show($"Unhandled exception: {ex.Message}\n\nSee log file for details.", 
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void LogException(Exception ex, string source)
+        {
+            try
+            {
+                var logDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+                if (!System.IO.Directory.Exists(logDir))
+                    System.IO.Directory.CreateDirectory(logDir);
+
+                var logFile = System.IO.Path.Combine(logDir, "exceptions.log");
+                var text = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC] {source}: {ex.Message}\n{ex.StackTrace}\n--- Inner: {ex.InnerException}\n\n";
+                System.IO.File.AppendAllText(logFile, text);
+            }
+            catch { /* Swallow to avoid recursive failures */ }
         }
 
         protected override void OnExit(ExitEventArgs e)

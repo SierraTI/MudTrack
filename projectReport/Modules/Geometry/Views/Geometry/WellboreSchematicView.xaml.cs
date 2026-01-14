@@ -129,12 +129,12 @@ namespace ProjectReport.Views.Geometry
 
                 switch (section.SectionType)
                 {
-                    case WellboreSectionType.Casing:
+                    case ComponentType.Casing:
                         var converter = new BrushConverter();
                         fill = (Brush?)converter.ConvertFrom("#9CA3AF") ?? Brushes.Gray; // Gray-400
                         stroke = (Brush?)converter.ConvertFrom("#374151") ?? Brushes.DarkGray; // Gray-700
                         break;
-                    case WellboreSectionType.Liner:
+                    case ComponentType.Liner:
                         fill = (Brush?)new BrushConverter().ConvertFrom("#60A5FA") ?? Brushes.Blue; // Blue-400
                         stroke = (Brush?)new BrushConverter().ConvertFrom("#1D4ED8") ?? Brushes.DarkBlue; // Blue-700
                         break;
@@ -159,11 +159,11 @@ namespace ProjectReport.Views.Geometry
                 SchematicCanvas.Children.Add(rect);
 
                 // Highlight Shoe depth or Liner Top
-                if (section.SectionType == WellboreSectionType.Liner)
+                if (section.SectionType == ComponentType.Liner)
                 {
                     AddMarkerLabel($"LT: {section.TopMD} ft", section.TopMD.Value, Brushes.Blue, true);
                 }
-                if (section.SectionType != WellboreSectionType.OpenHole)
+                if (section.SectionType != ComponentType.OpenHole)
                 {
                     AddMarkerLabel($"Shoe: {section.BottomMD} ft", section.BottomMD.Value, Brushes.DarkSlateGray, false);
                 }

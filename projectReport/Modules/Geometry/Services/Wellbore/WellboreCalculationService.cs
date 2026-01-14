@@ -1,5 +1,6 @@
 using System;
 using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Services.Wellbore
 {
@@ -24,7 +25,7 @@ namespace ProjectReport.Services.Wellbore
 
             double volume = 0;
 
-            if (component.SectionType == WellboreSectionType.OpenHole)
+            if (component.Component == ComponentType.OpenHole)
             {
                 // OpenHole: Volumen = Diámetro del hoyo con washout
                 // Formula: (ID² / 1029.4) × Length × (1 + Washout%)
@@ -41,8 +42,8 @@ namespace ProjectReport.Services.Wellbore
                     }
                 }
             }
-            else if (component.SectionType == WellboreSectionType.Casing || 
-                     component.SectionType == WellboreSectionType.Liner)
+            else if (component.Component == ComponentType.Casing || 
+                     component.Component == ComponentType.Liner)
             {
                 // Casing/Liner: Volumen anular entre sección anterior e actual
                 // Formula: π/4 * (ID_anterior² - OD_actual²) * Length / 1029.4
@@ -95,9 +96,9 @@ namespace ProjectReport.Services.Wellbore
         /// <summary>
         /// Calcula la rugosidad hidráulica basada en el tipo de sección.
         /// </summary>
-        public double GetHydraulicRoughness(WellboreSectionType sectionType)
+        public double GetHydraulicRoughness(ComponentType sectionType)
         {
-            return sectionType == WellboreSectionType.OpenHole ? 0.006 : 0.0006;
+            return sectionType == ComponentType.OpenHole ? 0.006 : 0.0006;
         }
 
         /// <summary>

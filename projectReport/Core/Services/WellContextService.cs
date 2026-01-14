@@ -19,11 +19,18 @@ namespace ProjectReport.Services
         private Project? _currentProject;
         private Well? _currentWell;
         private double _currentDepth;
+        private double _currentFlowRate;
         private readonly Dictionary<string, bool> _stepCompletionStatus = new();
 
         public event EventHandler<Well>? WellChanged;
         public event EventHandler<double>? DepthUpdated;
         public event EventHandler<double>? MudDensityUpdated;
+        public event EventHandler<double>? FlowRateUpdated;
+        
+        /// <summary>
+        /// Event fired when report thermal data (MaxBHT and TVD) changes
+        /// </summary>
+        public event EventHandler<ReportThermalDataEventArgs>? ReportThermalDataUpdated;
 
         public Project? CurrentProject
         {
@@ -53,6 +60,12 @@ namespace ProjectReport.Services
             set => _currentDepth = value;
         }
 
+        public double CurrentFlowRate
+        {
+            get => _currentFlowRate;
+            set => _currentFlowRate = value;
+        }
+
         /// <summary>
         /// Updates the System Global Depth. typically called from Daily Reports.
         /// </summary>
@@ -76,6 +89,15 @@ namespace ProjectReport.Services
             // If we had a property for this in Well, we'd update it.
             // For now, just firing the event for Geometry/WellTest to consume.
             MudDensityUpdated?.Invoke(this, density);
+        }
+
+        /// <summary>
+        /// Updates the current active Flow Rate (GPM).
+        /// </summary>
+        public void UpdateFlowRate(double gpm)
+        {
+            CurrentFlowRate = gpm;
+            FlowRateUpdated?.Invoke(this, gpm);
         }
 
         /// <summary>
@@ -123,6 +145,29 @@ namespace ProjectReport.Services
                 return $"Error: Wellbore cannot be deeper than current drilling depth ({CurrentDepth:F0} ft)";
             }
             return null;
+        }
+
+        /// <summary>
+        /// Notifies subscribers when report thermal data (MaxBHT and TVD) is updated
+        /// </summary>
+        public void NotifyReportThermalDataUpdated(double? reportTVD, double? reportMaxBHT)
+        {
+            ReportThermalDataUpdated?.Invoke(this, new ReportThermalDataEventArgs(reportTVD, reportMaxBHT));
+        }
+    }
+
+    /// <summary>
+    /// Event arguments for report thermal data updates
+    /// </summary>
+    public class ReportThermalDataEventArgs : EventArgs
+    {
+        public double? ReportTVD { get; }
+        public double? ReportMaxBHT { get; }
+
+        public ReportThermalDataEventArgs(double? reportTVD, double? reportMaxBHT)
+        {
+            ReportTVD = reportTVD;
+            ReportMaxBHT = reportMaxBHT;
         }
     }
 }

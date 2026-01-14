@@ -89,17 +89,16 @@ namespace ProjectReport.Services
         public void ExportWellTestsToCsv(IEnumerable<WellTest> tests, string filePath)
         {
             var csv = new StringBuilder();
-            csv.AppendLine("ID,Section,Type,MD (ft),TVD (ft),Test Value (ppb),Description");
+            csv.AppendLine("ID,Type,MD (ft),TVD (ft),Pressure (psi),EMW (ppg)");
             
             foreach (var test in tests)
             {
                 csv.AppendLine($"{test.Id}," +
-                             $"\"{test.Section}\"," +
                              $"{test.Type}," +
                              $"{test.MD:F2}," +
                              $"{test.TVD:F2}," +
-                             $"{test.TestValue:F2}," +
-                             $"\"{test.Description}\"");
+                             $"{test.TestPressurePsi:F2}," +
+                             $"{test.TestValue:F2}");
             }
             
             File.WriteAllText(filePath, csv.ToString());

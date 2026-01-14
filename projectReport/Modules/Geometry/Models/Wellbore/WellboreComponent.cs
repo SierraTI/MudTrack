@@ -6,10 +6,11 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Models.Geometry.Wellbore
 {
-    // Using WellboreSectionType from WellboreSectionType.cs instead of SectionType
+    // Using ComponentType for section classification instead of WellboreSectionType
 
     public class WellboreComponent : BaseModel
     {
@@ -18,8 +19,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private double? _topMD;
         private double? _bottomMD;
         private string _name = string.Empty;
-        private WellboreSectionType? _sectionType;
+        private WellSectionType? _wellSection;
         private WellboreStage? _stage;
+        private ComponentType? _component = null; // Default to null for "Select..." placeholder
         public const double BBL_TO_CUBIC_FEET = 5.615;
         public const double CUBIC_FEET_TO_BBL = 1.0 / 5.615;
 
@@ -30,6 +32,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private readonly Dictionary<string, List<string>> _warnings = new();
         private bool _isFirstRow = false;
         private double? _previousBottomMD = null;
+        private bool _isHighlighted = false;
 
         public ObservableCollection<string> ValidationErrors
         {
@@ -71,6 +74,13 @@ namespace ProjectReport.Models.Geometry.Wellbore
             _externalWarnings.Clear();
             OnPropertyChanged(nameof(HasWarnings));
             OnPropertyChanged(nameof(WarningMessage));
+        }
+
+        [Newtonsoft.Json.JsonIgnore]
+        public bool IsHighlighted
+        {
+            get => _isHighlighted;
+            set => SetProperty(ref _isHighlighted, value);
         }
 
         public string ValidationMessage
@@ -210,9 +220,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
                 if (Length <= 0)
                     return 0;
 
-                // Case 1: OpenHole
+                // Case 1: Open Hole (when using ComponentType)
                 // Volume = Hole Volume with Washout
-                if (SectionType == WellboreSectionType.OpenHole)
+                if (Component == ComponentType.OpenHole)
                 {
                     // For OpenHole, OD is the "Bit Size" or Hole Diameter
                     double holeParamsDiameter = OD.GetValueOrDefault();
@@ -228,25 +238,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
                     return (Math.PI / 4.0) * Math.Pow(holeParamsDiameter, 2) * Length * washoutFactor / 1029.4;
                 }
                 
-                // Case 2: Casing / Liner (Annular Volume typically calculated externally, but here we can't easily access Previous.ID without context)
+                // Case 2: Casing / Liner / Other Components
                 // The spec says: "Volume (bbl) = π/4 × (ID_outer² - OD_inner²) × Length / 1029.4"
-                // Ideally this calculation should happen in the Service or ViewModel where "Previous Component" is known.
-                // However, if this property is purely "Capacity" (Internal Volume), then it is simply ID^2.
-                // IF this property is meant to be "Displacement" or "Annular", it depends on context.
-                //
-                // RE-READING SPEC 3.1: "Volume for LINER and CASING (Sin Washout)... ID_outer = ID of previous... OD_inner = OD of current"
-                // This implies "Volume" field in the grid represents the ANNULAR volume between this string and the previous one (or open hole).
-                // 
-                // Since this model doesn't know its parent/previous, we MUST set this property from the ViewModel.
-                // Therefore, this property should be a simple backing field that the ViewModel updates, OR we keep the internal calculation
-                // but clarify it's only accurate if updated externally for Annular.
-                
-                // Current implementation in ViewModel loop calls `_geometryService.CalculateWellboreComponentVolume`
-                // So we should make this a settleable property or keep the logic simple here.
-                //
-                // Let's rely on the backing field for now, assuming the Service updates it. 
-                // But wait, the previous code had logic. 
-                // Let's restore a logical default: Capacity (Internal Volume) if no other info.
+                // This calculation should happen in the Service or ViewModel where "Previous Component" is known.
                 
                 // Actually, the previous code was:
                 // return (ID.Value * ID.Value / 1029.4) * Length; -> This is Internal Capacity.
@@ -358,6 +352,12 @@ namespace ProjectReport.Models.Geometry.Wellbore
                 AddError(nameof(TopMD), "Top MD cannot be negative");
             }
 
+            // Rule: Continuity Top MD[n] = Bottom MD[n-1]
+            if (!_isFirstRow && _previousBottomMD.HasValue && Math.Abs(TopMD.Value - _previousBottomMD.Value) > 0.01)
+            {
+                AddError(nameof(TopMD), $"Error de Continuidad: Top MD ({TopMD.Value:F1} ft) debe ser igual al Bottom MD de la sección anterior ({_previousBottomMD.Value:F1} ft).");
+            }
+
             if (BottomMD.HasValue && BottomMD.Value <= TopMD.Value)
             {
                 AddError(nameof(TopMD), "Top MD must be less than Bottom MD");
@@ -414,9 +414,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
 
         // For OpenHole: OD is editable (hole diameter), ID is disabled (always 0)
         // For Casing/Liner: Both OD and ID are editable
-        // If SectionType is null (Select...), fields should be disabled.
-        public bool IsODEnabled => SectionType.HasValue;
-        public bool IsIDEnabled => SectionType.HasValue && SectionType != WellboreSectionType.OpenHole;
+        // If Component is null (Select...), fields should be disabled.
+        public bool IsODEnabled => Component.HasValue;
+        public bool IsIDEnabled => Component.HasValue && Component != ComponentType.OpenHole;
 
 
 
@@ -439,7 +439,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             ClearErrors(nameof(ID));
             
             // OpenHole must have ID = 0.000 (read-only)
-            if (SectionType == WellboreSectionType.OpenHole)
+            if (Component == ComponentType.OpenHole)
             {
                 if (ID.GetValueOrDefault() > 0.001)
                 {
@@ -487,33 +487,30 @@ namespace ProjectReport.Models.Geometry.Wellbore
             set { _collapseRating = value; OnPropertyChanged(); }
         }
 
-        public WellboreSectionType? SectionType 
+        public ComponentType? Component 
         { 
-            get => _sectionType;
+            get => _component;
             set
             {
-                if (SetProperty(ref _sectionType, value))
+                if (SetProperty(ref _component, value))
                 {
-                    OnPropertyChanged(nameof(SectionType));
+                    OnPropertyChanged(nameof(Component));
                     OnPropertyChanged(nameof(IsODEnabled)); 
                     OnPropertyChanged(nameof(IsIDEnabled)); // Notify ID enabled state change
                     OnPropertyChanged(nameof(IsWashoutEnabled)); 
                     
-                    // CORRECTED LOGIC: For OpenHole, ID = 0 (no pipe), OD = hole diameter
-                    if (value == WellboreSectionType.OpenHole)
+                    // OpenHole Guard: Automatically set ID = 0.000 and lock it
+                    if (value == ComponentType.OpenHole)
                     {
-                        _id = 0.0; // OpenHole has no inner pipe, so ID = 0
+                        // Force ID to 0.000 for OpenHole (no inner pipe)
+                        _id = 0.0;
                         OnPropertyChanged(nameof(ID));
                         ClearErrors(nameof(ID)); // Remove any existing ID errors
-                        
                         ValidateWashout(); // Validate washout when switching to OpenHole
                     }
                     else
                     {
-                        // If switching away from OpenHole (or to null), clear Washout logic?
-                        // Spec says: "Washout says N/A for Casing".
-                        // Logic: Set Washout to null or let UI handle "N/A" display. Model should probably just clear value or ignore it.
-                        // Let's clear it to be safe.
+                        // If switching away from OpenHole, clear Washout
                         if (_washout.HasValue)
                         {
                             _washout = null;
@@ -522,7 +519,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
                         }
                     }
                     
-                    ValidateSectionType();
+                    ValidateComponent();
                     ValidateOD(); // Re-validate OD based on new section type
                     ValidateID(); // Re-validate ID based on new section type
                     OnPropertyChanged(nameof(Volume));
@@ -531,6 +528,14 @@ namespace ProjectReport.Models.Geometry.Wellbore
                     UpdateHydraulicRoughness();
                 }
             }
+        }
+
+        // Backwards-compatible alias used in older code: SectionType
+        [Newtonsoft.Json.JsonIgnore]
+        public ComponentType? SectionType
+        {
+            get => Component;
+            set => Component = value;
         }
 
         private void ValidateName()
@@ -559,17 +564,29 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
         }
 
-        private void ValidateSectionType()
+        public WellSectionType? WellSection
         {
-            ClearErrors(nameof(SectionType));
+            get => _wellSection;
+            set
+            {
+                if (SetProperty(ref _wellSection, value))
+                {
+                    OnPropertyChanged(nameof(WellSection));
+                }
+            }
+        }
+
+        private void ValidateComponent()
+        {
+            ClearErrors(nameof(Component));
             
             // Allow null as "not selected" but maybe mark as error if user saves?
             // "Al elegir 'Seleccionar...', todos los campos ... null o deshabilitados."
             // This implies null is valid temporary state.
             
-            if (SectionType.HasValue && !Enum.IsDefined(typeof(WellboreSectionType), SectionType.Value))
+            if (Component.HasValue && !Enum.IsDefined(typeof(ComponentType), Component.Value))
             {
-                AddError(nameof(SectionType), "Invalid section type");
+                AddError(nameof(Component), "Invalid component type");
             }
         }
 
@@ -590,7 +607,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
         /// <summary>
         /// Gets whether Washout field should be enabled (only for OpenHole sections).
         /// </summary>
-        public bool IsWashoutEnabled => SectionType == WellboreSectionType.OpenHole;
+        public bool IsWashoutEnabled => Component == ComponentType.OpenHole;
 
         public double AnnularVolume
         {
@@ -605,9 +622,9 @@ namespace ProjectReport.Models.Geometry.Wellbore
 
         private void UpdateHydraulicRoughness()
         {
-            HydraulicRoughness = SectionType switch
+            HydraulicRoughness = Component switch
             {
-                WellboreSectionType.OpenHole => 0.006,
+                ComponentType.OpenHole => 0.006,
                 _ => 0.0006
             };
         }
@@ -658,11 +675,11 @@ namespace ProjectReport.Models.Geometry.Wellbore
             // If null, we suppress error to keep UI clean (ValidationService catches it on Save).
             if (OD != null && OD.Value <= 0.001)
             {
-                if (SectionType == WellboreSectionType.OpenHole)
+                if (Component == ComponentType.OpenHole)
                 {
                     AddError(nameof(OD), "Hole Diameter must be > 0.");
                 }
-                else if (SectionType.HasValue) // Casing/Liner
+                else if (Component.HasValue) // Casing/Liner
                 {
                     AddError(nameof(OD), "OD must be > 0.");
                 }
@@ -670,7 +687,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
             
             // Rule: ID < OD (Internal Diameter Logic)
-            if (SectionType != WellboreSectionType.OpenHole && SectionType.HasValue && (ID ?? 0) > 0 && (OD ?? 0) <= (ID ?? 0))
+            if (Component != ComponentType.OpenHole && Component.HasValue && (ID ?? 0) > 0 && (OD ?? 0) <= (ID ?? 0))
             {
                 AddError(nameof(OD), "ID ≥ OD is not allowed. Fix diameters before continuing.");
                 AddError(nameof(ID), "ID ≥ OD is not allowed. Fix diameters before continuing.");
@@ -686,7 +703,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
         {
             ClearErrors(nameof(Washout));
             
-            if (SectionType == WellboreSectionType.OpenHole)
+            if (Component == ComponentType.OpenHole)
             {
                 // Washout is mandatory for OpenHole
                 if (Washout == null)
@@ -719,16 +736,23 @@ namespace ProjectReport.Models.Geometry.Wellbore
         /// </summary>
         public void ValidateTelescopicDiameter(WellboreComponent? previousComponent)
         {
-            ClearErrors(nameof(OD));
+            // Re-run internal validation to ensure we don't wipe out "OD > 0" or "ID < OD" errors
+            ValidateOD();
             
             if (previousComponent == null) return; // First component, no telescoping check
             
             // Rule A2: OD[n] < ID[n-1] (Telescopic Diameter)
-            if (OD.GetValueOrDefault() >= previousComponent.ID.GetValueOrDefault() && previousComponent.ID.GetValueOrDefault() > 0.001)
+            // This applies to Casing/Liner following another Casing/Liner/OpenHole
+            // If current is Casing/Liner, it must fit inside previous ID.
+            if (Component != ComponentType.OpenHole && 
+                previousComponent.ID.GetValueOrDefault() > 0.001)
             {
-                string currentOD = OD.GetValueOrDefault().ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
-                string prevID = previousComponent.ID.GetValueOrDefault().ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
-                AddError(nameof(OD), $"Error A2: OD ({currentOD} in) must be smaller than previous section ID ({prevID} in). Telescopic progression required.");
+                 if (OD.GetValueOrDefault() >= previousComponent.ID.GetValueOrDefault())
+                 {
+                    string currentOD = OD.GetValueOrDefault().ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+                    string prevID = previousComponent.ID.GetValueOrDefault().ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+                    AddError(nameof(OD), $"Error A2: OD ({currentOD} in) must be smaller than previous section ID ({prevID} in). Telescopic progression required.");
+                 }
             }
         }
 
@@ -741,8 +765,8 @@ namespace ProjectReport.Models.Geometry.Wellbore
             if (previousComponent == null) return;
             
             // Only applies to Casing and Liner sections
-            if ((SectionType == WellboreSectionType.Casing || SectionType == WellboreSectionType.Liner) &&
-                (previousComponent.SectionType == WellboreSectionType.Casing || previousComponent.SectionType == WellboreSectionType.Liner))
+            if ((Component == ComponentType.Casing || Component == ComponentType.Liner) &&
+                (previousComponent.Component == ComponentType.Casing || previousComponent.Component == ComponentType.Liner))
             {
                 // Check for valid casing override: same TopMD, deeper or equal BottomMD
                 bool isCasingOverride = Math.Abs((TopMD ?? 0) - (previousComponent.TopMD ?? 0)) < 0.01 && (BottomMD ?? 0) >= (previousComponent.BottomMD ?? 0);

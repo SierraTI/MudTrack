@@ -16,7 +16,6 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
         private double? _weight;
         private double? _tjIDLength;
         private string _grade = "S-135";
-        private bool _hasFloatSub = false;
 
         public string Grade
         {
@@ -33,18 +32,6 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
 
         public System.Collections.Generic.List<string> AvailableGrades => ToolJointConfig.StandardGrades;
 
-        public bool HasFloatSub
-        {
-            get => Model.HasFloatSub;
-            set
-            {
-                if (SetProperty(ref _hasFloatSub, value))
-                {
-                    Model.HasFloatSub = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
         public double? TJ_OD
         {

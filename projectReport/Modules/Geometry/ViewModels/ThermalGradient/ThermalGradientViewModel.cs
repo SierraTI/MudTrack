@@ -43,6 +43,33 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             }
         }
 
+        // Offshore vs Land well configuration
+        private bool _isOffshoreWell = true; // Default to offshore (with Mudline)
+        public bool IsOffshoreWell
+        {
+            get => _isOffshoreWell;
+            set
+            {
+                if (SetProperty(ref _isOffshoreWell, value))
+                {
+                    OnOffshoreModeChanged();
+                }
+            }
+        }
+
+        private double _ambientTemperature = 75.0; // Surface/ambient temperature (editable)
+        public double AmbientTemperature
+        {
+            get => _ambientTemperature;
+            set
+            {
+                if (SetProperty(ref _ambientTemperature, value))
+                {
+                    UpdateSurfaceTemperature();
+                }
+            }
+        }
+
         public ThermalGradientViewModel(ThermalGradientService thermalService)
         {
             _thermalService = thermalService ?? throw new ArgumentNullException(nameof(thermalService));
@@ -55,20 +82,36 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
             // Subscribe to WellContextService for dynamic depth updates (Rule B)
             WellContextService.Instance.DepthUpdated += OnGlobalDepthUpdated;
+            
+            // Subscribe to Report thermal data updates for automatic synchronization
+            WellContextService.Instance.ReportThermalDataUpdated += OnReportThermalDataUpdated;
 
             // Ensure default points (as per specification)
+            // For offshore wells: Surface, Mudline, BHT
+            // For land wells: Surface, BHT only
             if (ThermalGradientPoints.Count == 0)
             {
-                var p1 = new ThermalGradientPoint(_nextId++, 0, 75.0) { Label = "Surface" };
-                var p2 = new ThermalGradientPoint(_nextId++, 4500, 110.0) { Label = "Mudline" };
-                var p3 = new ThermalGradientPoint(_nextId++, 10000, 180.0) { Label = "BHT" };
-
+                var p1 = new ThermalGradientPoint(_nextId++, 0, AmbientTemperature) { Label = "Surface" };
                 p1.PropertyChanged += OnThermalPointPropertyChanged;
-                p2.PropertyChanged += OnThermalPointPropertyChanged;
-                p3.PropertyChanged += OnThermalPointPropertyChanged;
-
                 ThermalGradientPoints.Add(p1);
-                ThermalGradientPoints.Add(p2);
+
+                // Only add Mudline for offshore wells
+                if (IsOffshoreWell)
+                {
+                    var p2 = new ThermalGradientPoint(_nextId++, 4500, 110.0) { Label = "Mudline" };
+                    p2.PropertyChanged += OnThermalPointPropertyChanged;
+                    ThermalGradientPoints.Add(p2);
+                }
+
+                // Add BHT point (will be synced with report if available)
+                var defaultBHTTVD = MaxWellboreTVD > 0 ? MaxWellboreTVD : 10000;
+                var defaultBHT = ReportMaxBHT ?? 180.0;
+                var p3 = new ThermalGradientPoint(_nextId++, defaultBHTTVD, defaultBHT) { Label = "BHT" };
+                if (ReportMaxBHT.HasValue && ReportMaxBHT.Value > 0)
+                {
+                    p3.IsLocked = true; // Lock if synced from report
+                }
+                p3.PropertyChanged += OnThermalPointPropertyChanged;
                 ThermalGradientPoints.Add(p3);
             }
 
@@ -137,6 +180,9 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             SyncWithSurveyCommand = new RelayCommand(_ => SyncWithSurvey(), _ => CanImportFromSurvey);
             AddFormationCommand = new RelayCommand(_ => AddFormation());
             DeleteFormationCommand = new RelayCommand(DeleteFormation);
+            AddControlPointCommand = new RelayCommand(_ => AddControlPoint());
+            RemoveMudlineCommand = new RelayCommand(_ => RemoveMudline());
+            AddMudlineCommand = new RelayCommand(_ => AddMudline());
             
             // Sample formation for demo
             Formations.Add(new Formation("Shale Zone", 1000, 3000, "#F3F4F6"));
@@ -146,8 +192,8 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
         public ObservableCollection<ThermalGradientPoint> ThermalGradientPoints { get; }
 
-        public SeriesCollection SeriesCollection { get; set; } = new();
-        public VisualElementsCollection VisualElements { get; set; } = new();
+        public SeriesCollection SeriesCollection { get; set; }
+        public VisualElementsCollection VisualElements { get; set; }
         private SectionsCollection _axisSections = new();
         public SectionsCollection AxisSections 
         { 
@@ -168,6 +214,12 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             "#F5F3FF", // Violet-100
             "#FFEDD5"  // Orange-100
         };
+
+        private double _xAxisMinValue = 50;
+        public double XAxisMinValue => _xAxisMinValue;
+
+        private double _xAxisMaxValue = 250;
+        public double XAxisMaxValue => _xAxisMaxValue;
         // ... (rest of properties)
 
 
@@ -245,8 +297,48 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     ValidateAllPoints();
                     RecalculateSummaryStatistics();
                     OnPropertyChanged(nameof(CanImportFromSurvey));
+                    // Auto-sync BHT when TVD changes
+                    SyncBHTFromReport();
                 }
             }
+        }
+
+        // Report synchronization properties
+        private double? _reportMaxBHT;
+        public double? ReportMaxBHT
+        {
+            get => _reportMaxBHT;
+            set
+            {
+                if (SetProperty(ref _reportMaxBHT, value))
+                {
+                    SyncBHTFromReport();
+                }
+            }
+        }
+
+        private double? _reportTVD;
+        public double? ReportTVD
+        {
+            get => _reportTVD;
+            set
+            {
+                if (SetProperty(ref _reportTVD, value))
+                {
+                    if (value.HasValue && value.Value > 0)
+                    {
+                        MaxWellboreTVD = value.Value;
+                    }
+                }
+            }
+        }
+
+        // Indicates if BHT is locked (synced from report)
+        private bool _isBHTLocked;
+        public bool IsBHTLocked
+        {
+            get => _isBHTLocked;
+            set => SetProperty(ref _isBHTLocked, value);
         }
 
         private bool _hasSurveyData;
@@ -316,6 +408,28 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             }
         }
 
+        // Segmented Gradients (Water vs Geothermal)
+        private double _waterGradient;
+        public double WaterGradient
+        {
+            get => _waterGradient;
+            set => SetProperty(ref _waterGradient, value);
+        }
+
+        private double _geothermalGradient;
+        public double GeothermalGradient
+        {
+            get => _geothermalGradient;
+            set => SetProperty(ref _geothermalGradient, value);
+        }
+
+        private bool _showSegmentedGradients = true;
+        public bool ShowSegmentedGradients
+        {
+            get => _showSegmentedGradients;
+            set => SetProperty(ref _showSegmentedGradients, value);
+        }
+
         // Rule B: Dynamic Y-axis scaling based on current depth
         private double _currentDepth;
         public double CurrentDepth
@@ -327,13 +441,15 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 {
                     OnPropertyChanged(nameof(YAxisMinValue));
                     OnPropertyChanged(nameof(YAxisMaxValue));
+                    ValidateAllPoints();
                     UpdateChart();
                 }
             }
         }
 
         // Rule A: Inverted Y-axis (0 at top, depth increases downward)
-        public double YAxisMinValue => -Math.Max(CurrentDepth, MaxWellboreTVD > 0 ? MaxWellboreTVD : 10000);
+        // Calculations and visualization are clipped to CurrentDepth (Report TVD)
+        public double YAxisMinValue => -Math.Max(1000, CurrentDepth);
         public double YAxisMaxValue => 0;
 
         #endregion
@@ -349,6 +465,9 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
         public ICommand SyncWithSurveyCommand { get; }
         public ICommand AddFormationCommand { get; }
         public ICommand DeleteFormationCommand { get; }
+        public ICommand AddControlPointCommand { get; }
+        public ICommand RemoveMudlineCommand { get; }
+        public ICommand AddMudlineCommand { get; }
 
         #endregion
 
@@ -466,6 +585,93 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             ToastNotificationService.Instance.ShowInfo($"TVD máxima del survey importada ({MaxWellboreTVD:F2} ft). Temperatura sugerida: {suggestedTemp:F1}°F");
         }
 
+        /// <summary>
+        /// Syncs BHT point from Report data (MaxBHT and Report TVD)
+        /// This is called automatically when Report data changes
+        /// </summary>
+        private void SyncBHTFromReport()
+        {
+            // Only sync if we have TVD from report
+            if (!ReportTVD.HasValue || ReportTVD.Value <= 0)
+                return;
+
+            var targetTVD = ReportTVD.Value;
+            var targetBHT = ReportMaxBHT ?? 0;
+
+            // Find or create BHT point
+            var existingBht = ThermalGradientPoints.FirstOrDefault(p => p.Label == "BHT");
+            
+            if (existingBht != null)
+            {
+                // Only update if the point is locked (synced from report) or if values have changed
+                bool shouldUpdate = existingBht.IsLocked || 
+                                    Math.Abs(existingBht.TVD - targetTVD) > 0.01 ||
+                                    (targetBHT > 0 && Math.Abs(existingBht.Temperature - targetBHT) > 0.1);
+
+                if (shouldUpdate)
+                {
+                    // Temporarily disable property change notifications to avoid recursive updates
+                    existingBht.PropertyChanged -= OnThermalPointPropertyChanged;
+                    
+                    existingBht.TVD = targetTVD;
+                    if (targetBHT > 0)
+                    {
+                        existingBht.Temperature = targetBHT;
+                        existingBht.IsLocked = true; // Lock if we have BHT from report
+                    }
+                    else if (existingBht.IsLocked)
+                    {
+                        // Keep locked if it was previously locked, but allow temperature to be updated
+                        existingBht.IsLocked = true;
+                    }
+                    
+                    existingBht.PropertyChanged += OnThermalPointPropertyChanged;
+                    IsBHTLocked = targetBHT > 0 || existingBht.IsLocked;
+                }
+            }
+            else if (targetTVD > 0)
+            {
+                // Create new BHT point
+                double suggestedTemp = targetBHT > 0 ? targetBHT : 180.0;
+                
+                // If no BHT from report, try to interpolate from existing points
+                if (targetBHT <= 0 && ThermalGradientPoints.Count >= 2)
+                {
+                    suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), targetTVD);
+                }
+
+                var newPoint = new ThermalGradientPoint(_nextId++, targetTVD, suggestedTemp);
+                newPoint.Label = "BHT";
+                newPoint.IsLocked = targetBHT > 0; // Lock if synced from report
+                newPoint.PropertyChanged += OnThermalPointPropertyChanged;
+                ThermalGradientPoints.Add(newPoint);
+                IsBHTLocked = targetBHT > 0;
+                
+                AutoSortPoints();
+            }
+
+            // Update MaxWellboreTVD to match Report TVD (only if different)
+            if (targetTVD > 0 && (MaxWellboreTVD == 0 || Math.Abs(MaxWellboreTVD - targetTVD) > 0.01))
+            {
+                MaxWellboreTVD = targetTVD;
+            }
+        }
+
+        /// <summary>
+        /// Public method to sync with Report data (called from external sources)
+        /// </summary>
+        public void SyncWithReport(double? reportTVD, double? reportMaxBHT)
+        {
+            ReportTVD = reportTVD;
+            ReportMaxBHT = reportMaxBHT;
+            SyncBHTFromReport();
+            
+            if (reportTVD.HasValue && reportMaxBHT.HasValue)
+            {
+                ToastNotificationService.Instance.ShowSuccess($"✓ Sincronizado con Daily Report: TVD {reportTVD.Value:F0} ft, BHT {reportMaxBHT.Value:F1}°F.");
+            }
+        }
+
         private void SyncWithSurvey()
         {
             if (!CanImportFromSurvey)
@@ -475,28 +681,49 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             }
 
             // Remove any existing point that might be the BHT from a previous sync to avoid duplicates
+            // But only if it's not locked from report
             var existingBht = ThermalGradientPoints.FirstOrDefault(p => p.Label == "BHT");
-            if (existingBht != null)
+            if (existingBht != null && !IsBHTLocked)
             {
                 ThermalGradientPoints.Remove(existingBht);
             }
 
-            // Suggest a BHT temperature based on existing data (interpolation) if possible
-            double suggestedTemp = 180.0;
-            if (ThermalGradientPoints.Count >= 2)
+            // Update Surface Temperature to match Ambient Temperature
+            var surfacePoint = ThermalGradientPoints.FirstOrDefault(p => Math.Abs(p.TVD) < 0.01 || p.Label == "Surface");
+            if (surfacePoint != null)
             {
-                suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), MaxWellboreTVD);
+                surfacePoint.Temperature = AmbientTemperature;
             }
 
-            var newPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, suggestedTemp);
-            newPoint.Label = "BHT"; 
-            newPoint.PropertyChanged += OnThermalPointPropertyChanged;
-            ThermalGradientPoints.Add(newPoint);
+            // Only update BHT if not locked from report
+            if (!IsBHTLocked)
+            {
+                // Suggest a BHT temperature based on existing data (interpolation) if possible
+                double suggestedTemp = 180.0;
+                if (ThermalGradientPoints.Count >= 2)
+                {
+                    suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), MaxWellboreTVD);
+                }
 
-            // Auto-sort to ensure correct order
-            AutoSortPoints();
+                // Create or update BHT point with TVD from MaxWellboreTVD
+                if (existingBht == null)
+                {
+                    var newPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, suggestedTemp);
+                    newPoint.Label = "BHT"; 
+                    newPoint.PropertyChanged += OnThermalPointPropertyChanged;
+                    ThermalGradientPoints.Add(newPoint);
+                }
+                else
+                {
+                    existingBht.TVD = MaxWellboreTVD;
+                    existingBht.Temperature = suggestedTemp;
+                }
 
-            ToastNotificationService.Instance.ShowSuccess($"Sincronizado con Survey: TVD máxima {MaxWellboreTVD:F0} ft.");
+                // Auto-sort to ensure correct order
+                AutoSortPoints();
+            }
+
+            ToastNotificationService.Instance.ShowSuccess($"✓ Sincronizado con Survey: TVD máxima {MaxWellboreTVD:F0} ft, Temperatura Ambiente {AmbientTemperature:F1}°F.");
         }
 
         private void AddFormation()
@@ -542,6 +769,7 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             // Validar antes de recalcular para que ShowChart refleje el estado correcto
             ValidateAllPoints();
             RecalculateSummaryStatistics();
+            UpdateChartScaling();
             UpdateChart();
         }
 
@@ -600,16 +828,31 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             var orderingErrors = _thermalService.ValidateTVDOrdering(ThermalGradientPoints.ToList());
             errors.AddRange(orderingErrors);
 
-            // BR-TG-002: TVD Range Validation
-            if (MaxWellboreTVD > 0)
-            {
-                var rangeErrors = _thermalService.ValidateTVDRange(ThermalGradientPoints.ToList(), MaxWellboreTVD);
-                errors.AddRange(rangeErrors);
-            }
+            // BR-TG-002: TVD Range Validation (Clip to CurrentDepth/Report TVD)
+            double depthLimit = CurrentDepth > 0 ? CurrentDepth : (MaxWellboreTVD > 0 ? MaxWellboreTVD : double.MaxValue);
+            
+            var rangeErrors = _thermalService.ValidateTVDRange(ThermalGradientPoints.ToList(), depthLimit);
+            errors.AddRange(rangeErrors);
 
-            // BR-TG-003: Temperature Gradient Logic
+            // BR-TG-003: Temperature Gradient Logic (includes validation for decreasing temperature)
             var gradientWarnings = _thermalService.ValidateTemperatureGradient(ThermalGradientPoints.ToList());
             errors.AddRange(gradientWarnings);
+            
+            // Additional validation: Check for temperature decreasing with depth (critical error)
+            var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
+            for (int i = 0; i < sortedPoints.Count - 1; i++)
+            {
+                var p1 = sortedPoints[i];
+                var p2 = sortedPoints[i + 1];
+                
+                if (p2.Temperature < p1.Temperature)
+                {
+                    errors.Add($"❌ ERROR CRÍTICO: La temperatura disminuye con la profundidad (ID {p2.Id}: {p1.Temperature:F1}°F @ {p1.TVD:F0}ft → {p2.Temperature:F1}°F @ {p2.TVD:F0}ft). Esto es físicamente imposible.");
+                    // Mark the point with error
+                    p2.HasValidationWarning = true;
+                    p2.ValidationMessage = "Temperatura decreciente - físicamente imposible";
+                }
+            }
 
             // Clear per-point warnings
             foreach (var p in ThermalGradientPoints)
@@ -692,6 +935,8 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 AverageGradient = 0;
                 RegressionSlope = 0;
                 RegressionIntercept = 0;
+                WaterGradient = 0;
+                GeothermalGradient = 0;
                 OnPropertyChanged(nameof(ShowChart));
                 return;
             }
@@ -723,6 +968,9 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     SegmentGradients.Add(segment);
                 }
                 
+                // Calculate segmented gradients (Water vs Geothermal for offshore wells)
+                CalculateSegmentedGradients();
+                
                 // Calculate temperature zones
                 CalculateTemperatureZones(sortedPoints);
             }
@@ -733,11 +981,14 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 AverageGradient = 0;
                 RegressionSlope = 0;
                 RegressionIntercept = 0;
+                WaterGradient = 0;
+                GeothermalGradient = 0;
                 SegmentGradients.Clear();
                 TemperatureZones = string.Empty;
             }
 
             // Notificar cambio de ShowChart (depende de DataPointsCount y HasValidationError)
+            UpdateChartScaling();
             OnPropertyChanged(nameof(ShowChart));
         }
 
@@ -814,8 +1065,94 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             UpdatePointLabels();
         }
 
+        private void UpdateChartScaling()
+        {
+            if (ThermalGradientPoints.Count == 0)
+            {
+                _xAxisMinValue = 50;
+                _xAxisMaxValue = 250;
+            }
+            else
+            {
+                var validPoints = ThermalGradientPoints.Where(p => !double.IsNaN(p.Temperature) && !double.IsInfinity(p.Temperature)).ToList();
+                if (validPoints.Count == 0)
+                {
+                    _xAxisMinValue = 50;
+                    _xAxisMaxValue = 250;
+                }
+                else
+                {
+                    var minTemp = validPoints.Min(p => p.Temperature);
+                    var maxTemp = validPoints.Max(p => p.Temperature);
+
+                    // Ensure at least 20 degree range for the X axis
+                    if (maxTemp - minTemp < 20)
+                    {
+                        double mid = (maxTemp + minTemp) / 2;
+                        _xAxisMinValue = Math.Max(0, mid - 10);
+                        _xAxisMaxValue = mid + 10;
+                    }
+                    else
+                    {
+                        // Add 5% padding
+                        double padding = (maxTemp - minTemp) * 0.05;
+                        _xAxisMinValue = Math.Max(0, minTemp - padding);
+                        _xAxisMaxValue = maxTemp + padding;
+                    }
+                }
+            }
+
+            OnPropertyChanged(nameof(XAxisMinValue));
+            OnPropertyChanged(nameof(XAxisMaxValue));
+            OnPropertyChanged(nameof(YAxisMinValue));
+        }
+
         private void UpdateChart()
         {
+            // Ensure SeriesCollection is initialized
+            if (SeriesCollection == null || SeriesCollection.Count == 0)
+            {
+                // Re-initialize if needed (shouldn't happen, but safety check)
+                SeriesCollection = new SeriesCollection
+                {
+                    new LineSeries
+                    {
+                        Title = "Temperature",
+                        Values = new ChartValues<ObservablePoint>(),
+                        PointGeometry = DefaultGeometries.Circle,
+                        PointGeometrySize = 8,
+                        PointForeground = Brushes.Red,
+                        LineSmoothness = 0,
+                        Stroke = Brushes.Red,
+                        StrokeThickness = 3,
+                        Fill = Brushes.Transparent,
+                        LabelPoint = point => $"Depth: {Math.Abs(point.Y):N0} ft | Temp: {point.X:N1} °F"
+                    },
+                    new LineSeries
+                    {
+                        Title = "Reference",
+                        Values = new ChartValues<ObservablePoint>(),
+                        StrokeDashArray = new DoubleCollection { 2, 2 },
+                        Fill = Brushes.Transparent,
+                        PointGeometry = null,
+                        LineSmoothness = 0,
+                        Stroke = (Brush?)new BrushConverter().ConvertFrom("#3B82F6") ?? Brushes.Blue,
+                        StrokeThickness = 1
+                    },
+                    new LineSeries
+                    {
+                        Title = "Prediction (TD)",
+                        Values = new ChartValues<ObservablePoint>(),
+                        Stroke = Brushes.Gray,
+                        StrokeThickness = 1.5,
+                        StrokeDashArray = new DoubleCollection { 4, 4 },
+                        Fill = Brushes.Transparent,
+                        PointGeometry = null,
+                        LineSmoothness = 0
+                    }
+                };
+            }
+
             if (SeriesCollection != null && SeriesCollection.Count > 0)
             {
                 var values = new ChartValues<ObservablePoint>();
@@ -909,10 +1246,30 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 // [1] Reference
                 // [2] Prediction (TD)
 
-                if (SeriesCollection.Count > 0) SeriesCollection[0].Values = values;
+                if (SeriesCollection.Count > 0 && SeriesCollection[0] != null)
+                {
+                    // Ensure Values collection is initialized and update safely to avoid LiveCharts NRE
+                    if (SeriesCollection[0].Values == null)
+                    {
+                        SeriesCollection[0].Values = new ChartValues<ObservablePoint>();
+                    }
+
+                    // Update existing ChartValues to avoid swapping the collection while LiveCharts is iterating
+                    if (SeriesCollection[0].Values is ChartValues<ObservablePoint> existingValues)
+                    {
+                        existingValues.Clear();
+                        foreach (var v in values)
+                            existingValues.Add(v);
+                    }
+                    else
+                    {
+                        // Fallback: assign new collection
+                        SeriesCollection[0].Values = values;
+                    }
+                }
 
                 // Reference Gradient Line
-                if (SeriesCollection.Count > 1)
+                if (SeriesCollection.Count > 1 && SeriesCollection[1] != null)
                 {
                     var refValues = new ChartValues<ObservablePoint>();
                     if (ShowReferenceLine && ThermalGradientPoints.Count > 0)
@@ -928,11 +1285,23 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                         refValues.Add(new ObservablePoint(startTemp, 0));
                         refValues.Add(new ObservablePoint(endTemp, -maxTVD));
                     }
-                    SeriesCollection[1].Values = refValues;
+                    if (SeriesCollection[1].Values == null)
+                        SeriesCollection[1].Values = new ChartValues<ObservablePoint>();
+
+                    if (SeriesCollection[1].Values is ChartValues<ObservablePoint> existingRef)
+                    {
+                        existingRef.Clear();
+                        foreach (var v in refValues)
+                            existingRef.Add(v);
+                    }
+                    else
+                    {
+                        SeriesCollection[1].Values = refValues;
+                    }
                 }
 
                 // Prediction Line (dotted to TD)
-                if (SeriesCollection.Count > 2)
+                if (SeriesCollection.Count > 2 && SeriesCollection[2] != null)
                 {
                     var predictionValues = new ChartValues<ObservablePoint>();
                     if (sortedPoints.Count >= 2 && MaxWellboreTVD > sortedPoints.Last().TVD)
@@ -943,7 +1312,19 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                         predictionValues.Add(new ObservablePoint(lastPoint.Temperature, -lastPoint.TVD));
                         predictionValues.Add(new ObservablePoint(predictedTempTD, -MaxWellboreTVD));
                     }
-                    SeriesCollection[2].Values = predictionValues;
+                    if (SeriesCollection[2].Values == null)
+                        SeriesCollection[2].Values = new ChartValues<ObservablePoint>();
+
+                    if (SeriesCollection[2].Values is ChartValues<ObservablePoint> existingPred)
+                    {
+                        existingPred.Clear();
+                        foreach (var v in predictionValues)
+                            existingPred.Add(v);
+                    }
+                    else
+                    {
+                        SeriesCollection[2].Values = predictionValues;
+                    }
                 }
 
                 // Total Depth Line Section
@@ -984,6 +1365,194 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
 
         #endregion
 
+        #region Offshore/Land Well Configuration
+
+        /// <summary>
+        /// Handles transition when switching between offshore and land well modes
+        /// </summary>
+        private void OnOffshoreModeChanged()
+        {
+            if (IsOffshoreWell)
+            {
+                // Transitioning to offshore: ensure Mudline exists
+                if (!ThermalGradientPoints.Any(p => p.Label == "Mudline"))
+                {
+                    //Insert Mudline at 4500ft default or 45% of depth
+                    double mudlineDepth = MaxWellboreTVD > 0 ? MaxWellboreTVD * 0.45 : 4500;
+                    double mudlineTemp = 110.0;
+                    
+                    if (ThermalGradientPoints.Count >= 2)
+                    {
+                        mudlineTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), mudlineDepth);
+                    }
+
+                    var mudlinePoint = new ThermalGradientPoint(_nextId++, mudlineDepth, mudlineTemp) { Label = "Mudline" };
+                    mudlinePoint.PropertyChanged += OnThermalPointPropertyChanged;
+                    ThermalGradientPoints.Add(mudlinePoint);
+                    AutoSortPoints();
+                }
+                CalculateSegmentedGradients();
+            }
+            else
+            {
+                // Transitioning to land: remove Mudline if present
+                var mudlinePoint = ThermalGradientPoints.FirstOrDefault(p => p.Label == "Mudline");
+                if (mudlinePoint != null)
+                {
+                    mudlinePoint.PropertyChanged -= OnThermalPointPropertyChanged;
+                    ThermalGradientPoints.Remove(mudlinePoint);
+                }
+                WaterGradient = 0;
+            }
+
+            RecalculateSummaryStatistics();
+            UpdateChart();
+            OnPropertyChanged(nameof(IsOffshoreWell));
+        }
+
+        /// <summary>
+        /// Updates Surface temperature from Ambient Temperature
+        /// </summary>
+        private void UpdateSurfaceTemperature()
+        {
+            var surfacePoint = ThermalGradientPoints.FirstOrDefault(p => Math.Abs(p.TVD) < 0.01 || p.Label == "Surface");
+            if (surfacePoint != null)
+            {
+                surfacePoint.Temperature = AmbientTemperature;
+            }
+            SurfaceTemperature = AmbientTemperature;
+        }
+
+        /// <summary>
+        /// Calculates separate gradients for water column (Surface to Mudline) and geothermal (Mudline to BHT)
+        /// For land wells, only calculates geothermal gradient (Surface to BHT)
+        /// </summary>
+        private void CalculateSegmentedGradients()
+        {
+            if (ThermalGradientPoints.Count < 2)
+            {
+                WaterGradient = 0;
+                GeothermalGradient = 0;
+                return;
+            }
+
+            var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
+            var surfacePoint = sortedPoints.FirstOrDefault(p => Math.Abs(p.TVD) < 0.01 || p.Label == "Surface");
+            var mudlinePoint = sortedPoints.FirstOrDefault(p => p.Label == "Mudline");
+            var bhtPoint = sortedPoints.LastOrDefault(p => p.Label == "BHT") ?? sortedPoints.LastOrDefault();
+
+            if (IsOffshoreWell && mudlinePoint != null && surfacePoint != null)
+            {
+                // Offshore: Calculate Water Gradient (Surface to Mudline) and Geothermal Gradient (Mudline to BHT)
+                WaterGradient = _thermalService.CalculateGradient(
+                    surfacePoint.TVD, surfacePoint.Temperature,
+                    mudlinePoint.TVD, mudlinePoint.Temperature
+                );
+
+                // Geothermal Gradient: Mudline to BHT
+                if (bhtPoint != null && bhtPoint != mudlinePoint)
+                {
+                    GeothermalGradient = _thermalService.CalculateGradient(
+                        mudlinePoint.TVD, mudlinePoint.Temperature,
+                        bhtPoint.TVD, bhtPoint.Temperature
+                    );
+                }
+                else
+                {
+                    GeothermalGradient = AverageGradient;
+                }
+            }
+            else if (sortedPoints.Count >= 2)
+            {
+                // Land well: Only Geothermal Gradient (Surface to BHT), no Water Gradient
+                WaterGradient = 0;
+                if (surfacePoint != null && bhtPoint != null)
+                {
+                    GeothermalGradient = _thermalService.CalculateGradient(
+                        surfacePoint.TVD, surfacePoint.Temperature,
+                        bhtPoint.TVD, bhtPoint.Temperature
+                    );
+                }
+                else
+                {
+                    GeothermalGradient = AverageGradient;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Control Point Management
+
+        private void AddControlPoint()
+        {
+            // Create dialog to input TVD for new control point
+            double tvd = (ThermalGradientPoints.Any() ? ThermalGradientPoints.Max(p => p.TVD) / 2 : 5000);
+            double suggestedTemp = 0;
+
+            if (ThermalGradientPoints.Count >= 2)
+            {
+                suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), tvd);
+            }
+
+            var newPoint = new ThermalGradientPoint(_nextId++, tvd, suggestedTemp);
+            newPoint.Label = "Control Point";
+            newPoint.PropertyChanged += OnThermalPointPropertyChanged;
+            ThermalGradientPoints.Add(newPoint);
+
+            AutoSortPoints();
+            ToastNotificationService.Instance.ShowSuccess("Control point added at " + tvd.ToString("F0") + " ft");
+        }
+
+        private void RemoveMudline()
+        {
+            if (!IsOffshoreWell) return;
+
+            var mudlinePoint = ThermalGradientPoints.FirstOrDefault(p => p.Label == "Mudline");
+            if (mudlinePoint != null)
+            {
+                mudlinePoint.PropertyChanged -= OnThermalPointPropertyChanged;
+                ThermalGradientPoints.Remove(mudlinePoint);
+                ToastNotificationService.Instance.ShowSuccess("Mudline point removed");
+            }
+        }
+
+        private void AddMudline()
+        {
+            if (!IsOffshoreWell) return;
+
+            if (ThermalGradientPoints.Any(p => p.Label == "Mudline"))
+            {
+                ToastNotificationService.Instance.ShowWarning("Mudline already exists");
+                return;
+            }
+
+            // Find optimal position between Surface and BHT
+            var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
+            double tvd = 4500; // Default mudline depth
+
+            if (sortedPoints.Count > 1)
+            {
+                var lastPoint = sortedPoints.Last();
+                tvd = lastPoint.TVD * 0.45; // Position at 45% of deepest point
+            }
+
+            double suggestedTemp = 0;
+            if (ThermalGradientPoints.Count >= 2)
+            {
+                suggestedTemp = _thermalService.InterpolateTemperature(ThermalGradientPoints.ToList(), tvd);
+            }
+
+            var mudlinePoint = new ThermalGradientPoint(_nextId++, tvd, suggestedTemp) { Label = "Mudline" };
+            mudlinePoint.PropertyChanged += OnThermalPointPropertyChanged;
+            ThermalGradientPoints.Add(mudlinePoint);
+
+            AutoSortPoints();
+            ToastNotificationService.Instance.ShowSuccess("Mudline point added at " + tvd.ToString("F0") + " ft");
+        }
+
+        #endregion
+
         #region WellContextService Integration
 
         /// <summary>
@@ -997,6 +1566,27 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             if (MaxWellboreTVD == 0 && newDepth > 0)
             {
                 MaxWellboreTVD = newDepth;
+            }
+        }
+
+        /// <summary>
+        /// Handles automatic synchronization when report thermal data (MaxBHT and TVD) changes
+        /// </summary>
+        private void OnReportThermalDataUpdated(object? sender, ReportThermalDataEventArgs e)
+        {
+            // Only sync if we have valid data and it's different from current values
+            if (e.ReportTVD.HasValue && e.ReportTVD.Value > 0)
+            {
+                // Avoid unnecessary updates if values haven't changed
+                bool tvdChanged = !ReportTVD.HasValue || Math.Abs(ReportTVD.Value - e.ReportTVD.Value) > 0.01;
+                bool bhtChanged = !ReportMaxBHT.HasValue || 
+                                  !e.ReportMaxBHT.HasValue || 
+                                  Math.Abs(ReportMaxBHT.Value - e.ReportMaxBHT.Value) > 0.1;
+
+                if (tvdChanged || bhtChanged)
+                {
+                    SyncWithReport(e.ReportTVD, e.ReportMaxBHT);
+                }
             }
         }
 

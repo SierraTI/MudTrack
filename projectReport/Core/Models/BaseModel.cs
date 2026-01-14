@@ -32,7 +32,7 @@ namespace ProjectReport.Models
             return Enumerable.Empty<string>();
         }
 
-        protected void AddError(string propertyName, string error)
+        public void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
                 _errors[propertyName] = new List<string>();
@@ -44,7 +44,7 @@ namespace ProjectReport.Models
             }
         }
 
-        protected void RemoveError(string propertyName, string error)
+        public void RemoveError(string propertyName, string error)
         {
             if (_errors.ContainsKey(propertyName) && _errors[propertyName].Contains(error))
             {
@@ -55,8 +55,15 @@ namespace ProjectReport.Models
             }
         }
 
-        protected void ClearErrors(string propertyName)
+        public void ClearErrors(string? propertyName)
         {
+            if (propertyName == null)
+            {
+                _errors.Clear();
+                OnErrorsChanged(string.Empty);
+                return;
+            }
+
             if (_errors.ContainsKey(propertyName))
             {
                 _errors.Remove(propertyName);

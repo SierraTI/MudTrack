@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Services.Wellbore
 {
@@ -65,6 +66,46 @@ namespace ProjectReport.Services.Wellbore
             // Validar secuencia de IDs
             ValidateIdSequence(list, result);
 
+            // B5: Primera Sección Comienza en 0.00
+            if (list[0].TopMD.GetValueOrDefault() != 0)
+            {
+                result.Items.Add(new ValidationError 
+                { 
+                    ComponentId = list[0].Id.ToString(), 
+                    ComponentName = list[0].Name, 
+                    Message = "La primera sección debe comenzar en 0.00 ft", 
+                    Severity = ValidationSeverity.Warning 
+                });
+            }
+
+            // B6: Total Depth Sync - Última Sección debe coincidir con Report MD
+            // Esta validación compara el BottomMD de la última sección contra el Report MD (totalWellboreMD)
+            var last = list.Last();
+            if (totalWellboreMD > 0)
+            {
+                if (!last.BottomMD.HasValue)
+                {
+                    result.Items.Add(new ValidationError 
+                    { 
+                        ComponentId = last.Id.ToString(), 
+                        ComponentName = last.Name, 
+                        Message = $"Error B6: La última sección debe tener Bottom MD igual al Report MD ({totalWellboreMD:F2} ft)", 
+                        Severity = ValidationSeverity.Error 
+                    });
+                }
+                else if (Math.Abs(last.BottomMD.Value - totalWellboreMD) > 0.01)
+                {
+                    double difference = Math.Abs(last.BottomMD.Value - totalWellboreMD);
+                    result.Items.Add(new ValidationError 
+                    { 
+                        ComponentId = last.Id.ToString(), 
+                        ComponentName = last.Name, 
+                        Message = $"Error B6: La última sección termina en {last.BottomMD.Value:F2} ft pero el Report MD es {totalWellboreMD:F2} ft. Diferencia: {difference:F2} ft", 
+                        Severity = ValidationSeverity.Error 
+                    });
+                }
+            }
+
             // Validaciones generales por sección
             for (int i = 0; i < list.Count; i++)
             {
@@ -78,7 +119,7 @@ namespace ProjectReport.Services.Wellbore
                 ValidateDepths(cur, prev, totalWellboreMD, result);
 
                 // Categoría C: Tipo de sección
-                ValidateSectionType(cur, prev, result);
+                ValidateComponent(cur, prev, result);
 
                 // Categoría D: Volumen
                 ValidateVolume(cur, result);
@@ -162,7 +203,7 @@ namespace ProjectReport.Services.Wellbore
             // A5: OD no puede ser cero
             if (cur.OD.GetValueOrDefault() <= 0.001)
             {
-                string msg = cur.SectionType == WellboreSectionType.OpenHole
+                string msg = cur.Component == ComponentType.OpenHole
                     ? "Error A5: OD (Hole Diameter) no puede ser 0.000"
                     : "Error A5: OD no puede ser 0.000";
                 result.Items.Add(new ValidationError
@@ -174,20 +215,35 @@ namespace ProjectReport.Services.Wellbore
                 });
             }
 
-            // A6: ID no puede ser cero (excepto OpenHole)
-            if (cur.SectionType != WellboreSectionType.OpenHole && cur.ID.GetValueOrDefault() <= 0.001)
+            // A6: ID Validation
+            // For OpenHole: ID must be exactly 0.000 (no inner pipe)
+            if (cur.Component == ComponentType.OpenHole)
+            {
+                if (cur.ID.GetValueOrDefault() > 0.001)
+                {
+                    result.Items.Add(new ValidationError
+                    {
+                        ComponentId = cur.Id.ToString(),
+                        ComponentName = cur.Name,
+                        Message = "Error A6: OpenHole debe tener ID = 0.000 (no hay tubería interna)",
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+            }
+            // For Casing/Liner: ID must be greater than 0
+            else if (cur.Component != ComponentType.OpenHole && cur.ID.GetValueOrDefault() <= 0.001)
             {
                 result.Items.Add(new ValidationError
                 {
                     ComponentId = cur.Id.ToString(),
                     ComponentName = cur.Name,
-                    Message = "Error A6: ID no puede ser 0.000 para secciones tubulares",
+                    Message = "Error A6: ID no puede ser 0.000 para secciones tubulares (Casing/Liner)",
                     Severity = ValidationSeverity.Error
                 });
             }
 
             // A1: ID < OD
-            if (cur.SectionType != WellboreSectionType.OpenHole && 
+            if (cur.Component != ComponentType.OpenHole && 
                 cur.ID.GetValueOrDefault() >= cur.OD.GetValueOrDefault() && 
                 cur.OD.GetValueOrDefault() > 0.001)
             {
@@ -244,29 +300,63 @@ namespace ProjectReport.Services.Wellbore
 
             if (prev != null)
             {
-                // B3: No solapamientos
-                if (cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value < prev.BottomMD.Value)
+                // BR-WG-002/003: Casing Override
+                // El "Casing Override" ocurre cuando una sección tiene el mismo Top MD que la anterior pero un Bottom MD mayor
+                bool isOverride = false;
+                if (cur.TopMD.HasValue && prev.TopMD.HasValue && 
+                    cur.BottomMD.HasValue && prev.BottomMD.HasValue)
+                {
+                    isOverride = Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01 && 
+                                 cur.BottomMD.Value >= prev.BottomMD.Value;
+
+                    if (isOverride)
+                    {
+                        // Regla BR-WG-002/003: Es un override válido. No marcar como error de solapamiento (B3).
+                        result.Items.Add(new ValidationError 
+                        { 
+                            ComponentId = cur.Id.ToString(),
+                            ComponentName = cur.Name,
+                            Message = "Casing Override detectado: la sección actual reemplaza la anterior en este intervalo.", 
+                            Severity = ValidationSeverity.Warning 
+                        });
+                    }
+                }
+
+                // B3: No solapamientos (solo si no es un override)
+                if (!isOverride && cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value < prev.BottomMD.Value)
                 {
                     result.Items.Add(new ValidationError
                     {
                         ComponentId = cur.Id.ToString(),
                         ComponentName = cur.Name,
-                        Message = "Error B3: Las secciones se solapan",
+                        Message = "Error B3: Las secciones se solapan. Revise profundidades.",
                         Severity = ValidationSeverity.Error
                     });
                 }
 
-                // B2: Detectar gaps
-                if (cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value > prev.BottomMD.Value + 0.01)
+                // B2: No Gaps - Top MD debe ser igual al Bottom MD de la sección anterior
+                if (cur.TopMD.HasValue && prev.BottomMD.HasValue)
                 {
                     double gap = cur.TopMD.Value - prev.BottomMD.Value;
-                    result.Items.Add(new ValidationError
+                    if (Math.Abs(gap) > 0.01)
                     {
-                        ComponentId = cur.Id.ToString(),
-                        ComponentName = cur.Name,
-                        Message = $"Warning B2: Gap de {gap:F2} ft detectado entre secciones",
-                        Severity = ValidationSeverity.Warning
-                    });
+                        if (gap > 0)
+                        {
+                            // Gap positivo: hay un espacio sin cubrir
+                            result.Items.Add(new ValidationError
+                            {
+                                ComponentId = cur.Id.ToString(),
+                                ComponentName = cur.Name,
+                                Message = $"Error B2: Gap de {gap:F2} ft detectado. Top MD ({cur.TopMD.Value:F2} ft) debe ser igual al Bottom MD anterior ({prev.BottomMD.Value:F2} ft)",
+                                Severity = ValidationSeverity.Error
+                            });
+                        }
+                        else
+                        {
+                            // Gap negativo: solapamiento (ya manejado en B3)
+                            // Pero si no es override, ya se marcó como error en B3
+                        }
+                    }
                 }
             }
         }
@@ -274,12 +364,12 @@ namespace ProjectReport.Services.Wellbore
         /// <summary>
         /// CATEGORÍA C: Validaciones de tipo de sección (C1-C4).
         /// </summary>
-        private void ValidateSectionType(WellboreComponent cur, WellboreComponent? prev, ValidationResult result)
+        private void ValidateComponent(WellboreComponent cur, WellboreComponent? prev, ValidationResult result)
         {
             // C1: Casing Depth Progression
             if (prev != null &&
-                (cur.SectionType == WellboreSectionType.Casing || cur.SectionType == WellboreSectionType.Liner) &&
-                (prev.SectionType == WellboreSectionType.Casing || prev.SectionType == WellboreSectionType.Liner))
+                (cur.Component == ComponentType.Casing || cur.Component == ComponentType.Liner) &&
+                (prev.Component == ComponentType.Casing || prev.Component == ComponentType.Liner))
             {
                 bool isCasingOverride = cur.TopMD.HasValue && prev.TopMD.HasValue &&
                                        Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01 &&
@@ -298,8 +388,8 @@ namespace ProjectReport.Services.Wellbore
                 }
             }
 
-            // C3/C4: OpenHole Washout Requerido
-            if (cur.SectionType == WellboreSectionType.OpenHole)
+            // C3/C4: OpenHole Washout Validation
+            if (cur.Component == ComponentType.OpenHole)
             {
                 if (!cur.Washout.HasValue)
                 {
@@ -319,6 +409,17 @@ namespace ProjectReport.Services.Wellbore
                         ComponentName = cur.Name,
                         Message = "Error C3: Washout debe estar entre 0% y 100%",
                         Severity = ValidationSeverity.Error
+                    });
+                }
+                else if (Math.Abs(cur.Washout.Value) < 0.01)
+                {
+                    // C3: Washout of 0.00% is physically unlikely - warning
+                    result.Items.Add(new ValidationError
+                    {
+                        ComponentId = cur.Id.ToString(),
+                        ComponentName = cur.Name,
+                        Message = "Warning C3: Washout de 0.00% es físicamente improbable. Establezca un valor realista entre 5% y 25%",
+                        Severity = ValidationSeverity.Warning
                     });
                 }
                 else if (cur.Washout.Value > 50)

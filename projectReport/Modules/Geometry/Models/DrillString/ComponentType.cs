@@ -19,6 +19,7 @@ namespace ProjectReport.Models.Geometry.DrillString
         NearBit,
         Stabilizer, // Added for stabilizer components
         Bit,        // Kept for backward compatibility
-        BitSub      // Kept for backward compatibility
+        BitSub,     // Kept for backward compatibility
+        OpenHole    // Added for Wellbore Section Compatibility
     }
 }

@@ -2,7 +2,7 @@
   "$id": "1",
   "Name": "Y-23A",
   "WellName": "Well-04",
-  "LastModified": "2026-01-07T15:55:57.8096152-05:00",
+  "LastModified": "2026-01-13T10:43:04.3124728-05:00",
   "ActiveWellId": 1,
   "Wells": {
     "$id": "2",
@@ -10,11 +10,11 @@
       {
         "$id": "3",
         "Id": 1,
-        "WellName": "Guapo tu",
+        "WellName": "New Well 1",
         "Operator": "",
         "OperatorLogoPath": "",
         "LoadFluid": "",
-        "SpudDate": "2026-01-07T15:36:29.0079828-05:00",
+        "SpudDate": "2026-01-13T10:43:04.3103868-05:00",
         "Trajectory": "",
         "WellType": "",
         "RigName": "",
@@ -40,8 +40,8 @@
           "$values": []
         },
         "Status": "Draft",
-        "CreatedDate": "2026-01-07T15:36:29.0079448-05:00",
-        "LastModified": "2026-01-07T15:36:35.1575689-05:00",
+        "CreatedDate": "2026-01-13T10:43:04.3102521-05:00",
+        "LastModified": "2026-01-13T10:43:04.3107369-05:00",
         "LastModifiedBy": "",
         "WellboreComponents": {
           "$id": "5",
@@ -68,16 +68,14 @@
           "$values": [
             {
               "$id": "11",
-              "IntervalNumber": "1 (Copy)",
+              "IntervalNumber": "1",
               "RigName": "",
               "Contractor": "",
               "RigType": "",
-              "ReportDateTime": "2026-01-07T16:01:52.1472638-05:00",
-              "MD": 5000,
-              "TVD": 4900,
+              "ReportDateTime": "2026-01-13T10:43:10.0079505-05:00",
               "Activity": "",
-              "WellSection": "Original",
-              "PresentActivity": "Montando BHA 1",
+              "WellSection": "",
+              "PresentActivity": "",
               "PrimaryFluidSet": "",
               "OtherActiveFluids": "",
               "OperationalIssues": false,
@@ -106,165 +104,33 @@
               "IsDraft": true,
               "Error": "",
               "Id": 1,
-              "CreatedDate": "2026-01-07T16:01:52.1476753-05:00",
-              "HasErrors": false,
-              "IsValid": true
-            },
-            {
-              "$id": "17",
-              "IntervalNumber": "1 (Copy) (Copy)",
-              "RigName": "",
-              "Contractor": "",
-              "RigType": "",
-              "ReportDateTime": "2026-01-07T16:03:07.7765689-05:00",
-              "MD": 5000,
-              "TVD": 4900,
-              "Activity": "",
-              "WellSection": "Original",
-              "PresentActivity": "Montando BHA 1",
-              "PrimaryFluidSet": "",
-              "OtherActiveFluids": "",
-              "OperationalIssues": false,
-              "Pumps": {
-                "$id": "18",
-                "$values": []
-              },
-              "Screens": {
-                "$id": "19",
-                "$values": []
-              },
-              "OperatorReps": {
-                "$id": "20",
-                "$values": []
-              },
-              "ContractorReps": {
-                "$id": "21",
-                "$values": []
-              },
-              "BaroidReps": {
-                "$id": "22",
-                "$values": []
-              },
-              "TotalGpm": 0,
-              "SurfacePressureLoss": 0,
-              "IsDraft": true,
-              "Error": "",
-              "Id": 2,
-              "CreatedDate": "2026-01-07T16:03:07.7765795-05:00",
-              "HasErrors": false,
-              "IsValid": true
-            },
-            {
-              "$id": "23",
-              "IntervalNumber": "1 (Copy) (Copy)",
-              "RigName": "",
-              "Contractor": "",
-              "RigType": "",
-              "ReportDateTime": "2026-01-07T16:03:10.3449884-05:00",
-              "MD": 5000,
-              "TVD": 4900,
-              "Activity": "",
-              "WellSection": "Original",
-              "PresentActivity": "Montando BHA 1",
-              "PrimaryFluidSet": "",
-              "OtherActiveFluids": "",
-              "OperationalIssues": false,
-              "Pumps": {
-                "$id": "24",
-                "$values": []
-              },
-              "Screens": {
-                "$id": "25",
-                "$values": []
-              },
-              "OperatorReps": {
-                "$id": "26",
-                "$values": []
-              },
-              "ContractorReps": {
-                "$id": "27",
-                "$values": []
-              },
-              "BaroidReps": {
-                "$id": "28",
-                "$values": []
-              },
-              "TotalGpm": 0,
-              "SurfacePressureLoss": 0,
-              "IsDraft": true,
-              "Error": "",
-              "Id": 3,
-              "CreatedDate": "2026-01-07T16:03:10.3449973-05:00",
-              "HasErrors": false,
-              "IsValid": true
-            },
-            {
-              "$id": "29",
-              "IntervalNumber": "1 (Copy) (Copy)",
-              "RigName": "",
-              "Contractor": "",
-              "RigType": "",
-              "ReportDateTime": "2026-01-07T16:03:10.575778-05:00",
-              "MD": 5000,
-              "TVD": 4900,
-              "Activity": "",
-              "WellSection": "Original",
-              "PresentActivity": "Montando BHA 1",
-              "PrimaryFluidSet": "",
-              "OtherActiveFluids": "",
-              "OperationalIssues": false,
-              "Pumps": {
-                "$id": "30",
-                "$values": []
-              },
-              "Screens": {
-                "$id": "31",
-                "$values": []
-              },
-              "OperatorReps": {
-                "$id": "32",
-                "$values": []
-              },
-              "ContractorReps": {
-                "$id": "33",
-                "$values": []
-              },
-              "BaroidReps": {
-                "$id": "34",
-                "$values": []
-              },
-              "TotalGpm": 0,
-              "SurfacePressureLoss": 0,
-              "IsDraft": true,
-              "Error": "",
-              "Id": 4,
-              "CreatedDate": "2026-01-07T16:03:10.5757894-05:00",
+              "CreatedDate": "2026-01-13T10:43:10.0079898-05:00",
               "HasErrors": false,
               "IsValid": true
             }
           ]
         },
         "RigProfile": {
-          "$id": "35",
+          "$id": "17",
           "RigName": "",
           "Contractor": "",
           "RigType": "",
           "RkbElevation": 0,
           "CasingHeadElevation": 0,
           "SurfaceEquipment": {
-            "$id": "36",
+            "$id": "18",
             "$values": []
           },
           "Pumps": {
-            "$id": "37",
+            "$id": "19",
             "$values": []
           },
           "SolidsControl": {
-            "$id": "38",
+            "$id": "20",
             "$values": []
           },
           "Pits": {
-            "$id": "39",
+            "$id": "21",
             "$values": []
           },
           "Id": 0,
@@ -273,99 +139,7 @@
           "IsValid": true
         },
         "LastReport": {
-          "$ref": "29"
-        },
-        "IsRequiredFieldsComplete": false,
-        "HasErrors": false,
-        "IsValid": true
-      },
-      {
-        "$id": "40",
-        "Id": 2,
-        "WellName": "New Well 2",
-        "Operator": "",
-        "OperatorLogoPath": "",
-        "LoadFluid": "",
-        "SpudDate": "2026-01-07T15:55:57.8091422-05:00",
-        "Trajectory": "",
-        "WellType": "",
-        "RigName": "",
-        "RigType": "",
-        "Contractor": "",
-        "Location": "",
-        "Country": "",
-        "Basin": "",
-        "State": "",
-        "Municipality": "",
-        "Field": "",
-        "CurrentOperation": "",
-        "DrillingDays": 0,
-        "TargetFormation": "",
-        "ProjectCode": "",
-        "CostCenter": "",
-        "AFENumber": "",
-        "WellObjectives": "",
-        "SpecialRequirements": "",
-        "Notes": "",
-        "CustomTags": {
-          "$id": "41",
-          "$values": []
-        },
-        "Status": "Draft",
-        "CreatedDate": "2026-01-07T15:55:57.8091417-05:00",
-        "LastModified": "2026-01-07T15:55:57.8091458-05:00",
-        "LastModifiedBy": "",
-        "WellboreComponents": {
-          "$id": "42",
-          "$values": []
-        },
-        "DrillStringComponents": {
-          "$id": "43",
-          "$values": []
-        },
-        "SurveyPoints": {
-          "$id": "44",
-          "$values": []
-        },
-        "WellTests": {
-          "$id": "45",
-          "$values": []
-        },
-        "ThermalGradientPoints": {
-          "$id": "46",
-          "$values": []
-        },
-        "Reports": {
-          "$id": "47",
-          "$values": []
-        },
-        "RigProfile": {
-          "$id": "48",
-          "RigName": "",
-          "Contractor": "",
-          "RigType": "",
-          "RkbElevation": 0,
-          "CasingHeadElevation": 0,
-          "SurfaceEquipment": {
-            "$id": "49",
-            "$values": []
-          },
-          "Pumps": {
-            "$id": "50",
-            "$values": []
-          },
-          "SolidsControl": {
-            "$id": "51",
-            "$values": []
-          },
-          "Pits": {
-            "$id": "52",
-            "$values": []
-          },
-          "Id": 0,
-          "CreatedDate": "0001-01-01T00:00:00",
-          "HasErrors": false,
-          "IsValid": true
+          "$ref": "11"
         },
         "IsRequiredFieldsComplete": false,
         "HasErrors": false,

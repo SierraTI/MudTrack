@@ -58,6 +58,9 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             SaveCommand = new RelayCommand(async _ => await SaveAsync());
             SaveAndReturnCommand = new RelayCommand(async _ => await SaveAndReturnAsync());
             ResetToDefaultCommand = new RelayCommand(_ => ResetToDefault());
+
+            // Subscribe to global flow rate
+            _contextService.FlowRateUpdated += (s, gpm) => { if (Math.Abs(_testGpm - gpm) > 0.01) TestGpm = gpm; };
         }
 
         private void OnWellChanged(object? sender, Well well)
@@ -125,7 +128,14 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public double TestGpm
         {
             get => _testGpm;
-            set { if (SetProperty(ref _testGpm, value)) OnPropertyChanged(nameof(TotalSurfaceLoss)); }
+            set 
+            { 
+                if (SetProperty(ref _testGpm, value)) 
+                {
+                    OnPropertyChanged(nameof(TotalSurfaceLoss)); 
+                    _contextService.UpdateFlowRate(value); // Sync to global
+                }
+            }
         }
 
         public double TotalSurfaceLoss

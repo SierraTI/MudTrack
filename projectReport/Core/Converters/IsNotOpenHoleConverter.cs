@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
-using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Converters
 {
@@ -9,9 +9,9 @@ namespace ProjectReport.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is WellboreSectionType sectionType)
+            if (value is ComponentType sectionType)
             {
-                return sectionType != WellboreSectionType.OpenHole;
+                return sectionType != ComponentType.OpenHole;
             }
             return true;
         }

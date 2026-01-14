@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Tests.Geometry
 {
@@ -19,7 +20,7 @@ namespace ProjectReport.Tests.Geometry
             // Expected Volume: ~6.96 bbl
             var component = new WellboreComponent
             {
-                SectionType = WellboreSectionType.OpenHole,
+                SectionType = ComponentType.OpenHole,
                 OD = 8.500,  // Hole diameter in inches
                 ID = 0.000,  // OpenHole has no inner pipe
                 TopMD = 200,
@@ -58,7 +59,7 @@ namespace ProjectReport.Tests.Geometry
             // Arrange
             var component = new WellboreComponent
             {
-                SectionType = WellboreSectionType.OpenHole,
+                SectionType = ComponentType.OpenHole,
                 OD = holeDiameter,
                 ID = 0.000,
                 TopMD = 0,
@@ -79,7 +80,7 @@ namespace ProjectReport.Tests.Geometry
             // Arrange - Casing section (annular volume based on ID)
             var component = new WellboreComponent
             {
-                SectionType = WellboreSectionType.Casing,
+                SectionType = ComponentType.Casing,
                 OD = 13.375,  // Outer diameter
                 ID = 12.615,  // Inner diameter
                 TopMD = 0,
@@ -106,7 +107,7 @@ namespace ProjectReport.Tests.Geometry
             // Arrange
             var component = new WellboreComponent
             {
-                SectionType = WellboreSectionType.OpenHole,
+                SectionType = ComponentType.OpenHole,
                 OD = 8.500,
                 ID = 0.000,
                 TopMD = 0,
@@ -127,7 +128,7 @@ namespace ProjectReport.Tests.Geometry
             // Arrange
             var component = new WellboreComponent
             {
-                SectionType = WellboreSectionType.OpenHole,
+                SectionType = ComponentType.OpenHole,
                 OD = 8.500,
                 TopMD = 0,
                 BottomMD = 100,
@@ -179,7 +180,7 @@ namespace ProjectReport.Tests.Geometry
             
             var component = new WellboreComponent
             {
-                SectionType = WellboreSectionType.OpenHole,
+                SectionType = ComponentType.OpenHole,
                 OD = holeDiameter,
                 ID = 0.000,
                 TopMD = 0,

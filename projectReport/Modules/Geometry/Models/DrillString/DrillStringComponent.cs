@@ -13,11 +13,9 @@ namespace ProjectReport.Models.Geometry.DrillString
     {
         private const double CUBIC_FEET_TO_BBL = 0.178107607; // 1 cubic foot = 0.178107607 barrels
 
+        private double? _topMD;
+        private double? _bottomMD;
         private double? _length;
-        private double? _od;
-        private double? _id;
-        private double _volume;
-        private ComponentType _componentType;
         private string _name = string.Empty;
 
         // Tubular properties
@@ -53,15 +51,50 @@ namespace ProjectReport.Models.Geometry.DrillString
             set { _volume = value; OnPropertyChanged(); }
         }
 
+        private double _volume;
+        private ComponentType _componentType;
+        private double? _od;
+        private double? _id;
+
+        public double? TopMD
+        {
+            get => _topMD;
+            set
+            {
+                if (SetProperty(ref _topMD, value))
+                {
+                    OnPropertyChanged(nameof(Length));
+                    OnPropertyChanged(nameof(InternalVolume));
+                    OnPropertyChanged(nameof(DisplacementVolume));
+                }
+            }
+        }
+
+        public double? BottomMD
+        {
+            get => _bottomMD;
+            set
+            {
+                if (SetProperty(ref _bottomMD, value))
+                {
+                    OnPropertyChanged(nameof(Length));
+                    OnPropertyChanged(nameof(InternalVolume));
+                    OnPropertyChanged(nameof(DisplacementVolume));
+                }
+            }
+        }
+
         public double InternalVolume
         {
             get
             {
                 // Internal Volume (bbl) = (ID² / 1029.4) × Length
-                if (ID.GetValueOrDefault() <= 0 || Length.GetValueOrDefault() <= 0)
+                // SRS Rule: Use WeightedAverageID if Tool Joint configured
+                double effectiveID = WeightedAverageID;
+                if (effectiveID <= 0 || Length.GetValueOrDefault() <= 0)
                     return 0;
 
-                return (ID.GetValueOrDefault() * ID.GetValueOrDefault() / 1029.4) * Length.GetValueOrDefault();
+                return (effectiveID * effectiveID / 1029.4) * Length.GetValueOrDefault();
             }
         }
 
@@ -71,26 +104,29 @@ namespace ProjectReport.Models.Geometry.DrillString
             get
             {
                 // SRS Formula: Displacement Volume (bbl) = (OD² - ID²) / 1029.4 × Length
-                // Where OD = Outer Diameter (inches), ID = Inner Diameter (inches), Length (feet)
-                if (OD.GetValueOrDefault() <= 0 || Length.GetValueOrDefault() <= 0)
+                // SRS Rule: Use WeightedAverageOD and WeightedAverageID if Tool Joint configured
+                double effectiveOD = WeightedAverageOD;
+                double effectiveID = WeightedAverageID;
+
+                if (effectiveOD <= 0 || Length.GetValueOrDefault() <= 0)
                     return 0;
                 
-                // If ID is null/0, it acts as a solid bar (Displacement = Volume of cylinder)
-                // If ID exists, subtract it
-                double validId = ID.GetValueOrDefault();
-                return ((OD.GetValueOrDefault() * OD.GetValueOrDefault()) - (validId * validId)) / 1029.4 * Length.GetValueOrDefault();
+                return ((effectiveOD * effectiveOD) - (effectiveID * effectiveID)) / 1029.4 * Length.GetValueOrDefault();
             }
         }
 
         public double? Length
         {
-            get => _length;
+            get => BottomMD.HasValue && TopMD.HasValue ? BottomMD.Value - TopMD.Value : _length;
             set 
             { 
                 if (SetProperty(ref _length, value))
                 {
-                    OnPropertyChanged(nameof(NumberOfJoints)); 
-                    OnPropertyChanged(nameof(InternalVolume)); 
+                    if (value.HasValue && TopMD.HasValue)
+                    {
+                        BottomMD = TopMD.Value + value.Value;
+                    }
+                    OnPropertyChanged(nameof(InternalVolume));
                     OnPropertyChanged(nameof(DisplacementVolume));
                     ValidateLength();
                 }
@@ -406,6 +442,16 @@ namespace ProjectReport.Models.Geometry.DrillString
                 return errors.Any() ? string.Join(Environment.NewLine, errors) : string.Empty;
             }
         }
+
+        public bool IsConfigurable => ComponentType switch
+        {
+            ComponentType.DrillPipe => true,
+            ComponentType.HWDP => true,
+            ComponentType.MWD => true,
+            ComponentType.Motor => true,
+            ComponentType.Bit => true,
+            _ => false
+        };
 
         // UI Helper property for highlighting
         private bool _isHighlighted;

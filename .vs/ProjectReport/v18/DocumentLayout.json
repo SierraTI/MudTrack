@@ -3,6 +3,34 @@
   "WorkspaceRootPath": "C:\\Dev\\MudTrack\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\core\\converters\\booltotooltipconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\core\\converters\\booltotooltipconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\views\\wellbore\\wellboregeometryview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\views\\wellbore\\wellboregeometryview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\models\\wellbore\\wellsectiontype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\models\\wellbore\\wellsectiontype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\models\\wellbore\\wellborecomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\models\\wellbore\\wellborecomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\viewmodels\\geometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\viewmodels\\geometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\services\\geometryvalidationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\services\\geometryvalidationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\viewmodels\\drillstring\\drillstringgeometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\viewmodels\\drillstring\\drillstringgeometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\views\\geometryview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\views\\geometryview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -11,8 +39,23 @@
       "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\views\\geometryview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\viewmodels\\geometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\viewmodels\\geometryviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Dev\\MudTrack\\projectReport.Tests\\obj\\Debug\\net8.0-windows\\projectReport.Tests.csproj.FileListAbsolute.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:projectReport.Tests\\obj\\Debug\\net8.0-windows\\projectReport.Tests.csproj.FileListAbsolute.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Dev\\MudTrack\\projectReport\\obj\\Debug\\net8.0-windows\\ProjectReport.csproj.FileListAbsolute.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:projectReport\\obj\\Debug\\net8.0-windows\\ProjectReport.csproj.FileListAbsolute.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\modules\\geometry\\models\\drillstring\\drillstringcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\modules\\geometry\\models\\drillstring\\drillstringcomponent.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|c:\\dev\\mudtrack\\projectreport\\core\\converters\\nulltoplaceholderconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}|ProjectReport\\ProjectReport.csproj|solutionrelative:projectreport\\core\\converters\\nulltoplaceholderconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\GSA_PC_049\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\870519529\\WellboreSectionType.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,23 +65,155 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BoolToToolTipConverter.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Core\\Converters\\BoolToToolTipConverter.cs",
+              "RelativeDocumentMoniker": "projectReport\\Core\\Converters\\BoolToToolTipConverter.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Core\\Converters\\BoolToToolTipConverter.cs",
+              "RelativeToolTip": "projectReport\\Core\\Converters\\BoolToToolTipConverter.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T15:01:26.816Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "WellboreGeometryView.xaml",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\Wellbore\\WellboreGeometryView.xaml",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Views\\Wellbore\\WellboreGeometryView.xaml",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\Wellbore\\WellboreGeometryView.xaml",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\Views\\Wellbore\\WellboreGeometryView.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-01-09T15:38:49.779Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "WellboreComponent.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellboreComponent.cs",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellboreComponent.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellboreComponent.cs",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellboreComponent.cs",
+              "ViewState": "AgIAAAEDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T14:02:38.634Z"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "WellSectionType.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellSectionType.cs",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellSectionType.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellSectionType.cs",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\Models\\Wellbore\\WellSectionType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T13:47:42.551Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "GeometryViewModel.cs",
               "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
               "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
               "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
               "RelativeToolTip": "projectReport\\Modules\\Geometry\\ViewModels\\GeometryViewModel.cs",
-              "ViewState": "AgIAAMQIAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADcMAAAAAAAAAIBJwDoBAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-30T04:29:07.466Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 5,
+              "Title": "GeometryValidationService.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Services\\GeometryValidationService.cs",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Services\\GeometryValidationService.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Services\\GeometryValidationService.cs",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\Services\\GeometryValidationService.cs",
+              "ViewState": "AgIAAPsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T13:49:16.522Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "WellboreSectionType.cs",
+              "DocumentMoniker": "C:\\Users\\GSA_PC_049\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\870519529\\WellboreSectionType.cs",
+              "RelativeDocumentMoniker": "..\\..\\Users\\GSA_PC_049\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\870519529\\WellboreSectionType.cs",
+              "ToolTip": "C:\\Users\\GSA_PC_049\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\870519529\\WellboreSectionType.cs",
+              "RelativeToolTip": "..\\..\\Users\\GSA_PC_049\\AppData\\Local\\Temp\\CopilotBaseline\\Deleted\\870519529\\WellboreSectionType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T15:58:43.423Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "projectReport.Tests.csproj.FileListAbsolute.txt",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport.Tests\\obj\\Debug\\net8.0-windows\\projectReport.Tests.csproj.FileListAbsolute.txt",
+              "RelativeDocumentMoniker": "projectReport.Tests\\obj\\Debug\\net8.0-windows\\projectReport.Tests.csproj.FileListAbsolute.txt",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport.Tests\\obj\\Debug\\net8.0-windows\\projectReport.Tests.csproj.FileListAbsolute.txt",
+              "RelativeToolTip": "projectReport.Tests\\obj\\Debug\\net8.0-windows\\projectReport.Tests.csproj.FileListAbsolute.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-01-09T14:20:06.964Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ProjectReport.csproj.FileListAbsolute.txt",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\obj\\Debug\\net8.0-windows\\ProjectReport.csproj.FileListAbsolute.txt",
+              "RelativeDocumentMoniker": "projectReport\\obj\\Debug\\net8.0-windows\\ProjectReport.csproj.FileListAbsolute.txt",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\obj\\Debug\\net8.0-windows\\ProjectReport.csproj.FileListAbsolute.txt",
+              "RelativeToolTip": "projectReport\\obj\\Debug\\net8.0-windows\\ProjectReport.csproj.FileListAbsolute.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2026-01-09T14:20:15.559Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "DrillStringComponent.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Models\\DrillString\\DrillStringComponent.cs",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Models\\DrillString\\DrillStringComponent.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Models\\DrillString\\DrillStringComponent.cs",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\Models\\DrillString\\DrillStringComponent.cs",
+              "ViewState": "AgIAAKQBAAAAAAAAAIBZwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T14:44:15.914Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "NullToPlaceholderConverter.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Core\\Converters\\NullToPlaceholderConverter.cs",
+              "RelativeDocumentMoniker": "projectReport\\Core\\Converters\\NullToPlaceholderConverter.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Core\\Converters\\NullToPlaceholderConverter.cs",
+              "RelativeToolTip": "projectReport\\Core\\Converters\\NullToPlaceholderConverter.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T15:01:08.134Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DrillStringGeometryViewModel.cs",
+              "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\ViewModels\\DrillString\\DrillStringGeometryViewModel.cs",
+              "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\ViewModels\\DrillString\\DrillStringGeometryViewModel.cs",
+              "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\ViewModels\\DrillString\\DrillStringGeometryViewModel.cs",
+              "RelativeToolTip": "projectReport\\Modules\\Geometry\\ViewModels\\DrillString\\DrillStringGeometryViewModel.cs",
+              "ViewState": "AgIAAPMAAAAAAAAAAAAiwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-09T14:14:01.999Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "GeometryView.xaml.cs",
               "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml.cs",
               "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml.cs",
@@ -46,20 +221,18 @@
               "RelativeToolTip": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAnwCEAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-30T04:28:23.431Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-30T04:28:23.431Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 8,
               "Title": "GeometryView.xaml",
               "DocumentMoniker": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml",
               "RelativeDocumentMoniker": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml",
               "ToolTip": "C:\\Dev\\MudTrack\\projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml",
               "RelativeToolTip": "projectReport\\Modules\\Geometry\\Views\\GeometryView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-30T04:26:45.958Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-30T04:26:45.958Z"
             }
           ]
         }

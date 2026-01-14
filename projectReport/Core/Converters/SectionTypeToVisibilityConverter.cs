@@ -2,18 +2,18 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Converters
 {
     public class SectionTypeToVisibilityConverter : IValueConverter
     {
-        public WellboreSectionType TargetType { get; set; }
+        public ComponentType TargetType { get; set; }
         public bool Inverse { get; set; }
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is WellboreSectionType sectionType)
+            if (value is ComponentType sectionType)
             {
                 bool isMatch = sectionType == TargetType;
                 if (Inverse) isMatch = !isMatch;

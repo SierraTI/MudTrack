@@ -11,7 +11,6 @@ namespace ProjectReport.Models.Geometry.DrillString
         private double? _tjLength;
         private double? _weight;
         private string _grade = "S-135";
-        private bool _hasFloatSub = false;
 
         /// <summary>
         /// Standard API drill pipe grades
@@ -86,14 +85,5 @@ namespace ProjectReport.Models.Geometry.DrillString
             set => SetProperty(ref _grade, value);
         }
 
-        /// <summary>
-        /// Indicates if this component has a float sub installed
-        /// Float subs prevent backflow and reduce surge pressure
-        /// </summary>
-        public bool HasFloatSub
-        {
-            get => _hasFloatSub;
-            set => SetProperty(ref _hasFloatSub, value);
-        }
     }
 }

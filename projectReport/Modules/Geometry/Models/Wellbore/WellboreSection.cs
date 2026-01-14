@@ -1,6 +1,9 @@
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using ProjectReport.Models;
+using ProjectReport.Models.Geometry.DrillString;
+
 
 namespace ProjectReport.Models.Geometry.Wellbore
 {
@@ -11,7 +14,8 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private double _id;
         private double _topMd;
         private double _bottomMd;
-        private WellboreSectionType _sectionType;
+        private ComponentType _component;
+        private WellSectionType _wellSection;
         private double _volume;
 
         public string Name
@@ -70,20 +74,33 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
         }
 
-        public WellboreSectionType SectionType
+        /// <summary>
+        /// Component type (Casing, Liner, OpenHole, etc.)
+        /// Renamed from SectionType for clarity
+        /// </summary>
+        public ComponentType Component
         {
-            get => _sectionType;
+            get => _component;
             set
             {
-                if (SetProperty(ref _sectionType, value))
+                if (SetProperty(ref _component, value))
                 {
-                    // If section type is OpenHole, disable OD editing
-                    if (_sectionType == WellboreSectionType.OpenHole)
+                    // If component type is OpenHole, set ID to 0
+                    if (_component == ComponentType.OpenHole)
                     {
-                        OD = 0; // Or any default value for OpenHole
+                        ID = 0;
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Well section classification (Riser, Surface Casing, etc.)
+        /// </summary>
+        public WellSectionType WellSection
+        {
+            get => _wellSection;
+            set => SetProperty(ref _wellSection, value);
         }
 
         public double Volume

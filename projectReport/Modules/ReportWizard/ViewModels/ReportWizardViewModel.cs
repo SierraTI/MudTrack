@@ -319,6 +319,9 @@ namespace ProjectReport.ViewModels
             if (Report.MudDensity.HasValue)
                 WellContextService.Instance.UpdateMudDensity(Report.MudDensity.Value);
 
+            // Notify Thermal Gradient module of report thermal data
+            WellContextService.Instance.NotifyReportThermalDataUpdated(Report.TVD, Report.MaxBHT);
+
             NavigationService.Instance.NavigateToGeometry(_well.Id);
 
             RequestClose?.Invoke();

@@ -187,21 +187,6 @@ namespace ProjectReport.ViewModels.Geometry.Config
         /// </summary>
         public System.Collections.Generic.List<string> AvailableGrades => ToolJointConfig.StandardGrades;
 
-        /// <summary>
-        /// Indicates if this component has a float sub installed
-        /// </summary>
-        public bool HasFloatSub
-        {
-            get => Model.HasFloatSub;
-            set
-            {
-                if (Model.HasFloatSub != value)
-                {
-                    Model.HasFloatSub = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
         private ComponentType _componentType;
         public ComponentType ComponentType
@@ -241,7 +226,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
             OnPropertyChanged(nameof(Weight_String));
             OnPropertyChanged(nameof(TJ_ID_Length_String));
             OnPropertyChanged(nameof(Grade));
-            OnPropertyChanged(nameof(HasFloatSub));
+            OnPropertyChanged(nameof(Grade));
             OnPropertyChanged(nameof(AvailableGrades));
 
             SaveCommand = new RelayCommand(_ =>

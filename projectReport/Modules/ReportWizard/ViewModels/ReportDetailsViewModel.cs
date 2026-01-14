@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Windows.Input;
 using ProjectReport.Models;
 using ProjectReport.Models.Rig;
+using ProjectReport.Services;
 
 namespace ProjectReport.ViewModels
 {
@@ -146,13 +147,35 @@ namespace ProjectReport.ViewModels
         public double? MD
         {
             get => _md;
-            set { _md = value; OnPropertyChanged(); }
+            set 
+            { 
+                if (SetProperty(ref _md, value))
+                {
+                    // Sincronizar Report MD con TotalWellboreMD en Geometry
+                    // Al guardar o actualizar el "Report MD" en la cabecera del reporte,
+                    // este valor debe pasar al totalWellboreMD del servicio de validación
+                    if (value.HasValue && value.Value > 0)
+                    {
+                        WellContextService.Instance.UpdateSystemDepth(value.Value);
+                    }
+                }
+            }
         }
 
         public double? TVD
         {
             get => _tvd;
-            set { _tvd = value; OnPropertyChanged(); }
+            set 
+            { 
+                if (SetProperty(ref _tvd, value))
+                {
+                    // Notify Thermal Gradient module of TVD change
+                    if (value.HasValue && value.Value > 0)
+                    {
+                        WellContextService.Instance.NotifyReportThermalDataUpdated(value, MaxBHT);
+                    }
+                }
+            }
         }
 
         public string WellSection
@@ -164,7 +187,14 @@ namespace ProjectReport.ViewModels
         public double? MaxBHT
         {
             get => _maxBht;
-            set { _maxBht = value; OnPropertyChanged(); }
+            set 
+            { 
+                if (SetProperty(ref _maxBht, value))
+                {
+                    // Notify Thermal Gradient module of MaxBHT change
+                    WellContextService.Instance.NotifyReportThermalDataUpdated(TVD, value);
+                }
+            }
         }
 
         public string PresentActivity

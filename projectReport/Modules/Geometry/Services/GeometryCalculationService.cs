@@ -79,14 +79,18 @@ namespace ProjectReport.Services
             }
 
             // Case 1: OpenHole
-            if (component.SectionType == WellboreSectionType.OpenHole)
+            if (component.Component == ComponentType.OpenHole)
             {
                 // For OpenHole: OD = Hole Diameter, ID = 0
                 if (component.OD.HasValue && component.OD.Value > 0)
                 {
                     double holeDiameter = component.OD.Value;
                     double washoutFactor = 1.0 + (component.Washout.GetValueOrDefault(0) / 100.0);
-                    double vol = (Math.PI / 4.0) * Math.Pow(holeDiameter, 2) * component.Length * washoutFactor / BblVolumeConstant;
+                    
+                    // FIXED FORMULA: (Diameter^2 / 1029.4) * Length
+                    // 1029.4 already includes PI/4 conversion from inches^2 to ft^2 to bbl
+                    double vol = (Math.Pow(holeDiameter, 2) / BblVolumeConstant) * component.Length * washoutFactor;
+                    
                     component.Volume = vol;
                     return vol;
                 }
@@ -95,9 +99,10 @@ namespace ProjectReport.Services
             }
             
             // Case 2: Casing/Liner with previous component
+            // We use standard annular volume formula: (PreviousID^2 - OD^2) / 1029.4 * L
             if (previousComponent != null && previousComponent.ID.HasValue && component.OD.HasValue && previousComponent.ID.Value > component.OD.Value)
             {
-                // Annular Volume = (ID_prev^2 - OD_curr^2) * Length / 1029.4
+                // Annular Volume = (ID_prev^2 - OD_curr^2) / 1029.4 * Length
                 double annularVol = Math.Max(0, (Math.Pow(previousComponent.ID.Value, 2) - Math.Pow(component.OD.Value, 2)) / BblVolumeConstant * component.Length);
                 component.Volume = annularVol;
                 return annularVol;
@@ -106,7 +111,7 @@ namespace ProjectReport.Services
             // Case 3: First Casing/Liner (no previous component) - Use Internal Capacity
             if (previousComponent == null && component.ID.HasValue && component.ID.Value > 0)
             {
-                // Internal Capacity = ID^2 * Length / 1029.4
+                // Internal Capacity = ID^2 / 1029.4 * Length
                 double capacity = (Math.Pow(component.ID.Value, 2) / BblVolumeConstant) * component.Length;
                 component.Volume = capacity;
                 return capacity;

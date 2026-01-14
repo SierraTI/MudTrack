@@ -185,6 +185,7 @@ namespace ProjectReport.Services
 
         /// <summary>
         /// Validates temperature gradient logic (temperature should generally increase with depth)
+        /// Implements physical constraint: Temperature must never decrease with increasing TVD
         /// </summary>
         public List<string> ValidateTemperatureGradient(List<ThermalGradientPoint> points)
         {
@@ -202,7 +203,13 @@ namespace ProjectReport.Services
 
                 if (p2.Temperature < p1.Temperature)
                 {
-                    warnings.Add($"Error T4: La temperatura está disminuyendo a medida que la TVD aumenta (ID {p2.Id}: {p2.Temperature:F1}°F < {p1.Temperature:F1}°F). Verifique los datos.");
+                    // Physical constraint violation: Temperature cannot decrease with depth
+                    warnings.Add($"❌ ERROR CRÍTICO - ID {p2.Id}: La temperatura disminuye con la profundidad ({p1.Temperature:F1}°F @ {p1.TVD:F0}ft → {p2.Temperature:F1}°F @ {p2.TVD:F0}ft). Esto es físicamente imposible.");
+                }
+                else if (Math.Abs(p2.Temperature - p1.Temperature) < 0.01 && p1.TVD < p2.TVD)
+                {
+                    // Warning: Isothermal gradient is unusual but possible in certain formations
+                    warnings.Add($"⚠️ WARNING - ID {p2.Id}: Gradiente isotérmico detectado (Temperatura constante). Raro pero posible en formaciones especiales.");
                 }
             }
 

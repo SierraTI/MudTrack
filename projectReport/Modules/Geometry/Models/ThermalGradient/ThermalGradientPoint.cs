@@ -16,6 +16,16 @@ namespace ProjectReport.Models.Geometry.ThermalGradient
         private string _label = string.Empty;
         private double? _calculatedGradient;
         private bool _isAnomalous;
+        private bool _isLocked; // Indicates if this point is locked (e.g., synced from report)
+
+        /// <summary>
+        /// Indicates if this point is locked and cannot be edited (e.g., synced from report)
+        /// </summary>
+        public bool IsLocked
+        {
+            get => _isLocked;
+            set => SetProperty(ref _isLocked, value);
+        }
 
         /// <summary>
         /// Auto-incrementing unique identifier (read-only)
@@ -34,6 +44,12 @@ namespace ProjectReport.Models.Geometry.ThermalGradient
             get => _tvd;
             set
             {
+                // Prevent editing if locked
+                if (IsLocked)
+                {
+                    return;
+                }
+                
                 if (SetProperty(ref _tvd, value))
                 {
                     ValidateTVD();
@@ -49,6 +65,12 @@ namespace ProjectReport.Models.Geometry.ThermalGradient
             get => _temperature;
             set
             {
+                // Prevent editing if locked
+                if (IsLocked)
+                {
+                    return;
+                }
+                
                 if (SetProperty(ref _temperature, value))
                 {
                     ValidateTemperature();

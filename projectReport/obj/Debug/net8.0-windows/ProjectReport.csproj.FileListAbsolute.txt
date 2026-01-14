@@ -1,3 +1,5 @@
+<<<<<<< HEAD
+=======
 C:\DEV\projectReport\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.exe
 C:\DEV\projectReport\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.dll.config
 C:\DEV\projectReport\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.deps.json
@@ -263,6 +265,7 @@ C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Proj
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
 =======
 >>>>>>> ea3cb986f849b4626de2c3b9a62bbf41f581be68
+>>>>>>> f95c53d5a29051f1cf8a5e9101b4f377642a95e1
 C:\Dev\MudTrack\ProjectReport\bin\Debug\net8.0-windows\Data\Lista.xlsx
 C:\Dev\MudTrack\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.exe
 C:\Dev\MudTrack\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.dll.config
@@ -328,20 +331,34 @@ C:\Dev\MudTrack\ProjectReport\bin\Debug\net8.0-windows\runtimes\win-x86\native\W
 C:\Dev\MudTrack\ProjectReport\bin\Debug\net8.0-windows\runtimes\win\lib\net8.0\System.Runtime.Caching.dll
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.csproj.AssemblyReference.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Common\ConnectionDialog.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Controls\ToastNotificationControl.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Dialogs\InputDialog.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\BitAndJets\BitJetsConfigWindow.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\ContinuityErrorDialog.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\DrillStringGeometryView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\DrillString\DrillStringGeometryView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\GeometryView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\BhaSchematicView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreDrillStringSchematicView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreSchematicView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Modals\ValidationResultModal.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\PressureDropConfigWindow.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\ThermalGradientView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\ToolJointConfigWindow.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Wellbore\WellboreGeometryView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Home\Views\HomeView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryDashboardView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryHistoryView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReceivedView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReturnedView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\PersonnelPage.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\ReportDetailsPage.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\ReportEquipmentPage.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\ReportWizardView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\RigProfile\Views\RigProfileView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Shell\Views\MainWindow.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Well\Views\WellDashboardView.baml
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Well\Views\WellDataView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Resources\Lookups\StaticData.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\App.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Common\ConnectionDialog.g.cs
@@ -353,6 +370,7 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Dr
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\DrillString\DrillStringGeometryView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\GeometryView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\BhaSchematicView.g.cs
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreDrillStringSchematicView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreSchematicView.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Modals\ValidationResultModal.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\PressureDropConfigWindow.g.cs
@@ -377,31 +395,20 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport_Content.g.c
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport_MarkupCompile.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport_MarkupCompile.lref
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Controls\ToastNotificationControl.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\DrillString\DrillStringGeometryView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\GeometryView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\BhaSchematicView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\PressureDropConfigWindow.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Wellbore\WellboreGeometryView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Home\Views\HomeView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\TicketReceivedView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\ReportWizard\Views\ReportWizardView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\RigProfile\Views\RigProfileView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Shell\Views\MainWindow.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Well\Views\WellDashboardView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Well\Views\WellDataView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.g.resources
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.GeneratedMSBuildEditorConfig.editorconfig
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.AssemblyInfoInputs.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.AssemblyInfo.cs
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.csproj.CoreCompileInputs.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.sourcelink.json
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectR.53A52C41.Up2Date
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.dll
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport.dll
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
+<<<<<<< HEAD
+C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectR.53A52C41.Up2Date
+=======
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreDrillStringSchematicView.baml
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreDrillStringSchematicView.g.cs
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.csproj.AssemblyReference.cache
@@ -552,3 +559,4 @@ C:\DEV\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport.dll
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
+>>>>>>> f95c53d5a29051f1cf8a5e9101b4f377642a95e1

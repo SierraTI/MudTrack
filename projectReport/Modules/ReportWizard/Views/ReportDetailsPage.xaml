@@ -364,16 +364,7 @@
                             <TextBox Text="{Binding Report.PrimaryFluidSet}" Margin="0,6,0,0"/>
                         </StackPanel>
 
-                        <!-- Row 7 -->
-                        <StackPanel Grid.Row="5">
-                            <TextBlock Text="Other Active Fluids" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding Report.OtherActiveFluids}"
-                                     Margin="0,6,0,0"
-                                     MinHeight="110"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     VerticalScrollBarVisibility="Auto"/>
-                        </StackPanel>
+
 
                     </Grid>
                 </Border>

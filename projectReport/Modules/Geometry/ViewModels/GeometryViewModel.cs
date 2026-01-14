@@ -37,8 +37,11 @@ namespace ProjectReport.ViewModels.Geometry
         private readonly ThermalGradientService _thermalService;
         private readonly SurveyCalculationService _surveyCalculationService; // Survey trajectory calculations
         private readonly DrillStringAutoAdjustService _autoAdjustService; // Auto-adjust drill string to bit depth
+        private readonly WellboreHydraulicsService _hydraulicsService; // Wellbore & Hydraulics Integration service
+        private readonly SurveyValidationService _surveyValidationService; // Survey validation service
         private const double DepthTolerance = 0.01;
         private SeriesCollection _surveySeriesCollection = new();
+        private SeriesCollection _planViewSeriesCollection = new();
         private SeriesCollection _safetySeriesCollection = new();
         private SeriesCollection _lotSeriesCollection = new();
         private Well? _currentWell; // Reference to the current well being edited
@@ -70,6 +73,8 @@ namespace ProjectReport.ViewModels.Geometry
             _thermalService = thermalService ?? throw new ArgumentNullException(nameof(thermalService));
             _surveyCalculationService = new SurveyCalculationService(); // Initialize survey calculation service
             _autoAdjustService = new DrillStringAutoAdjustService(); // Initialize auto-adjust service
+            _hydraulicsService = new WellboreHydraulicsService(); // Initialize hydraulics service
+            _surveyValidationService = new SurveyValidationService(); // Initialize survey validation service
 
             // Initialize Sub-ViewModels
             ThermalGradientViewModel = new ThermalGradientViewModel(_thermalService);
@@ -87,16 +92,39 @@ namespace ProjectReport.ViewModels.Geometry
 
             // Initialize dropdown options
             // Include null for "Select..." state
-            var sectionTypes = new List<WellboreSectionType?> { null };
-            sectionTypes.AddRange(Enum.GetValues(typeof(WellboreSectionType)).Cast<WellboreSectionType?>());
-            WellboreSectionTypes = new ObservableCollection<WellboreSectionType?>(sectionTypes);
+            var sectionTypes = new List<WellSectionType?> { null };
+            sectionTypes.AddRange(Enum.GetValues(typeof(WellSectionType)).Cast<WellSectionType?>());
+            WellboreSectionTypes = new ObservableCollection<WellSectionType?>(sectionTypes);
 
             var stages = new List<WellboreStage?> { null };
             stages.AddRange(Enum.GetValues(typeof(WellboreStage)).Cast<WellboreStage?>());
             WellboreStages = new ObservableCollection<WellboreStage?>(stages);
             
-            ComponentTypes = new ObservableCollection<ComponentType>(
-                Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>());
+            // Component Types for Wellbore Geometry (Casing, Liner, OpenHole only)
+            ComponentTypes = new ObservableCollection<ComponentType>(new[]
+            {
+                ComponentType.Casing,
+                ComponentType.Liner,
+                ComponentType.OpenHole
+            });
+
+            // Component Types for Drill String (all drill string components)
+            DrillStringComponentTypes = new ObservableCollection<ComponentType>(new[]
+            {
+                ComponentType.DrillPipe,
+                ComponentType.HWDP,
+                ComponentType.DC,
+                ComponentType.LWD,
+                ComponentType.MWD,
+                ComponentType.PWD,
+                ComponentType.Motor,
+                ComponentType.XO,
+                ComponentType.Jar,
+                ComponentType.Accelerator,
+                ComponentType.NearBit,
+                ComponentType.Stabilizer,
+                ComponentType.Bit
+            });
 
 
             WellTestTypes = new ObservableCollection<string> 
@@ -109,6 +137,13 @@ namespace ProjectReport.ViewModels.Geometry
             DrillStringComponents.CollectionChanged += OnDrillStringCollectionChanged;
             SurveyPoints.CollectionChanged += OnSurveyCollectionChanged;
             WellboreComponents.CollectionChanged += (s, e) => OnPropertyChanged(nameof(WellboreSectionNames));
+
+            // Initialize formatters
+            YAxisLabelFormatter = value => 
+            {
+                if (double.IsNaN(value) || double.IsInfinity(value)) return "0";
+                return Math.Abs(value).ToString("N0");
+            };
 
             // Subscribe to property changes in components
             foreach (var component in WellboreComponents)
@@ -139,8 +174,10 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void InitializeSurveyChart()
         {
+            // Initialize multiple series for multi-view visualization
             SurveySeriesCollection = new SeriesCollection
             {
+                // Series 0: Vertical Section (Profile View)
                 new LineSeries
                 {
                     Title = "Trajectory (Vertical Section)",
@@ -152,6 +189,22 @@ namespace ProjectReport.ViewModels.Geometry
                     LabelPoint = point => $"VS: {point.X:N1} ft | TVD: {Math.Abs(point.Y):N1} ft"
                 }
             };
+            
+            // Initialize Plan View series (North vs East)
+            PlanViewSeriesCollection = new SeriesCollection
+            {
+                new LineSeries
+                {
+                    Title = "Plan View (North vs East)",
+                    Values = new ChartValues<ObservablePoint>(),
+                    PointGeometry = DefaultGeometries.Circle,
+                    PointGeometrySize = 6,
+                    Stroke = Brushes.DarkGreen,
+                    Fill = Brushes.Transparent,
+                    LabelPoint = point => $"N: {point.X:N1} ft | E: {point.Y:N1} ft"
+                }
+            };
+            
             UpdateSurveyChart();
         }
 
@@ -166,6 +219,14 @@ namespace ProjectReport.ViewModels.Geometry
         private void OnMudDensityUpdated(object? sender, double density)
         {
             CurrentMudWeight = density;
+            
+            // Propagation: Update all drill string components
+            foreach (var component in DrillStringComponents)
+            {
+                component.FluidDensity = density;
+            }
+            
+            RecalculateTotals();
         }
 
         private void OnGlobalDepthUpdated(object? sender, double newMD)
@@ -178,10 +239,11 @@ namespace ProjectReport.ViewModels.Geometry
 
 
         // Dropdown options
-        public ObservableCollection<WellboreSectionType?> WellboreSectionTypes { get; }
+        public ObservableCollection<WellSectionType?> WellboreSectionTypes { get; }
         public ObservableCollection<WellboreStage?> WellboreStages { get; }
 
-        public ObservableCollection<ComponentType> ComponentTypes { get; }
+        public ObservableCollection<ComponentType> ComponentTypes { get; } // For Wellbore Geometry
+        public ObservableCollection<ComponentType> DrillStringComponentTypes { get; } // For Drill String
         public ObservableCollection<string> WellTestTypes { get; }
 
         // Sub-ViewModels
@@ -271,16 +333,29 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void RenumberDrillStringSections()
         {
+            if (_isProcessingCollectionChange || _isLoading) return;
             _isProcessingCollectionChange = true;
             try
             {
                 int idCounter = 1;
-                // Drill string is typically top-down, so just order by list index effectively
-                // But since it's an ObservableCollection, the index is the order.
-                // If we want to accept drag-drop reordering, we should rely on the Collection order.
+                double currentTopMD = 0; // Drill string starts from surface (RKB=0 in relative terms for string)
+
                 foreach (var component in DrillStringComponents)
                 {
                     component.Id = idCounter++;
+                    
+                    // Depth Chaining
+                    component.TopMD = currentTopMD;
+                    if (component.Length.HasValue)
+                    {
+                        component.BottomMD = currentTopMD + component.Length.Value;
+                        currentTopMD = component.BottomMD.Value;
+                    }
+                    else
+                    {
+                        component.BottomMD = null;
+                        // Chain might stop here if length is undefined
+                    }
                 }
             }
             finally
@@ -298,10 +373,19 @@ namespace ProjectReport.ViewModels.Geometry
                 e.PropertyName == nameof(WellboreComponent.ID) ||
                 e.PropertyName == nameof(WellboreComponent.OD) ||
                 e.PropertyName == nameof(WellboreComponent.SectionType) ||
+                e.PropertyName == nameof(WellboreComponent.Component) ||
                 e.PropertyName == nameof(WellboreComponent.Washout))
             {
                 if (sender is WellboreComponent component)
                 {
+                    // OpenHole Guard: If Component == OpenHole, automatically set ID = 0.000 and disable that cell
+                    if (e.PropertyName == nameof(WellboreComponent.Component) && 
+                        component.Component == ComponentType.OpenHole)
+                    {
+                        // ID is already set to 0 in the Component setter, but ensure it's locked
+                        component.ID = 0.0;
+                    }
+
                     // Determine previous component for context-aware calculation
                     var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
                     int index = sorted.IndexOf(component);
@@ -312,7 +396,7 @@ namespace ProjectReport.ViewModels.Geometry
 
                     // Check for Casing Overwrite Logic (Rule 4.1)
                     // If user edited a casing to match the previous one's start, they might intend to overwrite.
-                    if (prev != null && component.SectionType == WellboreSectionType.Casing && prev.SectionType == WellboreSectionType.Casing)
+                    if (prev != null && component.SectionType == ComponentType.Casing && prev.SectionType == ComponentType.Casing)
                     {
                         bool topMatches = component.TopMD.HasValue && prev.TopMD.HasValue && Math.Abs(component.TopMD.Value - prev.TopMD.Value) < 0.01;
                         bool odMatches = Math.Abs(component.OD.GetValueOrDefault() - prev.OD.GetValueOrDefault()) < 0.001;
@@ -344,6 +428,7 @@ namespace ProjectReport.ViewModels.Geometry
                         if (next != null)
                         {
                             next.SetPreviousBottomMD(component.BottomMD);
+                            ValidateWellboreComponent(next); // Re-validate next section (Continuity)
                         }
                         
                         // Validate if this is the last section
@@ -357,10 +442,11 @@ namespace ProjectReport.ViewModels.Geometry
                     if (e.PropertyName == nameof(WellboreComponent.ID) || e.PropertyName == nameof(WellboreComponent.OD)) // OD can also affect next if we ever support complex annulus
                     {
                         var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
-                        if (next != null)
+                         if (next != null)
                         {
                              // Recalculate next component volume with THIS component as 'previous'
                             _geometryService.CalculateWellboreComponentVolume(next, "Imperial", component);
+                            ValidateWellboreComponent(next); // Re-validate next section (Telescopic Rule A2)
                         }
                     }
                 }
@@ -422,8 +508,8 @@ namespace ProjectReport.ViewModels.Geometry
         private void CheckForCasingOverwrite(WellboreComponent current, WellboreComponent? previous)
         {
             if (previous != null && 
-                (current.SectionType == WellboreSectionType.Casing || current.SectionType == WellboreSectionType.Liner) &&
-                (previous.SectionType == WellboreSectionType.Casing || previous.SectionType == WellboreSectionType.Liner))
+                (current.SectionType == ComponentType.Casing || current.SectionType == ComponentType.Liner) &&
+                (previous.SectionType == ComponentType.Casing || previous.SectionType == ComponentType.Liner))
             {
                 // Check for duplicate start (potential overwrite condition)
                 // Condition: Type Matches, OD Matches, TopMD Matches, New BottomMD > Old BottomMD
@@ -451,16 +537,61 @@ namespace ProjectReport.ViewModels.Geometry
         {
             if (_isLoading) return;
 
-            if (e.PropertyName == nameof(DrillStringComponent.Length) || 
-                e.PropertyName == nameof(DrillStringComponent.OD) ||
-                e.PropertyName == nameof(DrillStringComponent.ID))
+            if (sender is DrillStringComponent component)
             {
-                if (sender is DrillStringComponent component)
+                // Regla S4: Si el componente cambia a Bit, moverlo al final
+                if (e.PropertyName == nameof(DrillStringComponent.ComponentType) && 
+                    component.ComponentType == ComponentType.Bit)
                 {
-                    // Volume calculations are now handled automatically in the model
+                    // Si no está al final, moverlo
+                    if (DrillStringComponents.LastOrDefault() != component)
+                    {
+                        DrillStringComponents.Remove(component);
+                        // Remover cualquier otro Bit existente
+                        var existingBit = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.Bit);
+                        if (existingBit != null)
+                        {
+                            DrillStringComponents.Remove(existingBit);
+                        }
+                        DrillStringComponents.Add(component);
+                    }
                 }
-                RecalculateTotals();
+
+                if (e.PropertyName == nameof(DrillStringComponent.Length) || 
+                    e.PropertyName == nameof(DrillStringComponent.OD) ||
+                    e.PropertyName == nameof(DrillStringComponent.ID) ||
+                    e.PropertyName == nameof(DrillStringComponent.ComponentType))
+                {
+                    // If length changed, we must re-chain the entire string to update and volumes
+                    if (e.PropertyName == nameof(DrillStringComponent.Length) || e.PropertyName == nameof(DrillStringComponent.ComponentType))
+                    {
+                        RenumberDrillStringSections();
+                    }
+
+                    // Validar con las nuevas reglas S1-S5
+                    ValidateDrillStringComponent(component);
+                    RecalculateTotals();
+                }
             }
+        }
+
+        /// <summary>
+        /// Valida un componente de drill string usando las reglas S1-S5
+        /// </summary>
+        private void ValidateDrillStringComponent(DrillStringComponent component)
+        {
+            if (component == null) return;
+
+            // Usar el servicio de validación con TotalWellboreMD para regla S3
+            var validationService = new Services.DrillString.DrillStringValidationService();
+            var errors = validationService.ValidateDrillString(DrillStringComponents, TotalWellboreMD);
+
+            // Aplicar errores al componente específico
+            var componentErrors = errors.Where(e => e.ComponentId == component.Id).ToList();
+            
+            // Los errores de validación se manejan automáticamente por las propiedades del componente
+            // Las validaciones S1 y S2 ya están implementadas en las propiedades OD, ID y Length
+            // Las validaciones S3 y S4 se muestran como mensajes de validación generales
         }
 
         private void OnSurveyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -483,11 +614,11 @@ namespace ProjectReport.ViewModels.Geometry
                 }
             }
             
+            // Ensure surface point exists
+            _surveyValidationService.EnsureSurfacePoint(SurveyPoints.ToList());
+            
             // Re-validate all points after collection change (order may have changed)
-            foreach (var point in SurveyPoints)
-            {
-                ValidateSurveyPoint(point);
-            }
+            ValidateAllSurveyPoints();
             UpdateSurveyChart();
         }
 
@@ -503,9 +634,12 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 if (sender is SurveyPoint point)
                 {
+                    // Ensure surface point exists
+                    _surveyValidationService.EnsureSurfacePoint(SurveyPoints.ToList());
+                    
                     // Recalculate trajectory for this point and all subsequent points
                     RecalculateSurveyTrajectory(point);
-                    ValidateSurveyPoint(point);
+                    ValidateAllSurveyPoints();
                     UpdateSurveyChart();
                 }
             }
@@ -513,18 +647,154 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void UpdateSurveyChart()
         {
-            if (SurveySeriesCollection == null || SurveySeriesCollection.Count == 0) return;
-
-            var vsValues = new ChartValues<ObservablePoint>();
-            var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
-
-            foreach (var p in sorted)
+            if (SurveySeriesCollection == null || SurveySeriesCollection.Count == 0)
             {
-                // X = Vertical Section (Horizontal Displacement), Y = TVD (Inverted)
-                vsValues.Add(new ObservablePoint(p.VerticalSection, -p.TVD));
+                // Initialize if not already initialized
+                InitializeSurveyChart();
             }
 
-            SurveySeriesCollection[0].Values = vsValues;
+            if (SurveySeriesCollection == null || SurveySeriesCollection.Count == 0) return;
+            if (PlanViewSeriesCollection == null || PlanViewSeriesCollection.Count == 0) return;
+
+            var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
+            
+            if (sorted.Count == 0)
+            {
+                // Clear charts if no data
+                if (SurveySeriesCollection[0] is LineSeries vsS)
+                    vsS.Values = new ChartValues<ObservablePoint>();
+                if (PlanViewSeriesCollection[0] is LineSeries planS)
+                    planS.Values = new ChartValues<ObservablePoint>();
+                
+                // Still update scaling to apply defaults
+                UpdateSurveyChartScaling();
+                return;
+            }
+
+            // Update Vertical Section chart (Profile View)
+            var vsSeries = SurveySeriesCollection[0] as LineSeries;
+            if (vsSeries != null)
+            {
+                var vsValues = new ChartValues<ObservablePoint>();
+                foreach (var p in sorted)
+                {
+                    if (p == null) continue;
+                    // X = Vertical Section (Horizontal Displacement), Y = TVD (Inverted)
+                    double vs = p.VerticalSection;
+                    double tvd = -p.TVD;
+                    
+                    if (double.IsNaN(vs) || double.IsInfinity(vs)) vs = 0;
+                    if (double.IsNaN(tvd) || double.IsInfinity(tvd)) tvd = 0;
+                    
+                    vsValues.Add(new ObservablePoint(vs, tvd));
+                }
+                vsSeries.Values = vsValues;
+            }
+
+            // Update Plan View chart (North vs East)
+            var planSeries = PlanViewSeriesCollection[0] as LineSeries;
+            if (planSeries != null)
+            {
+                var planValues = new ChartValues<ObservablePoint>();
+                foreach (var p in sorted)
+                {
+                    if (p == null) continue;
+                    // X = North, Y = East
+                    double n = p.Northing;
+                    double e = p.Easting;
+                    
+                    if (double.IsNaN(n) || double.IsInfinity(n)) n = 0;
+                    if (double.IsNaN(e) || double.IsInfinity(e)) e = 0;
+                    
+                    planValues.Add(new ObservablePoint(n, e));
+                }
+                planSeries.Values = planValues;
+            }
+            
+            // Update auto-scaling properties
+            UpdateSurveyChartScaling();
+        }
+        
+        private void UpdateSurveyChartScaling()
+        {
+            if (SurveyPoints.Count == 0)
+            {
+                // Default ranges to avoid "invalid range" exception in LiveCharts
+                MaxSurveyTVD = 1000;
+                MaxSurveyVerticalSection = 100;
+                MaxSurveyNorth = 100;
+                MaxSurveyEast = 100;
+            }
+            else
+            {
+                var sorted = SurveyPoints.Where(p => p != null).OrderBy(p => p.MD).ToList();
+                if (sorted.Count == 0)
+                {
+                    MaxSurveyTVD = 1000;
+                    MaxSurveyVerticalSection = 100;
+                    MaxSurveyNorth = 100;
+                    MaxSurveyEast = 100;
+                    return;
+                }
+                
+                // Calculate max values for auto-scaling with sensible minimums to avoid 0-range
+                double maxTVD = sorted.Max(p => p.TVD);
+                double maxVS = sorted.Max(p => p.VerticalSection);
+                double maxN = sorted.Max(p => Math.Abs(p.Northing));
+                double maxE = sorted.Max(p => Math.Abs(p.Easting));
+
+                MaxSurveyTVD = Math.Max(double.IsNaN(maxTVD) ? 0 : maxTVD, 1000);
+                MaxSurveyVerticalSection = Math.Max(double.IsNaN(maxVS) ? 0 : maxVS, 100);
+                MaxSurveyNorth = Math.Max(double.IsNaN(maxN) ? 0 : maxN, 100);
+                MaxSurveyEast = Math.Max(double.IsNaN(maxE) ? 0 : maxE, 100);
+            }
+            
+            OnPropertyChanged(nameof(MaxSurveyTVD));
+            OnPropertyChanged(nameof(MaxSurveyVerticalSection));
+            OnPropertyChanged(nameof(MaxSurveyNorth));
+            OnPropertyChanged(nameof(MaxSurveyEast));
+        }
+        
+        // Properties for auto-scaling charts
+        public double MaxSurveyTVD { get; private set; } = 1000;
+        public double MaxSurveyVerticalSection { get; private set; } = 100;
+        public double MaxSurveyNorth { get; private set; } = 100;
+        public double MaxSurveyEast { get; private set; } = 100;
+        
+        // Report MD for marker display (returns TVD at Report MD)
+        public double ReportMD
+        {
+            get
+            {
+                var reportMD = WellContextService.Instance.CurrentDepth;
+                if (reportMD <= 0 || SurveyPoints.Count == 0) return 0;
+                
+                // Find the TVD corresponding to the Report MD
+                var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
+                var pointAtOrBefore = sorted.LastOrDefault(p => p.MD <= reportMD);
+                
+                if (pointAtOrBefore != null)
+                {
+                    // If exact match, return TVD
+                    if (Math.Abs(pointAtOrBefore.MD - reportMD) < 0.01)
+                        return pointAtOrBefore.TVD;
+                    
+                    // Interpolate TVD between points
+                    var nextPoint = sorted.FirstOrDefault(p => p.MD > reportMD);
+                    if (nextPoint != null)
+                    {
+                        double deltaMD = nextPoint.MD - pointAtOrBefore.MD;
+                        if (Math.Abs(deltaMD) < 0.001) return pointAtOrBefore.TVD;
+                        
+                        double ratio = (reportMD - pointAtOrBefore.MD) / deltaMD;
+                        return pointAtOrBefore.TVD + ratio * (nextPoint.TVD - pointAtOrBefore.TVD);
+                    }
+                    
+                    return pointAtOrBefore.TVD;
+                }
+                
+                return 0;
+            }
         }
 
         /// <summary>
@@ -577,6 +847,40 @@ namespace ProjectReport.ViewModels.Geometry
             point.ValidateDepthProgression(previousPoint);
         }
 
+        /// <summary>
+        /// Validates all survey points using the comprehensive validation service
+        /// </summary>
+        private void ValidateAllSurveyPoints()
+        {
+            var validationErrors = _surveyValidationService.ValidateSurvey(SurveyPoints.ToList());
+            
+            // Clear previous errors
+            foreach (var point in SurveyPoints)
+            {
+                point.ClearErrors(null);
+            }
+            
+            // Apply validation errors to points
+            foreach (var error in validationErrors)
+            {
+                var point = SurveyPoints.FirstOrDefault(p => p.Id == error.PointId);
+                if (point != null)
+                {
+                    // Add error to the appropriate property
+                    if (error.Message.Contains("MD"))
+                        point.AddError(nameof(SurveyPoint.MD), error.Message);
+                    else if (error.Message.Contains("Hole Angle") || error.Message.Contains("Inclination"))
+                        point.AddError(nameof(SurveyPoint.HoleAngle), error.Message);
+                    else if (error.Message.Contains("Azimuth"))
+                        point.AddError(nameof(SurveyPoint.Azimuth), error.Message);
+                    else if (error.Message.Contains("TVD"))
+                        point.AddError(nameof(SurveyPoint.TVD), error.Message);
+                    else
+                        point.AddError(string.Empty, error.Message);
+                }
+            }
+        }
+
         // Header fields
         public string WellName
         {
@@ -627,7 +931,7 @@ namespace ProjectReport.ViewModels.Geometry
         public ObservableCollection<WellTest> WellTests { get; }
         public ObservableCollection<AnnularVolumeDetail> AnnularVolumeDetails { get; }
 
-        public Func<double, string> YAxisLabelFormatter => value => Math.Abs(value).ToString("N0");
+        public Func<double, string> YAxisLabelFormatter { get; private set; }
 
         public double AnnularVolumePercent => TotalCirculationVolume > 0 ? (TotalAnnularVolume / TotalCirculationVolume) * 100 : 0;
         public double StringVolumePercent => TotalCirculationVolume > 0 ? (TotalDrillStringVolume / TotalCirculationVolume) * 100 : 0;
@@ -637,12 +941,19 @@ namespace ProjectReport.ViewModels.Geometry
             get => _surveySeriesCollection;
             set => SetProperty(ref _surveySeriesCollection, value);
         }
+        
+        public SeriesCollection PlanViewSeriesCollection
+        {
+            get => _planViewSeriesCollection;
+            set => SetProperty(ref _planViewSeriesCollection, value);
+        }
 
         public SeriesCollection SafetySeriesCollection
         {
             get => _safetySeriesCollection;
             set => SetProperty(ref _safetySeriesCollection, value);
         }
+        
 
         private double _currentMudWeight;
         public double CurrentMudWeight
@@ -684,6 +995,12 @@ namespace ProjectReport.ViewModels.Geometry
         public ICommand AddWellTestCommand => new RelayCommand(AddWellTest);
         public ICommand SyncWellTestDataCommand => new RelayCommand(SyncWellTestData, _ => SelectedWellTest != null);
 
+        // Drill String Row Commands
+        public ICommand AddDrillStringComponentCommand => new RelayCommand(AddDrillStringComponent);
+        public ICommand DeleteDrillStringComponentCommand => new RelayCommand(DeleteDrillStringComponent);
+        public ICommand MoveDrillStringUpCommand => new RelayCommand(MoveDrillStringUp);
+        public ICommand MoveDrillStringDownCommand => new RelayCommand(MoveDrillStringDown);
+
         // Dashboard Commands
         private ICommand? _exportToPdfCommand;
         public ICommand ExportToPdfCommand => _exportToPdfCommand ??= new RelayCommand(ExecuteExportToPdf);
@@ -698,7 +1015,7 @@ namespace ProjectReport.ViewModels.Geometry
         {
             get
             {
-                return WellContextService.Instance.CurrentDepth > 0 && DrillStringComponents.Count > 0;
+                return TotalWellboreMD > 0 && DrillStringComponents.Count > 0;
             }
         }
 
@@ -804,7 +1121,7 @@ namespace ProjectReport.ViewModels.Geometry
              NavigationService.Instance.NavigateToInventory(_currentWell?.Id ?? 0);
         }
 
-        // Wellbore Commands
+        // Wellbore commands
         public ICommand AddWellboreSectionCommand => new RelayCommand(AddWellboreSection);
         public ICommand DeleteWellboreSectionCommand => new RelayCommand(DeleteWellboreSection);
         
@@ -851,19 +1168,36 @@ namespace ProjectReport.ViewModels.Geometry
                 Washout = null
             };
             
-            // First row logic
+            // Auto-Fill Depths: When a user adds a new section, automatically set its Top MD to the Bottom MD of the previous section
             if (WellboreComponents.Count == 0)
             {
+                // First row: must start at 0.00
                 newSection.SetAsFirstRow(true);
+                newSection.TopMD = 0.0;
             }
-            else if (lastSection != null && lastSection.BottomMD.HasValue)
+            else
             {
                 // Subsequent rows: TopMD = previous row's BottomMD (auto-linked)
-                newSection.SetPreviousBottomMD(lastSection.BottomMD.Value);
+                // Find the last section by sorting by TopMD
+                var sortedSections = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+                var previousSection = sortedSections.LastOrDefault();
+                
+                if (previousSection != null && previousSection.BottomMD.HasValue)
+                {
+                    newSection.SetPreviousBottomMD(previousSection.BottomMD.Value);
+                    newSection.TopMD = previousSection.BottomMD.Value; // Auto-fill Top MD
+                    
+                    // Intelligent Input: Auto-fill Component based on previous row
+                    newSection.Component = previousSection.Component; // Copy type
+                    newSection.WellSection = previousSection.WellSection; // Copy well section
+                }
             }
 
             WellboreComponents.Add(newSection);
             newSection.PropertyChanged += OnWellboreComponentChanged;
+            
+            // Validate immediately
+            ValidateWellboreComponent(newSection);
             RecalculateTotals();
         }
 
@@ -872,7 +1206,67 @@ namespace ProjectReport.ViewModels.Geometry
             if (parameter is WellboreComponent section)
             {
                 WellboreComponents.Remove(section);
-                // Renumbering handled in CollectionChanged
+            }
+        }
+
+        private void AddDrillStringComponent(object? parameter)
+        {
+            var newComponent = new DrillStringComponent
+            {
+                Id = GetNextDrillStringId(),
+                Name = "Selecciona Componente...",
+                ComponentType = ComponentType.DrillPipe,
+                Length = null,
+                OD = null,
+                ID = null
+            };
+
+            // Rule S4: Add before Bit if exists, or at bottom
+            var bitComponent = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.Bit);
+            if (bitComponent != null)
+            {
+                int bitIndex = DrillStringComponents.IndexOf(bitComponent);
+                DrillStringComponents.Insert(bitIndex, newComponent);
+            }
+            else
+            {
+                DrillStringComponents.Add(newComponent);
+            }
+
+            // Sync MDs for Top-to-Bottom
+            RenumberDrillStringSections();
+            RecalculateTotals();
+        }
+
+        private void DeleteDrillStringComponent(object? parameter)
+        {
+            if (parameter is DrillStringComponent component)
+            {
+                DrillStringComponents.Remove(component);
+            }
+        }
+
+        private void MoveDrillStringUp(object? parameter)
+        {
+            if (parameter is DrillStringComponent component)
+            {
+                int index = DrillStringComponents.IndexOf(component);
+                if (index > 0)
+                {
+                    DrillStringComponents.Move(index, index - 1);
+                }
+            }
+        }
+
+        private void MoveDrillStringDown(object? parameter)
+        {
+            if (parameter is DrillStringComponent component)
+            {
+                int index = DrillStringComponents.IndexOf(component);
+                if (index < DrillStringComponents.Count - 1)
+                {
+                    DrillStringComponents.Move(index, index + 1);
+                }
             }
         }
         
@@ -896,7 +1290,53 @@ namespace ProjectReport.ViewModels.Geometry
         public ICommand MoveSurveyPointUpCommand => new RelayCommand(MoveSurveyPointUp, CanMoveSurveyPointUp);
         public ICommand MoveSurveyPointDownCommand => new RelayCommand(MoveSurveyPointDown, CanMoveSurveyPointDown);
         public ICommand DeleteSurveyPointCommand => new RelayCommand(DeleteSurveyPoint, CanDeleteSurveyPoint);
-        
+        public ICommand AddSurveyPointCommand => new RelayCommand(AddSurveyPoint);
+
+        private void AddSurveyPoint(object? parameter)
+        {
+            // Mirror logic from view's code-behind to add a survey point with smart defaults
+            // Check if surface point (MD=0) exists
+            var surfacePoint = SurveyPoints.FirstOrDefault(p => Math.Abs(p.MD) < 0.01);
+
+            if (surfacePoint == null && SurveyPoints.Count == 0)
+            {
+                var newPoint = new SurveyPoint
+                {
+                    Id = GetNextSurveyId(),
+                    MD = 0,
+                    HoleAngle = 0,
+                    Azimuth = 0,
+                    IsTieInPoint = true
+                };
+                newPoint.PropertyChanged += OnSurveyPointChanged;
+                SurveyPoints.Add(newPoint);
+                // Recalculate and validate
+                RecalculateSurveyTrajectory(newPoint);
+                ValidateAllSurveyPoints();
+                UpdateSurveyChart();
+                RecalculateTotals();
+            }
+            else
+            {
+                var sorted = SurveyPoints.OrderBy(p => p.MD).ToList();
+                double nextMD = sorted.Count > 0 ? sorted.Last().MD + 100 : 100;
+
+                var newPoint = new SurveyPoint
+                {
+                    Id = GetNextSurveyId(),
+                    MD = nextMD,
+                    HoleAngle = sorted.Count > 0 ? sorted.Last().HoleAngle : 0,
+                    Azimuth = sorted.Count > 0 ? sorted.Last().Azimuth : 0
+                };
+                newPoint.PropertyChanged += OnSurveyPointChanged;
+                SurveyPoints.Add(newPoint);
+                RecalculateSurveyTrajectory(newPoint);
+                ValidateAllSurveyPoints();
+                UpdateSurveyChart();
+                RecalculateTotals();
+            }
+        }
+
         private async Task SaveProjectAsync()
         {
             try
@@ -1101,8 +1541,14 @@ namespace ProjectReport.ViewModels.Geometry
                     SurveyPoints.Add(point);
                 }
                 
+                // Ensure surface point (MD=0) exists
+                _surveyValidationService.EnsureSurfacePoint(SurveyPoints.ToList());
+                
                 // Recalculate all survey trajectories after loading
                 RecalculateAllSurveyTrajectories();
+                
+                // Validate all survey points
+                ValidateAllSurveyPoints();
 
                 // Load Well Tests
                 WellTests.Clear();
@@ -1135,6 +1581,13 @@ namespace ProjectReport.ViewModels.Geometry
                 {
                     var maxTVD = WellboreComponents.Max(w => w.BottomMD ?? 0);
                     ThermalGradientViewModel.MaxWellboreTVD = maxTVD;
+                }
+
+                // Sync Thermal Gradient with latest Report data (MaxBHT and Report TVD)
+                if (ThermalGradientViewModel != null && well.LastReport != null)
+                {
+                    var report = well.LastReport;
+                    ThermalGradientViewModel.SyncWithReport(report.TVD, report.MaxBHT);
                 }
             }
         }
@@ -1660,10 +2113,13 @@ namespace ProjectReport.ViewModels.Geometry
         public double TotalDrillStringVolume { get; private set; }
         public double TotalAnnularVolume { get; private set; }
         public double TotalCirculationVolume { get; private set; }
-        public double TotalSurfaceVolume { get; private set; }
+
         public double TotalSystemVolume { get; private set; }
         public double TotalWellboreMD { get; private set; }
+        public double ShoeDepth { get; private set; }
         public string ContinuityError { get; private set; } = string.Empty;
+        
+        // Hydraulics metrics
 
         /// <summary>
         /// Returns a warning message if any steps in the master flow were skipped.
@@ -1752,8 +2208,6 @@ namespace ProjectReport.ViewModels.Geometry
             }
         }
 
-
-
         public double FeetMissing
         {
             get
@@ -1795,7 +2249,26 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void ExecuteExportToPdf(object? parameter)
         {
-            ToastNotificationService.Instance.ShowInfo("Export to PDF functionality will be implemented in the next patch.");
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "CSV Files (*.csv)|*.csv|All files (*.*)|*.*",
+                DefaultExt = ".csv",
+                FileName = $"Geometry_Summary_{DateTime.Now:yyyyMMdd}"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    var exportService = new ProjectReport.Services.ExportService();
+                    exportService.ExportAnnularVolumeDetailsToCsv(AnnularVolumeDetails, saveFileDialog.FileName);
+                    ToastNotificationService.Instance.ShowSuccess("Data exported successfully to CSV.");
+                }
+                catch (Exception ex)
+                {
+                    ToastNotificationService.Instance.ShowError($"Export failed: {ex.Message}");
+                }
+            }
         }
 
         // Dashboard Data
@@ -1825,8 +2298,8 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 double diff = DepthDifferential;
                 if (Math.Abs(diff) < DepthTolerance) return "OnBottom"; // 0 ft
-                if (diff > 0) return "Short"; // Positive - not reaching
-                return "Overrun"; // Negative - exceeds TD
+                if (diff > 0) return $"Short: {diff:F2} ft"; // Positive - not reaching
+                return $"Overrun: {Math.Abs(diff):F2} ft"; // Negative - exceeds TD
             }
         }
 
@@ -1845,13 +2318,6 @@ namespace ProjectReport.ViewModels.Geometry
                     _ => new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Gray)
                 };
             }
-        }
-
-        private double _shoeDepth;
-        public double ShoeDepth
-        {
-            get => _shoeDepth;
-            set => SetProperty(ref _shoeDepth, value);
         }
 
         /// <summary>
@@ -1919,13 +2385,38 @@ namespace ProjectReport.ViewModels.Geometry
             var component = CreateDefaultBhaComponent(componentType);
             if (component == null) return;
 
-            if (string.Equals(BhaInsertPosition, "Top", StringComparison.OrdinalIgnoreCase))
+            // Regla S4: Bit siempre debe ser el último componente
+            if (componentType == ComponentType.Bit)
             {
-                DrillStringComponents.Insert(0, component);
+                // Si ya hay un Bit, removerlo primero
+                var existingBit = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.Bit);
+                if (existingBit != null)
+                {
+                    DrillStringComponents.Remove(existingBit);
+                }
+                // Agregar el Bit al final
+                DrillStringComponents.Add(component);
             }
             else
             {
-                DrillStringComponents.Add(component);
+                // Para otros componentes, insertar antes del Bit (si existe) o al final
+                var bitComponent = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.Bit);
+                if (bitComponent != null)
+                {
+                    int bitIndex = DrillStringComponents.IndexOf(bitComponent);
+                    DrillStringComponents.Insert(bitIndex, component);
+                }
+                else
+                {
+                    if (string.Equals(BhaInsertPosition, "Top", StringComparison.OrdinalIgnoreCase))
+                    {
+                        DrillStringComponents.Insert(0, component);
+                    }
+                    else
+                    {
+                        DrillStringComponents.Add(component);
+                    }
+                }
             }
 
             component.PropertyChanged += OnDrillStringComponentChanged;
@@ -1976,7 +2467,7 @@ namespace ProjectReport.ViewModels.Geometry
 
         private double GetHoleDiameter()
         {
-            var openHole = WellboreComponents.LastOrDefault(c => c.SectionType == WellboreSectionType.OpenHole);
+            var openHole = WellboreComponents.LastOrDefault(c => c.SectionType == ComponentType.OpenHole);
             if (openHole != null && openHole.OD.GetValueOrDefault() > 0)
             {
                 return openHole.OD.GetValueOrDefault();
@@ -2044,30 +2535,87 @@ namespace ProjectReport.ViewModels.Geometry
         }
 
         /// <summary>
-        /// Auto-adjusts drill pipe length to match bit depth using DrillStringAutoAdjustService.
-        /// Formula: Length_DP = Bit_Depth - Σ Length_BHA
+        /// Adjusts the first component (usually Drill Pipe) to reach the wellbore bottom depth.
         /// </summary>
         private void ExecuteAutoAdjustToBottom()
         {
-            // Get current bit depth from Daily Report
-            var bitDepth = WellContextService.Instance.CurrentDepth;
+            // Use Total Wellbore MD as the target depth for bottoming out
+            var reportMD = TotalWellboreMD;
             
-            // Adjust for RKB (Rule 6)
-            var rig = WellContextService.Instance.CurrentWell?.RigProfile;
-            if (rig != null && rig.RkbElevation > 0)
-            {
-                bitDepth = Math.Max(0, bitDepth - rig.RkbElevation);
-            }
-
-            if (bitDepth <= 0)
+            if (reportMD <= 0)
             {
                 MessageBox.Show(
-                    "Current depth not set in Daily Report. Please set the depth in Daily Report first.",
-                    "Depth Not Set",
+                    "Wellbore bottom depth is not defined. Please add wellbore sections first.",
+                    "Hole Bottom Not Defined",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
+
+            if (DrillStringComponents.Count == 0)
+            {
+                MessageBox.Show(
+                    "No drill string components found. Please add components first.",
+                    "No Components",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            // Calculate difference: Report MD - Total current drill string length
+            double totalCurrentLength = DrillStringComponents.Sum(c => c.Length.GetValueOrDefault());
+            double difference = reportMD - totalCurrentLength;
+
+            if (Math.Abs(difference) < DepthTolerance)
+            {
+                ToastNotificationService.Instance.ShowInfo("Drill string is already on bottom.");
+                return;
+            }
+
+            // Find the top-most Drill Pipe component (or first component if no Drill Pipe)
+            // Rule: MudTrack list is Top-to-Bottom (DP starts at MD 0)
+            var topDrillPipe = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.DrillPipe);
+            var componentToAdjust = topDrillPipe ?? DrillStringComponents.FirstOrDefault();
+
+            if (componentToAdjust == null)
+            {
+                ToastNotificationService.Instance.ShowError("No component found to adjust.");
+                return;
+            }
+
+            // Adjust the first component's length
+            double oldLength = componentToAdjust.Length.GetValueOrDefault();
+            double newLength = oldLength + difference;
+
+            if (newLength <= 0)
+            {
+                MessageBox.Show(
+                    $"Cannot adjust: difference ({difference:F2} ft) would result in negative length.",
+                    "Invalid Adjustment",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            componentToAdjust.Length = newLength;
+            componentToAdjust.IsHighlighted = true;
+
+            // Remove highlight after 2 seconds
+            Task.Delay(2000).ContinueWith(_ => 
+            {
+                Application.Current.Dispatcher.Invoke(() => 
+                {
+                    componentToAdjust.IsHighlighted = false;
+                });
+            });
+
+            // Recalculate totals
+            RecalculateTotals();
+
+            // Show notification
+            string componentName = componentToAdjust.ComponentType == ComponentType.DrillPipe ? "Drill Pipe" : componentToAdjust.ComponentType.ToString();
+            ToastNotificationService.Instance.ShowSuccess(
+                $"✓ Ajustado al fondo: {componentName} ajustado de {oldLength:F2} ft a {newLength:F2} ft (+{difference:F2} ft). Estado: OnBottom");
 
             // Validate drill string configuration
             var configError = _autoAdjustService.ValidateDrillStringConfiguration(DrillStringComponents.ToList());
@@ -2078,67 +2626,6 @@ namespace ProjectReport.ViewModels.Geometry
                     "Configuration Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
-                return;
-            }
-
-            // Get drill pipe and BHA components
-            var drillPipe = _autoAdjustService.GetDrillPipeComponent(DrillStringComponents.ToList());
-            var bhaComponents = _autoAdjustService.GetBHAComponents(DrillStringComponents.ToList());
-
-            // Validate BHA doesn't exceed bit depth (collision detection)
-            var collisionError = _autoAdjustService.ValidateBHADepth(bitDepth, bhaComponents);
-            if (collisionError != null)
-            {
-                MessageBox.Show(
-                    collisionError,
-                    "BHA Collision Alert",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                return;
-            }
-
-            // Calculate required drill pipe length
-            var requiredLength = _autoAdjustService.CalculateDrillPipeLength(bitDepth, bhaComponents);
-            var bhaLength = _autoAdjustService.GetBHATotalLength(bhaComponents);
-            var oldLength = drillPipe?.Length ?? 0;
-
-            // Confirm with user
-            var message = $"Adjust Drill Pipe to Bottom?\n\n" +
-                         $"Bit Depth: {bitDepth:F0} ft\n" +
-                         $"BHA Length: {bhaLength:F2} ft\n" +
-                         $"Required Drill Pipe: {requiredLength:F2} ft\n" +
-                         $"Current Drill Pipe: {oldLength:F2} ft\n\n" +
-                         $"Change: {(requiredLength - oldLength):+0.00;-0.00} ft";
-
-            var result = MessageBox.Show(
-                message,
-                "Adjust to Bottom",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes && drillPipe != null)
-            {
-                // Apply the adjustment
-                drillPipe.Length = requiredLength;
-
-                // Highlight the adjusted field
-                drillPipe.IsHighlighted = true;
-
-                // Remove highlight after 2 seconds
-                Task.Delay(2000).ContinueWith(_ =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        drillPipe.IsHighlighted = false;
-                    });
-                });
-
-                // Mark step as complete
-                WellContextService.Instance.MarkStepComplete("DrillString");
-
-                // Show success message
-                ToastNotificationService.Instance.ShowSuccess(
-                    $"Drill Pipe adjusted to {requiredLength:F2} ft. Total string length: {bitDepth:F0} ft");
             }
         }
 
@@ -2166,36 +2653,22 @@ namespace ProjectReport.ViewModels.Geometry
         {
             TotalWellboreVolume = _geometryService.CalculateTotalWellboreVolume(WellboreComponents, "Imperial");
             TotalDrillStringVolume = _geometryService.CalculateTotalDrillStringVolume(DrillStringComponents, false, "Imperial"); // Internal Volume
-            TotalAnnularVolume = _geometryService.CalculateTotalAnnularVolume(TotalWellboreVolume, TotalDrillStringVolume);
             
-            // Calculate Surface Volume
-            double surfaceVol = 0;
-            var rig = _currentWell?.RigProfile;
-            if (rig != null)
-            {
-                // Active Pits
-                surfaceVol += rig.Pits.Where(p => p.IsActive).Sum(p => p.CurrentVolume);
-                
-                // Service Lines
-                foreach (var line in rig.SurfaceEquipment)
-                {
-                    if (line.InternalDiameter > 0 && line.Length > 0)
-                    {
-                        surfaceVol += _geometryService.CalculateCylindricalVolume(line.InternalDiameter, line.Length, "Imperial");
-                    }
-                }
-            }
-            TotalSurfaceVolume = surfaceVol;
+            // Re-calculate detailed segments for accuracy
+            UpdateAnnularVolumeDetails();
             
-            // The Golden Number
-            TotalSystemVolume = TotalAnnularVolume + TotalDrillStringVolume + TotalSurfaceVolume;
+            // Improved: Use the detailed segments for more accurate total annular volume (handles varying DS/WB diameters)
+            TotalAnnularVolume = _hydraulicsService.CalculateTotalAnnularVolume(AnnularVolumeDetails.ToList());
             
+            // The Golden Number (now only downhole volumes, no surface)
             TotalCirculationVolume = TotalAnnularVolume + TotalDrillStringVolume;
+            TotalSystemVolume = TotalCirculationVolume;
+            
             TotalWellboreMD = WellboreComponents.Count > 0 ? WellboreComponents.Max(w => w.BottomMD ?? 0) : 0;
             
             // Calculate Shoe Depth: BottomMD of the deepest Casing or Liner section
             var lastCasing = WellboreComponents
-                .Where(c => c.SectionType == WellboreSectionType.Casing || c.SectionType == WellboreSectionType.Liner)
+                .Where(c => c.SectionType == ComponentType.Casing || c.SectionType == ComponentType.Liner)
                 .OrderByDescending(c => c.BottomMD)
                 .FirstOrDefault();
             ShoeDepth = lastCasing?.BottomMD ?? 0;
@@ -2219,6 +2692,7 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(TotalAnnularVolume));
             OnPropertyChanged(nameof(TotalCirculationVolume));
             OnPropertyChanged(nameof(TotalWellboreMD));
+            OnPropertyChanged(nameof(ShoeDepth));
             OnPropertyChanged(nameof(AnnularVolumePercent));
             OnPropertyChanged(nameof(StringVolumePercent));
             UpdateAnnularVolumeDetails();
@@ -2259,16 +2733,36 @@ namespace ProjectReport.ViewModels.Geometry
         {
             AnnularVolumeDetails.Clear();
             
-            // Use the new service method for detailed calculation
-            var details = _geometryService.CalculateAnnularVolumeDetails(
+            // Use the new WellboreHydraulicsService for improved segment calculation
+            var details = _hydraulicsService.CalculateAnnularSegments(
                 WellboreComponents, 
-                DrillStringComponents, 
-                "Imperial"); // Assuming Imperial for now, should be dynamic based on settings
+                DrillStringComponents);
                 
             foreach (var detail in details)
             {
                 AnnularVolumeDetails.Add(detail);
             }
+            
+            // Annular Volume Breakdown is already updated in TotalAnnularVolume setter
+            // or by the hydraulics service call.
+        }
+        
+        
+        private double GetActivePumpRate()
+        {
+            // Get pump rate in bbl/min
+            var activePump = GetActivePump();
+            if (activePump == null)
+                return 0;
+            
+            // GPM to bbl/min: 1 bbl = 42 gallons, so bbl/min = GPM / 42
+            return activePump.Gpm / 42.0;
+        }
+        
+        private ProjectReport.Models.Rig.ReportPumpOperation? GetActivePump()
+        {
+            // Get the active pump from the current well's last report
+            return _currentWell?.LastReport?.Pumps?.FirstOrDefault(p => p.Gpm > 0);
         }
 
         private void UpdateDrillStringDepthState()
@@ -2326,13 +2820,13 @@ namespace ProjectReport.ViewModels.Geometry
         }
 
         // Helper methods to convert between string and enum
-        public static WellboreSectionType StringToSectionType(string value)
+        public static ComponentType StringToSectionType(string value)
         {
             return value switch
             {
-                "Casing" => WellboreSectionType.Casing,
-                "Liner" => WellboreSectionType.Liner,
-                _ => WellboreSectionType.OpenHole
+                "Casing" => ComponentType.Casing,
+                "Liner" => ComponentType.Liner,
+                _ => ComponentType.OpenHole
             };
         }
 
@@ -2507,24 +3001,10 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void OnWellTestPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "TestValue" || e.PropertyName == "TVD")
+            if (e.PropertyName == nameof(WellTest.TestValue) || e.PropertyName == nameof(WellTest.TVD) || e.PropertyName == nameof(WellTest.TestPressurePsi))
             {
+                // Safety metrics like MAASP depend on Well Test values
                 RecalculateSafetyMetrics();
-            }
-            else if (e.PropertyName == "TestPressurePsi")
-            {
-                if (sender is ProjectReport.Models.Geometry.WellTest.WellTest test && test.TVD > 0 && test.TestPressurePsi > 0)
-                {
-                    // Automatic Conversion: PSI to PPG
-                    // EMW = MW + (PSI / (0.052 * TVD))
-                    double emw = CurrentMudWeight + (test.TestPressurePsi / (0.052 * test.TVD));
-                    
-                    // Update TestValue only if it's different to prevent loops
-                    if (Math.Abs(test.TestValue - emw) > 0.001)
-                    {
-                        test.TestValue = Math.Round(emw, 2);
-                    }
-                }
             }
         }
 
@@ -2642,66 +3122,19 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void UpdateLotChart()
         {
-            if (LotSeriesCollection == null) LotSeriesCollection = new SeriesCollection();
-            else LotSeriesCollection.Clear();
+            // Create NEW collection to avoid LiveCharts threading/update crash on Clear()
+            var newSeries = new SeriesCollection();
 
-            if (SelectedWellTest == null || SelectedWellTest.PumpDataPoints == null || !SelectedWellTest.PumpDataPoints.Any())
-                return;
-
-            var pressureValues = new ChartValues<ObservablePoint>(
-                SelectedWellTest.PumpDataPoints.Select(p => new ObservablePoint(p.Volume > 0 ? p.Volume : p.Time, p.Pressure)));
-
-            LotSeriesCollection.Add(new LineSeries
-            {
-                Title = "Pump Pressure",
-                Values = pressureValues,
-                Stroke = Brushes.OrangeRed,
-                StrokeThickness = 2,
-                PointGeometry = DefaultGeometries.Circle,
-                PointGeometrySize = 6,
-                Fill = Brushes.Transparent
-            });
+            // Note: Pump data plotting is currently disabled in the simplified Well Test model.
+            // Assign empty collection atomically
+            LotSeriesCollection = newSeries;
         }
 
         private void ExecuteImportPumpData()
         {
-            if (SelectedWellTest == null)
-            {
-                ToastNotificationService.Instance.ShowWarning("Please select a Well Test of type 'Leak Off' first.");
-                return;
-            }
-
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
-            if (openFileDialog.ShowDialog() == true)
-            {
-                try
-                {
-                    var points = new List<PumpDataPoint>();
-                    string[] lines = File.ReadAllLines(openFileDialog.FileName);
-                    
-                    // Basic CSV support: Time,Pressure or Volume,Pressure
-                    foreach (var line in lines.Skip(1)) // Skip header
-                    {
-                        var parts = line.Split(',');
-                        if (parts.Length >= 2 && double.TryParse(parts[0], out double x) && double.TryParse(parts[1], out double y))
-                        {
-                            points.Add(new PumpDataPoint { Time = x, Volume = x, Pressure = y });
-                        }
-                    }
-
-                    if (points.Any())
-                    {
-                        SelectedWellTest.PumpDataPoints = new ObservableCollection<PumpDataPoint>(points);
-                        UpdateLotChart();
-                        ToastNotificationService.Instance.ShowSuccess($"Imported {points.Count} data points for LOT.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ToastNotificationService.Instance.ShowError($"Error importing CSV: {ex.Message}");
-                }
-            }
+            // Note: Pump data import is deprecated in the simplified Well Test model.
+            // If LOT data plots are required in the future, the model should be extended accordingly.
+            ToastNotificationService.Instance.ShowInfo("LOT Pump Data import is currently disabled in the simplified view.");
         }
 
         private void AddWellTest(object? parameter)
@@ -2709,9 +3142,7 @@ namespace ProjectReport.ViewModels.Geometry
             var newTest = new WellTest
             {
                 Id = GetNextWellTestId(),
-                Section = WellboreSectionNames.LastOrDefault() ?? "Open Hole",
                 Type = WellTestType.LeakOff,
-                TestValue = 0,
                 MD = 0,
                 TVD = 0
             };

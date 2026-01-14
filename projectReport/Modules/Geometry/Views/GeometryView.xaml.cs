@@ -81,45 +81,16 @@ namespace ProjectReport.Views
         private void SubscribeToViewModelEvents()
         {
             if (_viewModel == null) return;
-
-            _viewModel.WellboreComponents.CollectionChanged += WellboreComponents_CollectionChanged;
-            foreach (var component in _viewModel.WellboreComponents)
-            {
-                component.PropertyChanged += WellboreComponent_PropertyChanged;
-            }
-            foreach (var component in _viewModel.DrillStringComponents)
-            {
-                component.PropertyChanged += DrillStringComponent_PropertyChanged;
-            }
-            foreach (var point in _viewModel.SurveyPoints)
-            {
-                point.PropertyChanged += SurveyPoint_PropertyChanged;
-            }
-
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            
+            // Note: RecalculateTotals is already handled internally by the ViewModel
+            // through its own PropertyChanged and CollectionChanged subcriptions.
+            // No redundant subscriptions needed here.
         }
 
         private void UnsubscribeFromViewModelEvents()
         {
             if (_viewModel == null) return;
-
-            _viewModel.WellboreComponents.CollectionChanged -= WellboreComponents_CollectionChanged;
-            // Note: Individual item subscriptions are harder to unsubscribe in bulk without tracking, 
-            // but for this scope it might be acceptable or we track them.
-            // Ideally we iterate existing items and unsubscribe.
-            foreach (var component in _viewModel.WellboreComponents)
-            {
-                component.PropertyChanged -= WellboreComponent_PropertyChanged;
-            }
-            foreach (var component in _viewModel.DrillStringComponents)
-            {
-                component.PropertyChanged -= DrillStringComponent_PropertyChanged;
-            }
-            foreach (var point in _viewModel.SurveyPoints)
-            {
-                point.PropertyChanged -= SurveyPoint_PropertyChanged;
-            }
-
             _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
         }
 
@@ -138,9 +109,9 @@ namespace ProjectReport.Views
             {
                 switch (_viewModel.SelectedTabIndex)
                 {
-                    case 0: AddWellboreSection_Click(this, new RoutedEventArgs()); break;
-                    case 1: AddDrillStringComponent_Click(this, new RoutedEventArgs()); break;
-                    case 2: AddSurveyPoint_Click(this, new RoutedEventArgs()); break;
+                    case 0: _viewModel.AddWellboreSectionCommand.Execute(null); break;
+                    case 1: _viewModel.AddDrillStringComponentCommand.Execute(null); break;
+                    case 2: _viewModel.AddSurveyPointCommand.Execute(null); break;
                     case 4: 
                         if (_viewModel.AddWellTestCommand.CanExecute(null))
                             _viewModel.AddWellTestCommand.Execute(null); 
@@ -217,27 +188,6 @@ namespace ProjectReport.Views
             }
         }
 
-        private void AddDrillStringComponent_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel == null) return;
-
-            var newComponent = new DrillStringComponent
-            {
-                Id = _viewModel.GetNextDrillStringId(),
-                Name = "New Component",
-                ComponentType = ComponentType.DrillPipe,
-                Length = null,
-                OD = null,
-                ID = null
-            };
-
-            var geometryService = new GeometryCalculationService();
-            // Volume calculations are now handled automatically in the model
-
-            _viewModel.DrillStringComponents.Add(newComponent);
-            newComponent.PropertyChanged += DrillStringComponent_PropertyChanged;
-            _viewModel.RecalculateTotals();
-        }
 
         private void AddBitComponent_Click(object sender, RoutedEventArgs e)
         {
@@ -262,7 +212,6 @@ namespace ProjectReport.Views
                 {
                     case ComponentType.DrillPipe:
                     case ComponentType.HWDP:
-                    case ComponentType.DC:
                         var toolJointWindow = new ProjectReport.Views.Geometry.ToolJointConfigWindow(component.ToolJoint ?? null, component.ComponentType);
                         if (toolJointWindow.ShowDialog() == true)
                         {
@@ -273,6 +222,7 @@ namespace ProjectReport.Views
 
                     case ComponentType.Motor:
                     case ComponentType.MWD:
+                    case ComponentType.LWD:
                     case ComponentType.PWD:
                         var pdConfig = component.PressureDropConfig ?? new PressureDropConfig { MudDensity = component.FluidDensity.GetValueOrDefault() };
                         var pressureDropWindow = new ProjectReport.Views.Geometry.PressureDropConfigWindow(pdConfig);
@@ -301,34 +251,42 @@ namespace ProjectReport.Views
         private void AddSurveyPoint_Click(object sender, RoutedEventArgs e)
         {
             if (_viewModel == null) return;
-            var newPoint = new SurveyPoint
+            
+            // Check if surface point (MD=0) exists
+            var surfacePoint = _viewModel.SurveyPoints.FirstOrDefault(p => Math.Abs(p.MD) < 0.01);
+            
+            if (surfacePoint == null && _viewModel.SurveyPoints.Count == 0)
             {
-                Id = _viewModel.GetNextSurveyId(),
-                MD = 0,
-                HoleAngle = 0,
-                Azimuth = 0
-                // TVD, Northing, Easting, VerticalSection are auto-calculated
-            };
-
-            _viewModel.SurveyPoints.Add(newPoint);
-            newPoint.PropertyChanged += SurveyPoint_PropertyChanged;
+                // Create surface point (MD=0) as first point
+                var newPoint = new SurveyPoint
+                {
+                    Id = _viewModel.GetNextSurveyId(),
+                    MD = 0,
+                    HoleAngle = 0,
+                    Azimuth = 0,
+                    IsTieInPoint = true
+                };
+                _viewModel.SurveyPoints.Add(newPoint);
+                newPoint.PropertyChanged += SurveyPoint_PropertyChanged;
+            }
+            else
+            {
+                // Create new point at next depth
+                var sorted = _viewModel.SurveyPoints.OrderBy(p => p.MD).ToList();
+                double nextMD = sorted.Count > 0 ? sorted.Last().MD + 100 : 100; // Default increment of 100 ft
+                
+                var newPoint = new SurveyPoint
+                {
+                    Id = _viewModel.GetNextSurveyId(),
+                    MD = nextMD,
+                    HoleAngle = sorted.Count > 0 ? sorted.Last().HoleAngle : 0,
+                    Azimuth = sorted.Count > 0 ? sorted.Last().Azimuth : 0
+                };
+                _viewModel.SurveyPoints.Add(newPoint);
+                newPoint.PropertyChanged += SurveyPoint_PropertyChanged;
+            }
         }
 
-        private void AddWellTest_Click(object sender, RoutedEventArgs e)
-        {
-            if (_viewModel == null) return;
-            var newTest = new WellTest
-            {
-                Id = _viewModel.GetNextWellTestId(),
-                Section = "Section 1",
-                Type = WellTestType.LeakOff,
-                TestValue = 0,
-                MD = 0,
-                TVD = 0
-            };
-
-            _viewModel.WellTests.Add(newTest);
-        }
 
         // Drag and Drop
         private void WellboreDataGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -503,44 +461,16 @@ namespace ProjectReport.Views
         }
 
         // Property Changed Handlers
-        private void WellboreComponents_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            if (e.NewItems != null)
-            {
-                foreach (WellboreComponent item in e.NewItems)
-                    item.PropertyChanged += WellboreComponent_PropertyChanged;
-            }
-            if (e.OldItems != null)
-            {
-                foreach (WellboreComponent item in e.OldItems)
-                    item.PropertyChanged -= WellboreComponent_PropertyChanged;
-            }
-            _viewModel?.RecalculateTotals();
-        }
+        // Redundant Event Handlers (Handled by ViewModel)
+        private void WellboreComponents_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) { }
 
-        private void WellboreComponent_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(WellboreComponent.BottomMD) ||
-                e.PropertyName == nameof(WellboreComponent.ID) ||
-                e.PropertyName == nameof(WellboreComponent.OD))
-            {
-                _viewModel?.RecalculateTotals();
-            }
-        }
+        private void WellboreComponent_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) { }
 
-        private void DrillStringComponent_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(DrillStringComponent.Length) ||
-                e.PropertyName == nameof(DrillStringComponent.ID) ||
-                e.PropertyName == nameof(DrillStringComponent.OD))
-            {
-                _viewModel?.RecalculateTotals();
-            }
-        }
+        private void DrillStringComponent_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) { }
 
         private void SurveyPoint_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            // Handle survey changes if needed
+            // Redundant: Handled by VM
         }
 
         private void LoadSurveyFromExcel_Click(object sender, RoutedEventArgs e)
@@ -664,33 +594,6 @@ namespace ProjectReport.Views
             }
         }
 
-        private void DeleteDrillString_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is DrillStringComponent component)
-            {
-                _viewModel?.DrillStringComponents.Remove(component);
-            }
-        }
-
-        private void MoveDrillStringUp_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is DrillStringComponent component)
-            {
-                if (_viewModel == null) return;
-                int index = _viewModel.DrillStringComponents.IndexOf(component);
-                if (index > 0) _viewModel.DrillStringComponents.Move(index, index - 1);
-            }
-        }
-
-        private void MoveDrillStringDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is DrillStringComponent component)
-            {
-                if (_viewModel == null) return;
-                int index = _viewModel.DrillStringComponents.IndexOf(component);
-                if (index < _viewModel.DrillStringComponents.Count - 1) _viewModel.DrillStringComponents.Move(index, index + 1);
-            }
-        }
 
         // Survey Actions
         private void DeleteSurvey_Click(object sender, RoutedEventArgs e)
@@ -744,5 +647,7 @@ namespace ProjectReport.Views
                 if (index < _viewModel.WellTests.Count - 1) _viewModel.WellTests.Move(index, index + 1);
             }
         }
+
+
     }
-    }
+}

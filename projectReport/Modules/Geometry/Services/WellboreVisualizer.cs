@@ -76,13 +76,13 @@ namespace ProjectReport.Services
 
             switch (section.SectionType)
             {
-                case WellboreSectionType.Casing:
+                case ComponentType.Casing:
                     fillBrush = new SolidColorBrush(Color.FromRgb(218, 218, 218)); // #DADADA Gray
                     break;
-                case WellboreSectionType.Liner:
+                case ComponentType.Liner:
                     fillBrush = Brushes.LightGray;
                     break;
-                case WellboreSectionType.OpenHole:
+                case ComponentType.OpenHole:
                     fillBrush = Brushes.White;
                     strokeDashArray = new DoubleCollection { 4, 2 }; // Dashed outline
                     break;
@@ -107,7 +107,7 @@ namespace ProjectReport.Services
             _canvas.Children.Add(rect);
 
             // Draw Casing lines (OD) if not Open Hole
-            if (section.SectionType != WellboreSectionType.OpenHole && section.OD.GetValueOrDefault() > section.ID.GetValueOrDefault())
+            if (section.SectionType != ComponentType.OpenHole && section.OD.GetValueOrDefault() > section.ID.GetValueOrDefault())
             {
                 double odWidth = section.OD.GetValueOrDefault() * SCALE_WIDTH;
                 double odLeftX = centerX - (odWidth / 2);

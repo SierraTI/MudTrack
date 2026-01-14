@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 using ClosedXML.Excel;
 
 namespace ProjectReport.Services.Wellbore
@@ -103,7 +104,7 @@ namespace ProjectReport.Services.Wellbore
             }
 
             // Parse Section Type (column 1)
-            if (Enum.TryParse<WellboreSectionType>(values[1].Trim(), true, out var sectionType))
+            if (Enum.TryParse<ComponentType>(values[1].Trim(), true, out var sectionType))
             {
                 component.SectionType = sectionType;
             }
@@ -160,7 +161,7 @@ namespace ProjectReport.Services.Wellbore
 
             // BR-WG-001: Skip OD validation for Open Hole (handled by model)
             // BR-WG-003: Validate ID < OD for non-Open Hole sections
-            if (component.SectionType != WellboreSectionType.OpenHole && id >= od)
+            if (component.SectionType != ComponentType.OpenHole && id >= od)
             {
                 throw new InvalidOperationException($"ID ({id:F3}) must be less than OD ({od:F3})");
             }
@@ -240,7 +241,7 @@ namespace ProjectReport.Services.Wellbore
 
                             // Parse Section Type (Column 2)
                             var sectionTypeStr = row.Cell(2).GetString().Trim();
-                            if (Enum.TryParse<WellboreSectionType>(sectionTypeStr, true, out var sectionType))
+                            if (Enum.TryParse<ComponentType>(sectionTypeStr, true, out var sectionType))
                                 component.SectionType = sectionType;
                             else
                                 throw new FormatException($"Invalid Section Type: {sectionTypeStr}");
@@ -274,7 +275,7 @@ namespace ProjectReport.Services.Wellbore
                                 throw new FormatException("Invalid OD value");
 
                             // BR-WG-003: Validate ID < OD for non-Open Hole sections
-                            if (component.SectionType != WellboreSectionType.OpenHole && component.ID >= component.OD)
+                            if (component.SectionType != ComponentType.OpenHole && component.ID >= component.OD)
                                 throw new InvalidOperationException($"ID ({component.ID:F3}) must be less than OD ({component.OD:F3})");
 
                             result.WellboreComponents.Add(component);

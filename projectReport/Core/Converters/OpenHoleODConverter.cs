@@ -12,7 +12,7 @@ namespace ProjectReport.Converters
             // We need the whole object to check SectionType
             if (value is WellboreComponent component)
             {
-                if (component.SectionType == WellboreSectionType.OpenHole)
+                if (component.SectionType == ProjectReport.Models.Geometry.DrillString.ComponentType.OpenHole)
                 {
                     return "N/A";
                 }

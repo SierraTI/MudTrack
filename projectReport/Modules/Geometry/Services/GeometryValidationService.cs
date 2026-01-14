@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 
 namespace ProjectReport.Services
 {
@@ -89,7 +90,7 @@ namespace ProjectReport.Services
 
                 if (cur.OD.GetValueOrDefault() <= 0.001)
                 {
-                    string odMessage = cur.SectionType == WellboreSectionType.OpenHole
+                    string odMessage = cur.Component == ComponentType.OpenHole
                         ? "Error A5: OD cannot be 0.000 (or empty). For OpenHole, enter the Hole Diameter (in)."
                         : "Error A5: OD cannot be 0.000 (or empty). Enter the outer diameter of the pipe.";
                     result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = odMessage, Severity = ValidationSeverity.Error });
@@ -104,13 +105,13 @@ namespace ProjectReport.Services
                 }
 
                 // A6: ID No Puede Ser Cero (Excepto OpenHole)
-                if (cur.SectionType != WellboreSectionType.OpenHole && cur.ID.GetValueOrDefault() <= 0.001)
+                if (cur.Component != ComponentType.OpenHole && cur.ID.GetValueOrDefault() <= 0.001)
                 {
                     result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "Error A6: ID cannot be 0.000. Pipe sections must have a valid ID.", Severity = ValidationSeverity.Error });
                 }
 
                 // Validar que OpenHole SÍ tenga ID = 0
-                if (cur.SectionType == WellboreSectionType.OpenHole && cur.ID.GetValueOrDefault() > 0.001)
+                if (cur.Component == ComponentType.OpenHole && cur.ID.GetValueOrDefault() > 0.001)
                 {
                     result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = $"OpenHole debe tener ID = 0.000 (no hay tubería interior). Valor actual: {cur.ID.GetValueOrDefault():F3} in", Severity = ValidationSeverity.Error });
                 }
@@ -124,7 +125,7 @@ namespace ProjectReport.Services
                 }
 
                 // A1: Internal Diameter Logic - ID must always be smaller than OD
-                if (cur.SectionType != WellboreSectionType.OpenHole && cur.ID.GetValueOrDefault() >= cur.OD.GetValueOrDefault() && cur.OD.GetValueOrDefault() > 0.001)
+                if (cur.Component != ComponentType.OpenHole && cur.ID.GetValueOrDefault() >= cur.OD.GetValueOrDefault() && cur.OD.GetValueOrDefault() > 0.001)
                 {
                     result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "ID must always be smaller than OD", Severity = ValidationSeverity.Error });
                 }
@@ -151,10 +152,37 @@ namespace ProjectReport.Services
 
                 if (prev != null)
                 {
-                    // B3: Solapamientos
-                    if (cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value < prev.BottomMD.Value)
+                    // BR-WG-002/003: Casing Override
+                    // El "Casing Override" ocurre cuando una sección tiene el mismo Top MD que la anterior pero un Bottom MD mayor
+                    bool isOverride = false;
+                    if (cur.TopMD.HasValue && prev.TopMD.HasValue && 
+                        cur.BottomMD.HasValue && prev.BottomMD.HasValue)
                     {
-                        result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = $"Las secciones se solapan. La sección {cur.Id} comienza en {cur.TopMD.Value:F2} ft pero la sección anterior termina en {prev.BottomMD.Value:F2} ft", Severity = ValidationSeverity.Error });
+                        isOverride = Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01 && 
+                                         cur.BottomMD.Value >= prev.BottomMD.Value;
+
+                        if (isOverride)
+                        {
+                            // Regla BR-WG-002/003: Es un override válido. No marcar como error de solapamiento (B3).
+                            result.Items.Add(new ValidationError 
+                            { 
+                                ComponentId = cur.Id.ToString(),
+                                ComponentName = cur.Name,
+                                Message = "Casing Override detectado: la sección actual reemplaza la anterior en este intervalo.", 
+                                Severity = ValidationSeverity.Warning 
+                            });
+                        }
+                        else if (cur.TopMD.Value < prev.BottomMD.Value)
+                        {
+                            // Error B3: Solapamiento estándar (No es un override)
+                            result.Items.Add(new ValidationError 
+                            { 
+                                ComponentId = cur.Id.ToString(), 
+                                ComponentName = cur.Name,
+                                Message = "Las secciones se solapan. Revise profundidades.", 
+                                Severity = ValidationSeverity.Error 
+                            });
+                        }
                     }
 
                     // B2: Gaps (tolerancia)
@@ -163,40 +191,26 @@ namespace ProjectReport.Services
                         double gap = cur.TopMD.Value - prev.BottomMD.Value;
                         result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = $"Gap of {gap:F2} ft detected between Sections. Top MD should equal previous Bottom MD.", Severity = ValidationSeverity.Warning });
                     }
-                }
-
-                // --- CATEGORÍA C: TIPO DE SECCIÓN ---
-                if (prev != null &&
-                    (cur.SectionType == WellboreSectionType.Casing || cur.SectionType == WellboreSectionType.Liner) &&
-                    (prev.SectionType == WellboreSectionType.Casing || prev.SectionType == WellboreSectionType.Liner))
-                {
-                    // Check for Casing Override: Same TopMD, deeper or equal BottomMD (only when values present)
-                    bool isCasingOverride = cur.TopMD.HasValue && prev.TopMD.HasValue && Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01 && cur.BottomMD.GetValueOrDefault() >= prev.BottomMD.GetValueOrDefault();
-
-                    if (isCasingOverride)
+                    
+                    // D3 Check (Nested Casing Depth)
+                     if ((cur.Component == ComponentType.Casing || cur.Component == ComponentType.Liner) &&
+                        (prev.Component == ComponentType.Casing || prev.Component == ComponentType.Liner))
                     {
-                        result.Items.Add(new ValidationError
+                         if (!isOverride && cur.BottomMD.HasValue && prev.BottomMD.HasValue && cur.BottomMD.Value < prev.BottomMD.Value)
                         {
-                            ComponentId = cur.Id.ToString(),
-                            ComponentName = cur.Name,
-                            Message = "⚠ Casing Override detected → previous casing replaced.",
-                            Severity = ValidationSeverity.Warning
-                        });
-                    }
-                    else if (cur.BottomMD.HasValue && prev.BottomMD.HasValue && cur.BottomMD.Value < prev.BottomMD.Value)
-                    {
-                        result.Items.Add(new ValidationError
-                        {
-                            ComponentId = cur.Id.ToString(),
-                            ComponentName = cur.Name,
-                            Message = "Error D3: El Bottom MD de una sección de revestimiento anidada no puede ser menor que el Bottom MD de la sección superior inmediata.",
-                            Severity = ValidationSeverity.Error
-                        });
+                            result.Items.Add(new ValidationError
+                            {
+                                ComponentId = cur.Id.ToString(),
+                                ComponentName = cur.Name,
+                                Message = "Error D3: El Bottom MD de una sección de revestimiento anidada no puede ser menor que el Bottom MD de la sección superior inmediata.",
+                                Severity = ValidationSeverity.Error
+                            });
+                        }
                     }
                 }
 
                 // C3/C4: OpenHole Washout
-                if (cur.SectionType == WellboreSectionType.OpenHole)
+                if (cur.Component == ComponentType.OpenHole)
                 {
                     if (!cur.Washout.HasValue)
                     {

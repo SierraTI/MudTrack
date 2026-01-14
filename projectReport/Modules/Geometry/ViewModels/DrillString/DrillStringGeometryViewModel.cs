@@ -55,6 +55,7 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
 
         public ICommand AddDrillStringComponentCommand => new RelayCommand(AddDrillStringComponent);
         public ICommand DeleteDrillStringComponentCommand => new RelayCommand(DeleteDrillStringComponent);
+        public ICommand AdjustMDToBottomCommand => new RelayCommand(_ => AdjustMDToBottom());
 
         #endregion
 
@@ -223,6 +224,18 @@ namespace ProjectReport.ViewModels.Geometry.DrillString
         {
             TotalDrillStringLength = _calculationService.CalculateTotalDrillStringLength(DrillStringComponents);
             TotalDrillStringVolume = _calculationService.CalculateTotalDrillStringVolume(DrillStringComponents, false);
+        }
+
+        /// <summary>
+        /// Ajusta el MD inferior del último componente del wellbore para que coincida con el TotalLength del drill string.
+        /// Nota: La implementación real está en GeometryViewModel ya que tiene acceso a ambas colecciones.
+        /// Este método actúa como placeholder para la UI.
+        /// </summary>
+        public void AdjustMDToBottom()
+        {
+            // Este es un placeholder - la implementación real estará en GeometryViewModel
+            // porque necesita acceso a WellboreComponents y puede acceder a TotalWellboreMD
+            RecalculateTotals();
         }
 
         #endregion

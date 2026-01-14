@@ -38,77 +38,138 @@ namespace ProjectReport.Views.Geometry
             if (!wellbore.Any()) return;
 
             // Calculate Scales
-            double maxMD = wellbore.Max(w => w.BottomMD ?? 0);
+            double maxMD = Math.Max(
+                wellbore.Max(w => w.BottomMD ?? 0),
+                drillString.Any() ? drillString.Sum(ds => ds.Length ?? 0) : 0
+            );
             if (maxMD <= 0) maxMD = 1000;
             
             double availableHeight = Math.Max(600, ActualHeight - 40);
             double verticalScale = availableHeight / maxMD;
 
-            // 1. Draw Wellbore (Background)
+            // --- LAYER 1: Wellbore (Mud/Annulus Background) ---
             foreach (var section in wellbore)
             {
                 double top = (section.TopMD ?? 0) * verticalScale;
                 double bottom = (section.BottomMD ?? 0) * verticalScale;
                 double h = Math.Max(MinSegmentHeight, bottom - top);
-                double w = (section.OD ?? 12.0) * ODScale;
+                
+                // Use ID for visual width of the "Hole"
+                double id = section.ID ?? (section.OD ?? 12.0) - 1.0; 
+                double w = Math.Max(2, id * ODScale);
 
-                // Wall Fill
+                // Fluid/Hole Rectangle
                 var rect = new Rectangle
                 {
                     Width = w,
                     Height = h,
-                    Fill = section.SectionType == WellboreSectionType.OpenHole 
-                        ? (Brush?)new BrushConverter().ConvertFromString("#FEF3C7") ?? Brushes.Wheat
-                        : (Brush?)new BrushConverter().ConvertFromString("#F3F4F6") ?? Brushes.LightGray,
-                    Stroke = section.SectionType == WellboreSectionType.OpenHole 
-                        ? (Brush?)new BrushConverter().ConvertFromString("#F59E0B") ?? Brushes.Orange
-                        : (Brush?)new BrushConverter().ConvertFromString("#9CA3AF") ?? Brushes.Gray,
-                    StrokeThickness = 1,
-                    ToolTip = $"{section.Name}\nDepth: {section.TopMD}-{section.BottomMD} ft\nID: {section.ID}\" OD: {section.OD}\""
+                    Fill = (Brush?)new BrushConverter().ConvertFromString("#E0F2FE") ?? Brushes.LightCyan, // Mud Color
+                    StrokeThickness = 0
                 };
 
                 Canvas.SetLeft(rect, centerX - (w / 2));
                 Canvas.SetTop(rect, top + 10);
                 SchematicCanvas.Children.Add(rect);
 
+                // Wall Lines (Casing/OpenHole boundary)
+                var wallBrush = section.SectionType == ComponentType.OpenHole 
+                    ? Brushes.SaddleBrown 
+                    : Brushes.Black;
+                
+                double wallThickness = section.SectionType == ComponentType.OpenHole ? 2 : 1;
+
+                // Left Wall
+                var leftLine = new Line
+                {
+                    X1 = centerX - (w / 2), Y1 = top + 10,
+                    X2 = centerX - (w / 2), Y2 = top + h + 10,
+                    Stroke = wallBrush,
+                    StrokeThickness = wallThickness
+                };
+                
+                // Right Wall
+                var rightLine = new Line
+                {
+                    X1 = centerX + (w / 2), Y1 = top + 10,
+                    X2 = centerX + (w / 2), Y2 = top + h + 10,
+                    Stroke = wallBrush,
+                    StrokeThickness = wallThickness
+                };
+                
+                SchematicCanvas.Children.Add(leftLine);
+                SchematicCanvas.Children.Add(rightLine);
+
+                // Start Depth Label (only for 0)
+                if (Math.Abs(section.TopMD ?? 0) < 0.1)
+                {
+                     AddDepthLabel(0, 10, centerX - (w/2) - 10, false);
+                }
+
                 // Shoe Depth Label
-                if (section.SectionType != WellboreSectionType.OpenHole)
+                if (section.SectionType != ComponentType.OpenHole)
                 {
                     AddDepthLabel(section.BottomMD ?? 0, top + h + 10, centerX + (w / 2) + 5, true);
                 }
             }
 
-            // 2. Draw Drill String (Foreground)
-            // Bit depth from context or last component depth
-            double currentY = 10;
-            // Iterate from Top to Bottom (Last to First in our model implementation)
-            for (int i = drillString.Count - 1; i >= 0; i--)
+            // --- LAYER 2: Drill String (Foreground) ---
+            double currentY = 10; // Start at Surface
+            
+            // Iterate Top-Down (Surface at Index 0)
+            foreach (var comp in drillString)
             {
-                var comp = drillString[i];
                 double h = (comp.Length ?? 0) * verticalScale;
-                double w = (comp.OD ?? 5.0) * ODScale;
+                double compOD = comp.OD ?? 5.0;
+                double w = compOD * ODScale;
 
-                var rect = new Rectangle
+                // Special Draw for Bit
+                if (comp.ComponentType == ComponentType.Bit)
                 {
-                    Width = w,
-                    Height = h,
-                    Fill = GetColorForComponent(comp.ComponentType),
-                    Stroke = Brushes.Black,
-                    StrokeThickness = 0.5,
-                    ToolTip = $"{comp.Name}\nLength: {comp.Length} ft\nOD: {comp.OD}\""
-                };
+                    // Draw Bit as Triangle/Trapezoid pointing DOWN
+                    var bitShape = new Polygon
+                    {
+                        Points = new PointCollection
+                        {
+                            new Point(0, 0),    // Top Left
+                            new Point(w, 0),    // Top Right
+                            new Point(w/2, h)   // Bottom Center (Tip)
+                        },
+                        Fill = Brushes.Crimson,
+                        Stroke = Brushes.Black,
+                        StrokeThickness = 1,
+                        ToolTip = $"{comp.Name}\nLength: {comp.Length} ft\nOD: {comp.OD}\""
+                    };
+                    
+                    Canvas.SetLeft(bitShape, centerX - (w / 2));
+                    Canvas.SetTop(bitShape, currentY);
+                    SchematicCanvas.Children.Add(bitShape);
+                }
+                else
+                {
+                    // Standard Component Rectangle
+                    var rect = new Rectangle
+                    {
+                        Width = w,
+                        Height = h,
+                        Fill = GetColorForComponent(comp.ComponentType),
+                        Stroke = Brushes.Black,
+                        StrokeThickness = 0.5,
+                        ToolTip = $"{comp.Name}\nLength: {comp.Length} ft\nOD: {comp.OD}\""
+                    };
 
-                Canvas.SetLeft(rect, centerX - (w / 2));
-                Canvas.SetTop(rect, currentY);
-                SchematicCanvas.Children.Add(rect);
+                    Canvas.SetLeft(rect, centerX - (w / 2));
+                    Canvas.SetTop(rect, currentY);
+                    SchematicCanvas.Children.Add(rect);
+                }
 
                 currentY += h;
             }
 
-            // TD Label
-            AddDepthLabel(maxMD, maxMD * verticalScale + 10, centerX - 50, false);
+            // Final TD Label (Drill String Bottom)
+            double drillStringBottom = drillString.Sum(c => c.Length ?? 0);
+            AddDepthLabel(drillStringBottom, currentY, centerX - 50, false);
 
-            SchematicCanvas.Height = (maxMD * verticalScale) + 50;
+            SchematicCanvas.Height = Math.Max(currentY, (maxMD * verticalScale) + 10) + 50;
         }
 
         private void AddDepthLabel(double depth, double y, double x, bool isShoe)

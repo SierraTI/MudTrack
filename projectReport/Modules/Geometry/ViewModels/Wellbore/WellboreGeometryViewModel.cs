@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.DrillString;
 using ProjectReport.Services;
 using ProjectReport.Services.Wellbore;
 using ProjectReport.ViewModels;
@@ -24,7 +25,8 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
         private bool _isProcessingCollectionChange = false;
 
         public ObservableCollection<WellboreComponent> WellboreComponents { get; }
-        public ObservableCollection<WellboreSectionType> WellboreSectionTypes { get; }
+        public ObservableCollection<ComponentType> WellboreSectionTypes { get; }
+        public ObservableCollection<WellSectionType> WellSectionTypes { get; }
 
         private double _totalWellboreMD;
         public double TotalWellboreMD
@@ -46,8 +48,10 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
             _calculationService = calculationService ?? throw new ArgumentNullException(nameof(calculationService));
 
             WellboreComponents = new ObservableCollection<WellboreComponent>();
-            WellboreSectionTypes = new ObservableCollection<WellboreSectionType>(
-                Enum.GetValues(typeof(WellboreSectionType)).Cast<WellboreSectionType>());
+            WellboreSectionTypes = new ObservableCollection<ComponentType>(
+                Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>().Where(c => c == ComponentType.Casing || c == ComponentType.Liner || c == ComponentType.OpenHole));
+            WellSectionTypes = new ObservableCollection<WellSectionType>(
+                Enum.GetValues(typeof(WellSectionType)).Cast<WellSectionType>());
 
             WellboreComponents.CollectionChanged += OnWellboreCollectionChanged;
         }
@@ -70,7 +74,7 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
             {
                 Id = GetNextWellboreId(),
                 Name = string.Empty,
-                SectionType = WellboreSectionType.Casing,
+                Component = ComponentType.Casing,
                 TopMD = null,
                 BottomMD = null,
                 OD = null,
@@ -201,7 +205,7 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                 e.PropertyName == nameof(WellboreComponent.BottomMD) ||
                 e.PropertyName == nameof(WellboreComponent.ID) ||
                 e.PropertyName == nameof(WellboreComponent.OD) ||
-                e.PropertyName == nameof(WellboreComponent.SectionType) ||
+                e.PropertyName == nameof(WellboreComponent.Component) ||
                 e.PropertyName == nameof(WellboreComponent.Washout))
             {
                 if (sender is WellboreComponent component)
@@ -256,10 +260,10 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
         private void CheckForCasingOverwrite(WellboreComponent current, WellboreComponent? previous)
         {
             if (previous != null && 
-                (current.SectionType == WellboreSectionType.Casing || current.SectionType == WellboreSectionType.Liner) &&
-                (previous.SectionType == WellboreSectionType.Casing || previous.SectionType == WellboreSectionType.Liner))
+                (current.Component == ComponentType.Casing || current.Component == ComponentType.Liner) &&
+                (previous.Component == ComponentType.Casing || previous.Component == ComponentType.Liner))
             {
-                bool isSameType = current.SectionType == previous.SectionType;
+                bool isSameType = current.Component == previous.Component;
                 bool isSameOD = Math.Abs(current.OD.GetValueOrDefault() - previous.OD.GetValueOrDefault()) < 0.001;
                 bool isSameTop = current.TopMD.HasValue && previous.TopMD.HasValue && 
                                  Math.Abs(current.TopMD.Value - previous.TopMD.Value) < 0.01;
@@ -286,30 +290,35 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
 
         /// <summary>
         /// Recalcula el MD total del wellbore y volumen total basado en las secciones.
+        /// Sincroniza con Report MD desde WellContextService si está disponible.
         /// </summary>
         public void RecalculateTotals()
         {
-            if (WellboreComponents.Count == 0)
-            {
-                TotalWellboreMD = 0;
-                TotalVolume = 0;
-                return;
-            }
+            // Calculate total volume
+            TotalVolume = WellboreComponents.Sum(c => c.Volume);
 
-            var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
-            var lastComponent = sorted.LastOrDefault();
-
-            if (lastComponent != null && lastComponent.BottomMD.HasValue)
+            // TotalWellboreMD Logic (Report Sync)
+            // Al guardar o actualizar el "Report MD" en la cabecera del reporte,
+            // este valor debe pasar al totalWellboreMD del servicio de validación
+            double reportMD = WellContextService.Instance.CurrentDepth;
+            if (reportMD > 0)
             {
-                TotalWellboreMD = lastComponent.BottomMD.Value;
+                TotalWellboreMD = reportMD;
             }
             else
             {
-                TotalWellboreMD = 0;
+                // Fallback: usar el BottomMD de la última sección si no hay Report MD
+                if (WellboreComponents.Count == 0)
+                {
+                    TotalWellboreMD = 0;
+                }
+                else
+                {
+                    var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+                    var lastComponent = sorted.LastOrDefault();
+                    TotalWellboreMD = lastComponent?.BottomMD ?? 0;
+                }
             }
-
-            // Calculate total volume
-            TotalVolume = WellboreComponents.Sum(c => c.Volume);
         }
 
         #endregion

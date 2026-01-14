@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
+using ProjectReport.Models.Geometry.Wellbore;
 
 namespace ProjectReport.Converters
 {
@@ -12,6 +13,23 @@ namespace ProjectReport.Converters
             
             // Convert enum to display string
             string enumName = value.ToString() ?? string.Empty;
+            
+            // Handle WellSectionType enum with proper formatting
+            if (value is WellSectionType wellSectionType)
+            {
+                return wellSectionType switch
+                {
+                    WellSectionType.Riser => "Riser",
+                    WellSectionType.ConductorCasing => "Conductor casing",
+                    WellSectionType.SurfaceCasing => "Surface casing",
+                    WellSectionType.IntermediateCasing => "Intermediate casing",
+                    WellSectionType.ProductionCasing => "Production casing",
+                    WellSectionType.Liner => "Liner",
+                    WellSectionType.CasedHole => "Cased hole",
+                    WellSectionType.OpenHole => "Open hole",
+                    _ => enumName
+                };
+            }
             
             // Handle specific mappings
             if (enumName == "OpenHole") return "Open Hole";
@@ -28,6 +46,23 @@ namespace ProjectReport.Converters
         {
             if (value is string str && parameter is Type enumType)
             {
+                // Handle WellSectionType enum conversion
+                if (enumType == typeof(WellSectionType))
+                {
+                    return str switch
+                    {
+                        "Riser" => WellSectionType.Riser,
+                        "Conductor casing" => WellSectionType.ConductorCasing,
+                        "Surface casing" => WellSectionType.SurfaceCasing,
+                        "Intermediate casing" => WellSectionType.IntermediateCasing,
+                        "Production casing" => WellSectionType.ProductionCasing,
+                        "Liner" => WellSectionType.Liner,
+                        "Cased hole" => WellSectionType.CasedHole,
+                        "Open hole" => WellSectionType.OpenHole,
+                        _ => value
+                    };
+                }
+                
                 // Convert display string back to enum
                 string normalized = str.Replace(" ", "");
                 if (normalized == "OpenHole") normalized = "OpenHole";

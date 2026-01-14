@@ -169,27 +169,37 @@ namespace ProjectReport.ViewModels.Inventory
         {
             Error = "";
 
-            var line = new TicketLine
+            try
             {
-                ProductCode = string.Empty,
-                ProductName = string.Empty,
-                Quantity = 1,           // valor por defecto para facilitar edición
-                UnitPrice = 0,
-                Context = Origin        // prefill origin desde el campo superior
-            };
+                var line = new TicketLine
+                {
+                    ProductCode = string.Empty,
+                    ProductName = string.Empty,
+                    Quantity = 1,           // valor por defecto para facilitar edición
+                    UnitPrice = 0,
+                    Context = Origin        // prefill origin desde el campo superior
+                };
 
-            Lines.Add(line);
+                Lines.Add(line);
 
-            // Limpiar sólo inputs de entrada rápida (mantener Requisition y Origin)
-            Quantity = 0;
-            UnitPrice = 0;
-            ProductName = string.Empty;
-            ProductCode = string.Empty;
-            SelectedProduct = null;
-            Category = string.Empty;
-            Unit = string.Empty;
+                // Log + feedback para depuración
+                System.Diagnostics.Debug.WriteLine($"[TicketReceived] AddLine invoked: Lines.Count = {Lines.Count}");
+                Error = $"Línea agregada en borrador. Total líneas: {Lines.Count}";
 
-            Error = $"Línea agregada en borrador. Total líneas: {Lines.Count}";
+                // Limpiar sólo inputs de entrada rápida (mantener Requisition y Origin)
+                Quantity = 0;
+                UnitPrice = 0;
+                ProductName = string.Empty;
+                ProductCode = string.Empty;
+                SelectedProduct = null;
+                Category = string.Empty;
+                Unit = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[TicketReceived] AddLine exception: {ex}");
+                Error = "Error al agregar línea: " + ex.Message;
+            }
         }
 
         private void RemoveLine(TicketLine? line)

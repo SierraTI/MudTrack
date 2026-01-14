@@ -181,5 +181,8 @@
                     HorizontalAlignment="Right"
                     Command="{Binding SaveCommand}"/>
         </Grid>
+
+        <!-- Mensajes de estado (solo para depuracion) -->
+        <TextBlock Grid.Row="2" Text="{Binding Error}" Foreground="DarkRed" Margin="0,6,0,6"/>
     </Grid>
 </UserControl>

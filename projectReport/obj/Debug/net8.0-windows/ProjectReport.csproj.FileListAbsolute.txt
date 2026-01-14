@@ -131,7 +131,6 @@ C:\DEV\projectReport\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport
 C:\DEV\projectReport\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\DEV\projectReport\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\DEV\projectReport\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
-<<<<<<< HEAD
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.exe
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.dll.config
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\bin\Debug\net8.0-windows\ProjectReport.deps.json
@@ -263,7 +262,6 @@ C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\refi
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\Users\Maryo\source\repos\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
-=======
 >>>>>>> ea3cb986f849b4626de2c3b9a62bbf41f581be68
 >>>>>>> f95c53d5a29051f1cf8a5e9101b4f377642a95e1
 C:\Dev\MudTrack\ProjectReport\bin\Debug\net8.0-windows\Data\Lista.xlsx
@@ -406,11 +404,7 @@ C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport.dll
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
-<<<<<<< HEAD
 C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\ProjectR.53A52C41.Up2Date
-=======
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreDrillStringSchematicView.baml
-C:\Dev\MudTrack\ProjectReport\obj\Debug\net8.0-windows\Modules\Geometry\Views\Geometry\WellboreDrillStringSchematicView.g.cs
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.csproj.AssemblyReference.cache
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Common\ConnectionDialog.baml
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\Core\Views\Dialogs\InputDialog.baml
@@ -559,4 +553,3 @@ C:\DEV\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport.dll
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
->>>>>>> f95c53d5a29051f1cf8a5e9101b4f377642a95e1

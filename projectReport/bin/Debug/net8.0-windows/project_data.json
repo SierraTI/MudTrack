@@ -2,7 +2,7 @@
   "$id": "1",
   "Name": "Y-23A",
   "WellName": "Well-04",
-  "LastModified": "2026-01-13T10:43:04.3124728-05:00",
+  "LastModified": "2026-01-15T15:47:50.4780551-05:00",
   "ActiveWellId": 1,
   "Wells": {
     "$id": "2",
@@ -14,7 +14,7 @@
         "Operator": "",
         "OperatorLogoPath": "",
         "LoadFluid": "",
-        "SpudDate": "2026-01-13T10:43:04.3103868-05:00",
+        "SpudDate": "2026-01-15T15:47:50.4759805-05:00",
         "Trajectory": "",
         "WellType": "",
         "RigName": "",
@@ -40,8 +40,8 @@
           "$values": []
         },
         "Status": "Draft",
-        "CreatedDate": "2026-01-13T10:43:04.3102521-05:00",
-        "LastModified": "2026-01-13T10:43:04.3107369-05:00",
+        "CreatedDate": "2026-01-15T15:47:50.4759304-05:00",
+        "LastModified": "2026-01-15T15:47:50.4761674-05:00",
         "LastModifiedBy": "",
         "WellboreComponents": {
           "$id": "5",
@@ -65,81 +65,35 @@
         },
         "Reports": {
           "$id": "10",
-          "$values": [
-            {
-              "$id": "11",
-              "IntervalNumber": "1",
-              "RigName": "",
-              "Contractor": "",
-              "RigType": "",
-              "ReportDateTime": "2026-01-13T10:43:10.0079505-05:00",
-              "Activity": "",
-              "WellSection": "",
-              "PresentActivity": "",
-              "PrimaryFluidSet": "",
-              "OtherActiveFluids": "",
-              "OperationalIssues": false,
-              "Pumps": {
-                "$id": "12",
-                "$values": []
-              },
-              "Screens": {
-                "$id": "13",
-                "$values": []
-              },
-              "OperatorReps": {
-                "$id": "14",
-                "$values": []
-              },
-              "ContractorReps": {
-                "$id": "15",
-                "$values": []
-              },
-              "BaroidReps": {
-                "$id": "16",
-                "$values": []
-              },
-              "TotalGpm": 0,
-              "SurfacePressureLoss": 0,
-              "IsDraft": true,
-              "Error": "",
-              "Id": 1,
-              "CreatedDate": "2026-01-13T10:43:10.0079898-05:00",
-              "HasErrors": false,
-              "IsValid": true
-            }
-          ]
+          "$values": []
         },
         "RigProfile": {
-          "$id": "17",
+          "$id": "11",
           "RigName": "",
           "Contractor": "",
           "RigType": "",
           "RkbElevation": 0,
           "CasingHeadElevation": 0,
           "SurfaceEquipment": {
-            "$id": "18",
+            "$id": "12",
             "$values": []
           },
           "Pumps": {
-            "$id": "19",
+            "$id": "13",
             "$values": []
           },
           "SolidsControl": {
-            "$id": "20",
+            "$id": "14",
             "$values": []
           },
           "Pits": {
-            "$id": "21",
+            "$id": "15",
             "$values": []
           },
           "Id": 0,
           "CreatedDate": "0001-01-01T00:00:00",
           "HasErrors": false,
           "IsValid": true
-        },
-        "LastReport": {
-          "$ref": "11"
         },
         "IsRequiredFieldsComplete": false,
         "HasErrors": false,

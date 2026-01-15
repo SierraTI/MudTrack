@@ -51,8 +51,8 @@ namespace ProjectReport.Views.Geometry.BitAndJets {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri(("/ProjectReport;component/modules/geometry/views/bitandjets/bitjetsconfigwindow.xa" +
-                    "ml"), System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri(("/ProjectReport;V1.0.0.0;component/modules/geometry/views/bitandjets/bitjetsconfig" +
+                    "window.xaml"), System.UriKind.Relative);
             
             #line 1 "..\..\..\..\..\..\..\Modules\Geometry\Views\BitAndJets\BitJetsConfigWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

@@ -1,362 +1,159 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
-using System.Windows;
+using System.Text.Json;
 using System.Windows.Input;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
-using ProjectReport.ViewModels;
-using ProjectReport.Models;
 using ProjectReport.Services;
-using System.Globalization;
 
 namespace ProjectReport.ViewModels.Inventory
 {
-    public class WholeFluidsViewModel : BaseViewModel
+    public class WholeFluidsViewModel : INotifyPropertyChanged
     {
-        private readonly InventoryService _service;
+        private readonly string _dataFile;
+        private readonly InventoryService _inventoryService;
 
-        public ObservableCollection<string> Locations { get; } = new();
-        private string? _selectedLocation;
-        public string? SelectedLocation
-        {
-            get => _selectedLocation;
-            set
-            {
-                if (SetProperty(ref _selectedLocation, value))
-                    CommandManager.InvalidateRequerySuggested();
-            }
-        }
+        public ObservableCollection<WholeFluidItem> WholeFluids { get; } = new ObservableCollection<WholeFluidItem>();
+        public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
 
-        public ObservableCollection<FluidLine> Lines { get; } = new();
-
-        private string _movementType = "Ingreso";
-        public string MovementType
-        {
-            get => _movementType;
-            set
-            {
-                if (SetProperty(ref _movementType, value))
-                    CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        public DateTime Date { get; } = DateTime.Now;
-
-        private string _requisition = "";
-        public string Requisition
-        {
-            get => _requisition;
-            set
-            {
-                if (SetProperty(ref _requisition, value))
-                    CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        private string _origin = "";
-        public string Origin
-        {
-            get => _origin;
-            set
-            {
-                if (SetProperty(ref _origin, value))
-                    CommandManager.InvalidateRequerySuggested();
-            }
-        }
-
-        private string _reference = "";
-        public string Reference
-        {
-            get => _reference;
-            set => SetProperty(ref _reference, value);
-        }
+        public ICommand AddCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand RemoveCommand { get; }
 
         private string _error = "";
         public string Error
         {
             get => _error;
-            set => SetProperty(ref _error, value);
+            set { if (_error != value) { _error = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Error))); } }
         }
 
-        // Renombrada para evitar colisiones con tipos llamados User en el proyecto
-        private string _currentUser = Environment.UserName;
-        public string CurrentUser
+        public WholeFluidsViewModel()
         {
-            get => _currentUser;
-            set => SetProperty(ref _currentUser, value);
-        }
+            _inventoryService = ServiceLocator.InventoryService;
+            _dataFile = Path.Combine(AppContext.BaseDirectory, "Data", "wholefluids.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(_dataFile) ?? AppContext.BaseDirectory);
 
-        public ObservableCollection<ProjectReport.Models.Inventory.Product> Products { get; } = new();
-
-        public RelayCommand SaveCommand { get; }
-        public RelayCommand CancelCommand { get; }
-        public RelayCommand AddAllFromCatalogCommand { get; }
-        public RelayCommand LoadLastMovementCommand { get; }
-
-        public RelayCommand AddLineCommand { get; }
-        public RelayCommand RemoveLineCommand { get; }
-
-        public event Action? RequestClose;
-
-        public WholeFluidsViewModel(InventoryService service)
-        {
-            _service = service ?? throw new ArgumentNullException(nameof(service));
-
+            AddCommand = new RelayCommand(_ => Add());
             SaveCommand = new RelayCommand(_ => Save());
-            CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
-            AddAllFromCatalogCommand = new RelayCommand(_ => LoadFluidCatalog());
-            LoadLastMovementCommand = new RelayCommand(_ => LoadLastMovement());
+            RemoveCommand = new RelayCommand(param => Remove(param as WholeFluidItem));
 
-            // Habilita/inhabilita ADD según campos superiores
-            AddLineCommand = new RelayCommand(_ => AddLine(), _ => CanAddLine());
-            RemoveLineCommand = new RelayCommand(param => RemoveLine(param as FluidLine));
-
-            LoadLocations();
             LoadProducts();
-
-            // NOTE: no cargamos el catálogo en Lines por defecto.
-            // El usuario debe pulsar ADD para empezar a añadir filas,
-            // o usar "Cargar catálogo" para pre-poblar muchas líneas.
-
-            // refrescar catálogo/listas si cambia inventario
-            _service.InventoryUpdated += () =>
-            {
-                LoadLocations();
-                LoadProducts();
-            };
+            LoadFromFile();
         }
 
         private void LoadProducts()
         {
             Products.Clear();
-            var list = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name).ToList();
+
+            try
+            {
+                // Buscar fichero de lista de fluidos en Data (prioridad a "listaFluidos.xlsx")
+                var dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
+                var listaPath = Path.Combine(dataDir, "listaFluidos.xlsx");
+                if (!File.Exists(listaPath))
+                {
+                    // fallback a nombres comunes
+                    var alt = Path.Combine(dataDir, "Lista.xlsx");
+                    if (File.Exists(alt)) listaPath = alt;
+                }
+
+                if (File.Exists(listaPath))
+                {
+                    // Usar el importador existente que ya parsea excel a UniversalProduct
+                    var importer = new ProjectReport.Services.Inventory.InventoryExcelImportService();
+                    var uni = importer.LoadUniversalProducts(listaPath);
+
+                    // Mapear a Product para que el ComboBox (DisplayMemberPath="Name", SelectedValuePath="Code") funcione
+                    foreach (var u in uni)
+                    {
+                        var code = string.IsNullOrWhiteSpace(u.Codigo) ? (u.Nombre ?? Guid.NewGuid().ToString()) : u.Codigo;
+                        var name = string.IsNullOrWhiteSpace(u.Nombre) ? code : u.Nombre;
+                        Products.Add(new Product
+                        {
+                            Code = code,
+                            Name = name,
+                            Description = string.IsNullOrWhiteSpace(u.Categoria) ? string.Empty : u.Categoria,
+                            Category = string.IsNullOrWhiteSpace(u.Categoria) ? string.Empty : u.Categoria,
+                            Unit = string.IsNullOrWhiteSpace(u.Unidad) ? "Each" : u.Unidad,
+                            StockQty = 0,
+                            CurrentUnitCost = 0,
+                            Status = ProductStatus.Active
+                        });
+                    }
+
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                // No bloquear: mostrar error y seguir con repositorio si hay fallo de lectura
+                Error = "Error cargando lista de fluidos desde Excel: " + ex.Message;
+            }
+
+            // Fallback: cargar productos desde InventoryService (comportamiento anterior)
+            var list = _inventoryService.GetProducts();
             foreach (var p in list) Products.Add(p);
         }
 
-        private void LoadLocations()
+        public void Add()
         {
-            Locations.Clear();
-            var current = WellContextService.Instance.CurrentWell;
-            if (current != null && !string.IsNullOrWhiteSpace(current.WellName))
+            WholeFluids.Add(new WholeFluidItem
             {
-                Locations.Add(current.WellName);
-                SelectedLocation = current.WellName;
-            }
-            else
-            {
-                Locations.Add("Default");
-                if (SelectedLocation == null) SelectedLocation = "Default";
-            }
+                Requisition = string.Empty,
+                MovementType = "Ingreso",
+                ProductCode = string.Empty,
+                ProductName = string.Empty,
+                Quantity = 1,
+                UnitPrice = 0,
+                Context = string.Empty,
+                Date = DateTime.Now,
+                Observations = string.Empty
+            });
+
+            Error = $"Línea agregada en borrador. Total líneas: {WholeFluids.Count}";
         }
 
-        // Carga catálogo de fluidos en Lines (uso opcional, deja habilitadas=false)
-        private void LoadFluidCatalog()
+        public void Remove(WholeFluidItem? item)
         {
-            Lines.Clear();
-
-            var products = _service.GetProducts()
-                .Where(p => p.Status == ProductStatus.Active)
-                .Where(p =>
-                    (p.Unit ?? "").IndexOf("gal", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    (p.Category ?? "").IndexOf("fluid", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    (p.Name ?? "").IndexOf("fluid", StringComparison.OrdinalIgnoreCase) >= 0)
-                .OrderBy(p => p.Name)
-                .ToList();
-
-            if (products.Count == 0)
-            {
-                products = _service.GetProducts()
-                    .Where(p => p.Status == ProductStatus.Active)
-                    .OrderBy(p => p.Name)
-                    .ToList();
-            }
-
-            foreach (var p in products)
-            {
-                Lines.Add(new FluidLine
-                {
-                    ProductCode = p.Code ?? "",
-                    ProductName = p.Name ?? p.Code ?? "",
-                    Enabled = false,
-                    Barrels = 0,
-                    Price = p.CurrentUnitCost,
-                    AvailableStock = p.StockQty,
-                    Observations = string.Empty
-                });
-            }
+            if (item == null) return;
+            WholeFluids.Remove(item);
         }
 
-        // ADD línea vacía para que el usuario la complete (solo si campos superiores están rellenos)
-        private void AddLine()
-        {
-            // limpiar posible error previo
-            Error = "";
-
-            var line = new FluidLine
-            {
-                ProductCode = "",
-                ProductName = "",
-                Enabled = true,
-                Barrels = 0,
-                Price = 0,
-                AvailableStock = 0,
-                Observations = Reference ?? ""
-            };
-
-            Lines.Add(line);
-
-            // Forzar reevaluación de comandos por si hace falta
-            CommandManager.InvalidateRequerySuggested();
-        }
-
-        private void RemoveLine(FluidLine? line)
-        {
-            if (line == null) return;
-            Lines.Remove(line);
-        }
-
-        // Carga último movimiento de fluidos (si existe) y marca líneas correspondientes
-        private void LoadLastMovement()
+        public void Save()
         {
             try
             {
-                var lastReceived = _service.GetMovements()
-                    .Where(m => m.Type == TicketType.Received && (m.ProductName ?? "").Length > 0)
-                    .OrderByDescending(m => m.Date)
-                    .Take(200)
-                    .ToList();
-
-                if (lastReceived.Count == 0)
-                {
-                    MessageBox.Show("No hay movimientos recientes.", "Información", MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-
-                foreach (var mv in lastReceived)
-                {
-                    var line = Lines.FirstOrDefault(l => string.Equals((l.ProductCode ?? ""), (mv.ProductCode ?? ""), StringComparison.OrdinalIgnoreCase));
-                    if (line != null)
-                    {
-                        line.Enabled = true;
-                        line.Barrels = mv.Quantity;
-                        line.Price = mv.UnitPrice > 0 ? mv.UnitPrice : line.Price;
-                        line.Observations = mv.Observations ?? Reference ?? "";
-                    }
-                }
-
-                Error = "Último movimiento cargado (sugerencias).";
+                var list = WholeFluids.ToList();
+                var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_dataFile, json);
+                Error = "Whole Fluids guardado correctamente.";
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                Error = "Error guardando: " + ex.Message;
             }
         }
 
-        private bool CanAddLine()
+        private void LoadFromFile()
         {
-            // Requisición y Origen obligatorios antes de añadir una nueva fila
-            return !string.IsNullOrWhiteSpace(Requisition) && !string.IsNullOrWhiteSpace(Origin);
-        }
-
-        private bool ValidateAll()
-        {
-            Error = "";
-
-            if (!Lines.Any(l => l.Enabled))
-            {
-                Error = "Marca al menos un fluido para mover.";
-                return false;
-            }
-
-            foreach (var l in Lines.Where(x => x.Enabled))
-            {
-                if (l.Barrels <= 0)
-                {
-                    Error = $"Barriles debe ser > 0 para {l.ProductName}.";
-                    return false;
-                }
-
-                if (MovementType == "Ingreso" && l.Price <= 0)
-                {
-                    Error = $"Precio es obligatorio en Ingreso para {l.ProductName}.";
-                    return false;
-                }
-
-                if (MovementType == "Salida")
-                {
-                    var prod = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, l.ProductCode, StringComparison.OrdinalIgnoreCase));
-                    if (prod != null)
-                    {
-                        if (l.Barrels > prod.StockQty)
-                        {
-                            Error = $"Salida inválida para {l.ProductName}: disponible {prod.StockQty}.";
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        private void Save()
-        {
-            if (!ValidateAll()) return;
-
             try
             {
-                var ticket = new Ticket
-                {
-                    Type = MovementType == "Ingreso" ? TicketType.Received : TicketType.Returned,
-                    Date = DateTime.Now,
-                    User = CurrentUser,
-                    Observations = Reference ?? "",
-                    Requisition = Requisition ?? ""
-                };
-
-                ticket.Lines = Lines
-                    .Where(l => l.Enabled)
-                    .Select(l =>
-                    {
-                        // Normalizar nombre/código desde catálogo si es posible
-                        var prod = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, l.ProductCode, StringComparison.OrdinalIgnoreCase) || string.Equals(p.Name, l.ProductName, StringComparison.OrdinalIgnoreCase));
-                        var code = l.ProductCode;
-                        var name = l.ProductName;
-                        if (prod != null)
-                        {
-                            code = prod.Code;
-                            name = prod.Name;
-                        }
-
-                        return new TicketLine
-                        {
-                            ProductCode = code,
-                            ProductName = name,
-                            Quantity = l.Barrels,
-                            UnitPrice = l.Price,
-                            Context = Origin ?? ""
-                        };
-                    })
-                    .ToList();
-
-                if (ticket.Type == TicketType.Received)
-                    _service.CreateTicketReceived(ticket);
-                else
-                    _service.CreateTicketReturned(ticket);
-
-                MessageBox.Show("Movimiento guardado correctamente.", "OK", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                // limpiar:
-                Lines.Clear();
-                Requisition = "";
-                Origin = "";
-                Reference = "";
+                if (!File.Exists(_dataFile)) return;
+                var json = File.ReadAllText(_dataFile);
+                var list = JsonSerializer.Deserialize<WholeFluidItem[]>(json);
+                if (list == null) return;
+                WholeFluids.Clear();
+                foreach (var i in list) WholeFluids.Add(i);
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                Error = "Error cargando datos: " + ex.Message;
             }
         }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

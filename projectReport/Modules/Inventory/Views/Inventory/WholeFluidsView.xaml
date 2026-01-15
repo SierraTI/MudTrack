@@ -6,82 +6,65 @@
              mc:Ignorable="d">
     <Grid Margin="12">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Header -->
-            <RowDefinition Height="Auto"/>  <!-- Botones encima de la tabla (ADD, etc.) -->
-            <RowDefinition Height="8"/>     <!-- Spacer -->
-            <RowDefinition Height="*"/>     <!-- DataGrid -->
-            <RowDefinition Height="Auto"/>  <!-- Footer -->
+            <RowDefinition Height="Auto"/>  
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0" VerticalAlignment="Center" Margin="0,0,0,8" >
-            <StackPanel Orientation="Vertical" Margin="0,0,12,0">
-                <TextBlock Text="# Remision" FontWeight="SemiBold"/>
-                <TextBox Width="220" Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
+        <Border Grid.Row="0" Height="0"/>
 
-            <StackPanel Orientation="Vertical" Margin="0,0,12,0">
-                <TextBlock Text="Origin" FontWeight="SemiBold"/>
-                <TextBox Width="220" Text="{Binding Origin, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
-
-            <StackPanel Orientation="Vertical" Margin="0,0,12,0">
-                <TextBlock Text="Tipo movimiento" FontWeight="SemiBold"/>
-                <ComboBox Width="140" SelectedValuePath="Content" SelectedValue="{Binding MovementType}" >
-                    <ComboBoxItem Content="Ingreso"/>
-                    <ComboBoxItem Content="Salida"/>
-                </ComboBox>
-            </StackPanel>
-
-            <StackPanel Orientation="Vertical" Margin="0,0,12,0">
-                <TextBlock Text="Fecha" FontWeight="SemiBold"/>
-                <!-- DatePicker para permitir seleccionar fecha -->
-                <DatePicker Width="180" SelectedDate="{Binding Date, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
-
-            <StackPanel Orientation="Vertical" Margin="0,0,12,0">
-                <TextBlock Text="Observacion" FontWeight="SemiBold"/>
-                <TextBox Width="320" Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
-
-            <Button Content="Cargar catalogo" Width="120" Height="30" Margin="8,18,0,0" Command="{Binding AddAllFromCatalogCommand}"/>
-            <Button Content="Cargar ultimo movimiento" Command="{Binding LoadLastMovementCommand}" Margin="8,18,0,0"/>
-        </StackPanel>
-
-        <!-- Panel de botones encima de la tabla (ADD) -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,4">
-            <!-- ahora llama al manejador en code-behind para controlar selección/edición -->
-            <Button Content="ADD" Width="80" Height="30" Margin="0,0,8,0" Click="AddButton_Click"/>
-        </StackPanel>
-
-        <!-- DataGrid: columnas ordenadas según requerimiento -->
         <DataGrid x:Name="LinesDataGrid" Grid.Row="3"
                   ItemsSource="{Binding Lines}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
+                  IsReadOnly="False"
+                  SelectionUnit="CellOrRowHeader"
+                  SelectionMode="Single"
+                  PreparingCellForEdit="LinesDataGrid_PreparingCellForEdit"
+                  MouseDoubleClick="LinesDataGrid_MouseDoubleClick"
                   SelectionChanged="DataGrid_SelectionChanged"
                   HorizontalScrollBarVisibility="Auto">
             <DataGrid.Columns>
-                <!-- # Remision -->
-                <DataGridTemplateColumn Header="# Remision" Width="140">
-                    <DataGridTemplateColumn.CellTemplate>
+                <DataGridTextColumn Header="# Remision" Width="140"
+                                    Binding="{Binding Requisition, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!-- Tipo movimiento (Ingreso/Salida) con filtro en el header -->
+                <DataGridTemplateColumn Width="140">
+                    <DataGridTemplateColumn.HeaderTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding DataContext.Requisition, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+                                <TextBlock Text="Tipo movimiento" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                <!-- IMPORTANT: SelectedValuePath=Content para devolver string -->
+                                <ComboBox Width="120" SelectionChanged="MovementFilter_SelectionChanged" SelectedValuePath="Content">
+                                    <ComboBoxItem Content="Todos" IsSelected="True"/>
+                                    <ComboBoxItem Content="Ingreso"/>
+                                    <ComboBoxItem Content="Salida"/>
+                                </ComboBox>
+                            </StackPanel>
                         </DataTemplate>
+                    </DataGridTemplateColumn.HeaderTemplate>
+
+                    <DataGridTemplateColumn.CellTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding MovementType}" />
+                      </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                      <DataTemplate>
+                        <!-- SelectedValuePath=Content para que MovementType reciba la cadena -->
+                        <ComboBox SelectedValue="{Binding MovementType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Content"
+                                  IsEditable="False" Height="24">
+                          <ComboBoxItem Content="Ingreso"/>
+                          <ComboBoxItem Content="Salida"/>
+                        </ComboBox>
+                      </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Tipo movimiento -->
-                <DataGridTemplateColumn Header="Tipo movimiento" Width="120">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DataContext.MovementType, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <!-- Fluido -->
                 <DataGridTemplateColumn Header="Fluido" Width="3*" MinWidth="180">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -102,46 +85,45 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Barriles -->
-                <DataGridTextColumn Header="Barriles" Binding="{Binding Barrels, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
+                <DataGridTextColumn Header="Barriles" Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" />
+                <DataGridTextColumn Header="Precio" Binding="{Binding UnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Width="120" />
+                <DataGridTextColumn Header="Origin" Binding="{Binding Context, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="140" />
 
-                <!-- Precio -->
-                <DataGridTextColumn Header="Precio" Binding="{Binding Price, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" Width="120" />
-
-                <!-- Origin -->
-                <DataGridTemplateColumn Header="Origin" Width="140">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DataContext.Origin, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <!-- Fecha -->
                 <DataGridTemplateColumn Header="Fecha" Width="160">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding DataContext.Date, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+                            <TextBlock Text="{Binding Date, StringFormat={}{0:yyyy-MM-dd HH:mm}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding Date, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Observacion" Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200" />
+
+                <DataGridTemplateColumn Header="Acciones" Width="140">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="EDIT" Width="60" Margin="4,0" Click="RowEdit_Click" Tag="{Binding}"/>
+                                <Button Content="DELETE" Width="60" Margin="4,0" Click="RowDelete_Click" Tag="{Binding}"/>
+                            </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Observacion -->
-                <DataGridTemplateColumn Header="Observacion" Width="200">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DataContext.Reference, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Footer -->
+        <!-- Footer: SAVE / CANCEL / ADD -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <TextBlock Text="{Binding Error}" Foreground="Red" VerticalAlignment="Center" Margin="0,0,12,0"/>
-            <Button Content="CANCEL" Width="110" Command="{Binding CancelCommand}"/>
-            <Button Content="SAVE" Width="110" Command="{Binding SaveCommand}"/>
+            <Button Content="SAVE" Width="110" Command="{Binding SaveCommand}" Margin="8,0,0,0"/>
+            <Button Content="CANCEL" Width="110" Command="{Binding CancelCommand}" Margin="8,0,0,0"/>
+            <Button Content="ADD" Width="110" Click="AddButton_Click" Margin="8,0,0,0"/>
         </StackPanel>
     </Grid>
 </UserControl>

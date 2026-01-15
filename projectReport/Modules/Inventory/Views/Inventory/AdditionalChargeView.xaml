@@ -1,0 +1,129 @@
+<UserControl x:Class="ProjectReport.Views.Inventory.AdditionalChargeView"
+             x:Name="Root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d">
+    <Border Background="LightYellow" Padding="12">
+        <DockPanel>
+            <!-- Cabecera: contador a la izquierda, ADD a la derecha -->
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="AdditionalChargeView - items: " FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Charges.Count}" Foreground="Blue" FontWeight="Bold" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="ADD" Command="{Binding AddCommand}" Width="100" Margin="6,0"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid ItemsSource="{Binding Charges}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionMode="Single"
+                      IsReadOnly="False"
+                      RowHeaderWidth="0"
+                      Height="360">
+                <DataGrid.Columns>
+                    <!-- Charge: ComboBox desde DefaultChargeNames -->
+                    <DataGridTemplateColumn Header="Charge" Width="3*" >
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.DefaultChargeNames, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          SelectedItem="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          IsTextSearchEnabled="True"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Unit: lista desplegable por fila -->
+                    <DataGridTemplateColumn Header="Unit" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Unit}" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.UnitOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          SelectedItem="{Binding Unit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="False"
+                                          Width="110"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Currency: dropdown por fila usando TemplateColumn -->
+                    <DataGridTemplateColumn Header="Currency" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Currency}" VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.CurrencyOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          SelectedItem="{Binding Currency, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="False"
+                                          Width="110"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Quantity -->
+                    <DataGridTextColumn Header="Qty"
+                                        Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        Width="100"/>
+
+                    <!-- Unit Price -->
+                    <DataGridTextColumn Header="Unit $"
+                                        Binding="{Binding UnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
+                                        Width="120"/>
+
+                    <!-- Total (calculado en el modelo) -->
+                    <DataGridTextColumn Header="Total"
+                                        Binding="{Binding Total, Mode=OneWay, StringFormat=N2}"
+                                        Width="120"
+                                        IsReadOnly="True"/>
+
+                    <!-- Observations -->
+                    <DataGridTextColumn Header="Observations"
+                                        Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Width="2*"/>
+
+                    <!-- Actions: DELETE -->
+                    <DataGridTemplateColumn Header="Actions" Width="100" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="DELETE" Width="80" Margin="4,0"
+                                        Click="RowDelete_Click"
+                                        Tag="{Binding}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                <TextBlock Text="{Binding Error}" Foreground="Red" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <Button Content="RELOAD" Command="{Binding ReloadCommand}" Width="100" Margin="6,0"/>
+                <Button Content="SAVE" Command="{Binding SaveCommand}" Width="100" Margin="6,0"/>
+                <Button Content="ADD" Command="{Binding AddCommand}" Width="100" Margin="6,0"/>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</UserControl>

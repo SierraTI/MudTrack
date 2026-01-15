@@ -134,7 +134,9 @@
                 <local:WholeFluidsView />
             </TabItem>
 
-            <TabItem Header="Additional Charge" />
+            <TabItem Header="Additional Charge">
+                <local:AdditionalChargeView />
+            </TabItem>
         </TabControl>
     </Grid>
 </UserControl>

@@ -553,3 +553,7 @@ C:\DEV\ProjectReport\obj\Debug\net8.0-windows\refint\ProjectReport.dll
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.pdb
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ProjectReport.genruntimeconfig.cache
 C:\DEV\ProjectReport\obj\Debug\net8.0-windows\ref\ProjectReport.dll
+C:\DEV\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\AdditionalChargeView.baml
+C:\DEV\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\AdditionalChargeView.g.cs
+C:\DEV\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryView.g.cs
+C:\DEV\ProjectReport\obj\Debug\net8.0-windows\Modules\Inventory\Views\Inventory\InventoryView.baml

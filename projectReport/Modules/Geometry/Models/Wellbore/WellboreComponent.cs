@@ -34,6 +34,16 @@ namespace ProjectReport.Models.Geometry.Wellbore
         private double? _previousBottomMD = null;
         private bool _isHighlighted = false;
 
+        private bool _isHistory = false;
+
+        public bool IsHistory
+        {
+            get => _isHistory;
+            set => SetProperty(ref _isHistory, value);
+        }
+
+        public bool IsActive => !IsHistory;
+
         public ObservableCollection<string> ValidationErrors
         {
             get => _validationErrors;
@@ -88,6 +98,13 @@ namespace ProjectReport.Models.Geometry.Wellbore
             get
             {
                 var errors = new HashSet<string>(_validationErrors);
+                
+                // Add errors from the base IDataErrorInfo implementation
+                foreach (var baseError in GetErrors(null).Cast<string>())
+                {
+                    errors.Add(baseError);
+                }
+                
                 return errors.Count > 0 ? string.Join(Environment.NewLine, errors) : string.Empty;
             }
         }
@@ -355,7 +372,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             // Rule: Continuity Top MD[n] = Bottom MD[n-1]
             if (!_isFirstRow && _previousBottomMD.HasValue && Math.Abs(TopMD.Value - _previousBottomMD.Value) > 0.01)
             {
-                AddError(nameof(TopMD), $"Error de Continuidad: Top MD ({TopMD.Value:F1} ft) debe ser igual al Bottom MD de la sección anterior ({_previousBottomMD.Value:F1} ft).");
+                AddError(nameof(TopMD), $"Continuity Error: Top MD ({TopMD.Value:F1} ft) must be equal to previous section's Bottom MD ({_previousBottomMD.Value:F1} ft).");
             }
 
             if (BottomMD.HasValue && BottomMD.Value <= TopMD.Value)
@@ -510,6 +527,14 @@ namespace ProjectReport.Models.Geometry.Wellbore
                     }
                     else
                     {
+                        // If switching away from OpenHole, and ID was 0.0, reset to null
+                        // to force user to enter a valid ID for Casing/Liner.
+                        if (_id == 0.0)
+                        {
+                            _id = null;
+                            OnPropertyChanged(nameof(ID));
+                        }
+
                         // If switching away from OpenHole, clear Washout
                         if (_washout.HasValue)
                         {
@@ -581,7 +606,7 @@ namespace ProjectReport.Models.Geometry.Wellbore
             ClearErrors(nameof(Component));
             
             // Allow null as "not selected" but maybe mark as error if user saves?
-            // "Al elegir 'Seleccionar...', todos los campos ... null o deshabilitados."
+            // "When choosing 'Select...', all fields ... null or disabled."
             // This implies null is valid temporary state.
             
             if (Component.HasValue && !Enum.IsDefined(typeof(ComponentType), Component.Value))

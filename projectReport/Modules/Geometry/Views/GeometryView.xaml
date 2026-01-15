@@ -317,7 +317,7 @@
 
                             <DataGrid.Columns>
                                 <!-- 0. Status -->
-                                <DataGridTemplateColumn Header="" Width="34">
+                                <DataGridTemplateColumn Header="" Width="30">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid>
@@ -339,11 +339,11 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- No. Column -->
-                                <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
+                                <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="35" IsReadOnly="True"
                                                     Foreground="{StaticResource TextMuted}"/>
 
                                 <!-- Name / Description Column -->
-                                <DataGridTemplateColumn Header="Section Name" Width="200">
+                                <DataGridTemplateColumn Header="Section Name" Width="130">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid>
@@ -379,7 +379,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Well Section Type Column (NEW) -->
-                                <DataGridTemplateColumn Header="Well Section" Width="160">
+                                <DataGridTemplateColumn Header="Well Section" Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock VerticalAlignment="Center" Padding="10,6">
@@ -409,7 +409,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Component Column (Renamed from "Section Type") -->
-                                <DataGridTemplateColumn Header="Component" Width="130">
+                                <DataGridTemplateColumn Header="Component" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock VerticalAlignment="Center" Padding="10,6">
@@ -439,7 +439,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- 3. OD -->
-                                <DataGridTemplateColumn Width="110">
+                                <DataGridTemplateColumn Width="85">
                                     <DataGridTemplateColumn.Header>
                                         <TextBlock Text="OD (in)" ToolTip="For OpenHole: Hole diameter. For Casing/Liner: Outer diameter."/>
                                     </DataGridTemplateColumn.Header>
@@ -483,7 +483,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- 4. ID -->
-                                <DataGridTemplateColumn Width="110">
+                                <DataGridTemplateColumn Width="85">
                                     <DataGridTemplateColumn.Header>
                                         <TextBlock Text="ID (in)" ToolTip="For OpenHole: always 0.000. For Casing/Liner: Inner diameter."/>
                                     </DataGridTemplateColumn.Header>
@@ -531,13 +531,13 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- 5. Top MD -->
-                                <DataGridTextColumn Header="Top MD (ft)" Binding="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" Width="130"/>
+                                <DataGridTextColumn Header="Top MD (ft)" Binding="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" Width="100"/>
 
                                 <!-- 6. Bottom MD -->
-                                <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" Width="140"/>
+                                <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" Width="110"/>
 
                                 <!-- 7. Washout -->
-                                <DataGridTemplateColumn Width="130">
+                                <DataGridTemplateColumn Width="95">
                                     <DataGridTemplateColumn.Header>
                                         <TextBlock Text="Washout (%)" ToolTip="Only for OpenHole. Typical 5–25%. Min 0.01%."/>
                                     </DataGridTemplateColumn.Header>
@@ -593,10 +593,10 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- 8. Volume -->
-                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="130" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="100" IsReadOnly="True"/>
 
                                 <!-- 9. Actions -->
-                                <DataGridTemplateColumn Header="Actions" Width="160">
+                                <DataGridTemplateColumn Header="Actions" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -613,15 +613,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Bottom Bar -->
-                        <Border Grid.Row="4" Margin="0,10,0,0" Padding="10" Background="White" BorderBrush="#E6E8EB" BorderThickness="1" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Save &amp; Next: Drill String" 
-                                        Style="{StaticResource BrandPrimaryButton}"
-                                        Command="{Binding SaveAndNextCommand}"
-                                        Padding="20,10"/>
-                            </StackPanel>
-                        </Border>
+
                     </Grid>
                 </ScrollViewer>
             </TabItem>
@@ -760,7 +752,7 @@
                             </DataGrid.RowStyle>
 
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="" Width="34">
+                                <DataGridTemplateColumn Header="" Width="30">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="❌"
@@ -774,11 +766,11 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="60" IsReadOnly="True"
+                                <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
                                                     Foreground="{StaticResource TextMuted}"/>
 
                                 <!-- Component Name with Placeholder -->
-                                <DataGridTemplateColumn Header="Component Name" Width="200">
+                                <DataGridTemplateColumn Header="Component Name" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal">
@@ -787,7 +779,7 @@
                                                            Visibility="{Binding IsToolJointConfigured, Converter={StaticResource BoolToVis}}"/>
                                                 
                                                 <Grid Margin="5,0,0,0">
-                                                    <TextBlock Text="Ej: MWD - TeleScope"
+                                                    <TextBlock Text="Ej: DC"
                                                                Foreground="{StaticResource DisabledText}"
                                                                FontStyle="Italic"
                                                                VerticalAlignment="Center"
@@ -819,7 +811,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- Component Type Column (Placeholder added) -->
-                                <DataGridTemplateColumn Header="Type" Width="160">
+                                <DataGridTemplateColumn Header="Type" Width="110">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock VerticalAlignment="Center" Padding="10,6">
@@ -831,8 +823,13 @@
                                                             <DataTrigger Binding="{Binding ComponentTypeString}" Value="Drill Pipe">
                                                                 <!-- We only want placeholder if it's "New" or null logic -->
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Name}" Value="Selecciona Componente...">
-                                                                <Setter Property="Text" Value="-- Seleccione Componente --"/>
+                                                            <DataTrigger Binding="{Binding Name}" Value="">
+                                                                <Setter Property="Text" Value="-- Select --"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                                <Setter Property="FontStyle" Value="Italic"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
+                                                                <Setter Property="Text" Value="-- Select --"/>
                                                                 <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
                                                                 <Setter Property="FontStyle" Value="Italic"/>
                                                             </DataTrigger>
@@ -851,7 +848,7 @@
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Properties" Width="90">
+                                <DataGridTemplateColumn Header="Properties" Width="70">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Button Content="⚙️" Style="{StaticResource IconMiniButton}" 
@@ -863,12 +860,12 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Length (ft)" Binding="{Binding Length, StringFormat=F2}" Width="130"/>
-                                <DataGridTextColumn Header="OD (in)" Binding="{Binding OD, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
-                                <DataGridTextColumn Header="ID (in)" Binding="{Binding ID, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
-                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding InternalVolume, StringFormat=F2}" Width="130" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Length (ft)" Binding="{Binding Length, StringFormat=F2}" Width="100"/>
+                                <DataGridTextColumn Header="OD (in)" Binding="{Binding OD, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+                                <DataGridTextColumn Header="ID (in)" Binding="{Binding ID, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding InternalVolume, StringFormat=F2}" Width="100" IsReadOnly="True"/>
 
-                                <DataGridTemplateColumn Header="Actions" Width="240">
+                                <DataGridTemplateColumn Header="Actions" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -928,15 +925,7 @@
                     </Border>
                 </Grid>
 
-                        <!-- Bottom Bar -->
-                        <Border Grid.Row="4" Margin="0,10,0,0" Padding="10" Background="White" BorderBrush="#E6E8EB" BorderThickness="1" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Save &amp; Next: Survey" 
-                                        Style="{StaticResource BrandPrimaryButton}"
-                                        Command="{Binding SaveAndNextCommand}"
-                                        Padding="20,10"/>
-                            </StackPanel>
-                        </Border>
+
                     </Grid>
                 </ScrollViewer>
             </TabItem>
@@ -1321,15 +1310,7 @@
                             </Border>
                         </Grid>
 
-                        <!-- Bottom Bar -->
-                        <Border Grid.Row="4" Margin="0,10,0,0" Padding="10" Background="White" BorderBrush="#E6E8EB" BorderThickness="1" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Save &amp; Next: Thermal Gradient" 
-                                        Style="{StaticResource BrandPrimaryButton}"
-                                        Command="{Binding SaveAndNextCommand}"
-                                        Padding="20,10"/>
-                            </StackPanel>
-                        </Border>
+
                     </Grid>
                 </ScrollViewer>
             </TabItem>
@@ -1348,15 +1329,7 @@
                         <geometry:ThermalGradientView DataContext="{Binding ThermalGradientViewModel}"/>
                     </Border>
 
-                    <!-- Bottom Bar -->
-                    <Border Grid.Row="1" Margin="0,10,0,0" Padding="10" Background="White" BorderBrush="#E6E8EB" BorderThickness="1" CornerRadius="8">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Save &amp; Next: Well Test" 
-                                    Style="{StaticResource BrandPrimaryButton}"
-                                    Command="{Binding SaveAndNextCommand}"
-                                    Padding="20,10"/>
-                        </StackPanel>
-                    </Border>
+
                 </Grid>
             </TabItem>
 
@@ -1451,15 +1424,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Bottom Bar -->
-                        <Border Grid.Row="3" Margin="0,10,0,0" Padding="10" Background="White" BorderBrush="#E6E8EB" BorderThickness="1" CornerRadius="8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Save &amp; Next: Summary" 
-                                        Style="{StaticResource BrandPrimaryButton}"
-                                        Command="{Binding SaveAndNextCommand}"
-                                        Padding="20,10"/>
-                            </StackPanel>
-                        </Border>
+
                     </Grid>
                 </ScrollViewer>
             </TabItem>
@@ -1520,10 +1485,10 @@
                         <Grid Margin="25">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/> <!-- Hero: Total System Volume -->
-                                <RowDefinition Height="Auto"/> <!-- Volumes Blocks -->
-                                <RowDefinition Height="Auto"/> <!-- Annular Details Table -->
-                                <RowDefinition Height="Auto"/> <!-- Charts Row -->
-                                <RowDefinition Height="Auto"/> <!-- Action Bar -->
+                                 <RowDefinition Height="Auto"/> <!-- Volumes Blocks -->
+                                 <RowDefinition Height="Auto"/> <!-- Safety Metrics -->
+                                 <RowDefinition Height="Auto"/> <!-- Annular Details Table -->
+                                 <RowDefinition Height="Auto"/> <!-- Action Bar -->
                             </Grid.RowDefinitions>
 
                             <!-- Hero: Wellbore & Hydraulics Integration -->
@@ -1553,8 +1518,6 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="20"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- In-Wellbore Volumes Block -->
@@ -1580,29 +1543,8 @@
                                     </StackPanel>
                                 </GroupBox>
 
-                                 <!-- Mud Density Manual Edit (NEW) -->
-                                 <GroupBox Grid.Column="2" Header="Mud Density" Style="{StaticResource StandardGroupBox}">
-                                     <StackPanel Margin="10" VerticalAlignment="Center">
-                                         <TextBox Text="{Binding CurrentMudWeight, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}" 
-                                                  FontSize="32" 
-                                                  FontWeight="Bold" 
-                                                  Foreground="{StaticResource BrandOrange}"
-                                                  HorizontalAlignment="Center"
-                                                  BorderThickness="0"
-                                                  Background="Transparent"
-                                                  TextAlignment="Center"
-                                                  Margin="0,10"/>
-                                         <TextBlock Text="ppg" 
-                                                    FontSize="14" 
-                                                    Foreground="#6B7280"
-                                                    HorizontalAlignment="Center"
-                                                    Margin="0,0,0,10"/>
-
-                                     </StackPanel>
-                                 </GroupBox>
-
                                  <!-- System Volume Percentages -->
-                                 <GroupBox Grid.Column="4" Header="Distribution" Style="{StaticResource StandardGroupBox}">
+                                 <GroupBox Grid.Column="2" Header="Distribution" Style="{StaticResource StandardGroupBox}">
                                      <StackPanel Margin="15" VerticalAlignment="Center">
                                          <Grid Margin="0,5">
                                              <TextBlock Text="Annular" Foreground="#4B5563"/>
@@ -1615,45 +1557,104 @@
                                          <ProgressBar Value="{Binding AnnularVolumePercent, Mode=OneWay}" Height="10" Margin="0,10,0,0" Foreground="{StaticResource BrandBlue}"/>
                                      </StackPanel>
                                  </GroupBox>
-                            </Grid>
+                             </Grid>
 
-                            <!-- Annular Volume Breakdown Table -->
-                            <GroupBox Grid.Row="2" Header="Annular Volume Segments" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
+                             <!-- Safety Metrics Row -->
+                             <Grid Grid.Row="2" Margin="0,0,0,20">
+                                 <GroupBox Header="Drill String Status" Style="{StaticResource StandardGroupBox}">
+                                     <StackPanel Margin="15">
+                                         <Grid Margin="0,5">
+                                             <TextBlock Text="Bottom Status" Foreground="#4B5563"/>
+                                             <TextBlock Text="{Binding DepthDifferentialStatus}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{Binding DepthDifferentialColor}"/>
+                                         </Grid>
+                                         <Grid Margin="0,5">
+                                             <TextBlock Text="Bit Depth" Foreground="#4B5563"/>
+                                             <TextBlock Text="{Binding TotalDrillStringLength, StringFormat='{}{0:F2} ft'}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                         </Grid>
+                                     </StackPanel>
+                                 </GroupBox>
+                             </Grid>
+
+                             <!-- Annular Volume Breakdown Table -->
+                             <GroupBox Grid.Row="3" Header="Annular Volume Segments" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
                                 <StackPanel>
-                                 <DataGrid ItemsSource="{Binding AnnularVolumeDetails}"
-                                           Style="{StaticResource ModernDataGrid}"
-                                           AutoGenerateColumns="False"
-                                           IsReadOnly="True"
-                                           MaxHeight="300"
-                                           Margin="10"
-                                           AlternationCount="2">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Segmento" Binding="{Binding Name}" Width="100"/>
-                                        <DataGridTextColumn Header="Desde (ft)" Binding="{Binding TopMD, StringFormat=F0}" Width="90">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Hasta (ft)" Binding="{Binding BottomMD, StringFormat=F0}" Width="90">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Elementos (Sarta / Pozo)" Binding="{Binding ElementDescription}" Width="*"/>
-                                        <DataGridTextColumn Header="Vol. Anular (bbl)" Binding="{Binding AnnularVolume, StringFormat=F2}" Width="120">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                                    <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                    <Setter Property="Foreground" Value="#059669"/>
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                    </DataGrid.Columns>
+                                 <DataGrid ItemsSource="{Binding Source={StaticResource AnnularDetailsView}}"
+                                            Style="{StaticResource ModernDataGrid}"
+                                            AutoGenerateColumns="False"
+                                            IsReadOnly="True"
+                                            MaxHeight="400"
+                                            Margin="10"
+                                            AlternationCount="2"
+                                            GridLinesVisibility="Horizontal">
+                                     <DataGrid.GroupStyle>
+                                         <GroupStyle>
+                                             <GroupStyle.HeaderTemplate>
+                                                 <DataTemplate>
+                                                     <Border Background="#F3F4F6" Padding="8,4" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
+                                                         <StackPanel Orientation="Horizontal">
+                                                             <TextBlock Text="Stage: " FontWeight="Bold" Foreground="#374151"/>
+                                                             <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#374151"/>
+                                                             <TextBlock Text="{Binding ItemCount, StringFormat=' ({0} segments)'}" Foreground="#6B7280" Margin="10,0,0,0" FontSize="11" VerticalAlignment="Center"/>
+                                                         </StackPanel>
+                                                     </Border>
+                                                 </DataTemplate>
+                                             </GroupStyle.HeaderTemplate>
+                                         </GroupStyle>
+                                     </DataGrid.GroupStyle>
+                                     <DataGrid.Columns>
+                                         <DataGridTextColumn Header="Segment" Binding="{Binding Name}" Width="120"/>
+                                         <DataGridTextColumn Header="From (ft)" Binding="{Binding TopMD, StringFormat=F0}" Width="85">
+                                             <DataGridTextColumn.ElementStyle>
+                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                 </Style>
+                                             </DataGridTextColumn.ElementStyle>
+                                         </DataGridTextColumn>
+                                         <DataGridTextColumn Header="To (ft)" Binding="{Binding BottomMD, StringFormat=F0}" Width="85">
+                                             <DataGridTextColumn.ElementStyle>
+                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                 </Style>
+                                             </DataGridTextColumn.ElementStyle>
+                                         </DataGridTextColumn>
+                                         <DataGridTextColumn Header="Wellbore ID (in)" Binding="{Binding WellboreID, StringFormat=F3}" Width="90">
+                                             <DataGridTextColumn.ElementStyle>
+                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                 </Style>
+                                             </DataGridTextColumn.ElementStyle>
+                                         </DataGridTextColumn>
+                                         <DataGridTextColumn Header="String OD (in)" Binding="{Binding DrillStringOD, StringFormat=F3}" Width="90">
+                                             <DataGridTextColumn.ElementStyle>
+                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                 </Style>
+                                             </DataGridTextColumn.ElementStyle>
+                                         </DataGridTextColumn>
+                                         <DataGridTextColumn Header="Capacidad (bbl/ft)" Binding="{Binding Capacity, StringFormat=F5}" Width="100">
+                                             <DataGridTextColumn.ElementStyle>
+                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                 </Style>
+                                             </DataGridTextColumn.ElementStyle>
+                                         </DataGridTextColumn>
+                                         <DataGridTextColumn Header="Elements (String / Well)" Binding="{Binding ElementDescription}" Width="*"/>
+                                         <DataGridTextColumn Header="Annular Vol. (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="110">
+                                             <DataGridTextColumn.ElementStyle>
+                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                     <Setter Property="FontWeight" Value="SemiBold"/>
+                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                     <Setter Property="Foreground" Value="#059669"/>
+                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                 </Style>
+                                             </DataGridTextColumn.ElementStyle>
+                                         </DataGridTextColumn>
+                                     </DataGrid.Columns>
 
                                 </DataGrid>
                                 
@@ -1670,44 +1671,6 @@
                                 </Border>
                                 </StackPanel>
                             </GroupBox>
-
-                            <!-- Integrated Charts -->
-                            <Grid Grid.Row="3">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="220"/>
-                                </Grid.ColumnDefinitions>
-
-                                <GroupBox Grid.Column="0" Header="Survey Plot (Profile View)" Style="{StaticResource StandardGroupBox}">
-                                    <lvc:CartesianChart Series="{Binding SurveySeriesCollection}" Height="250" LegendLocation="None">
-                                        <lvc:CartesianChart.AxisY>
-                                            <lvc:Axis Title="TVD (ft)"/>
-                                        </lvc:CartesianChart.AxisY>
-                                        <lvc:CartesianChart.AxisX>
-                                            <lvc:Axis Title="Vertical Section (ft)"/>
-                                        </lvc:CartesianChart.AxisX>
-                                    </lvc:CartesianChart>
-                                </GroupBox>
-
-                                <GroupBox Grid.Column="2" Header="Thermal Gradient" Style="{StaticResource StandardGroupBox}">
-                                    <lvc:CartesianChart Series="{Binding ThermalGradientViewModel.SeriesCollection}" Height="250" LegendLocation="None">
-                                        <lvc:CartesianChart.AxisY>
-                                            <lvc:Axis Title="TVD (ft)"/>
-                                        </lvc:CartesianChart.AxisY>
-                                        <lvc:CartesianChart.AxisX>
-                                            <lvc:Axis Title="Temp (°F)"/>
-                                        </lvc:CartesianChart.AxisX>
-                                    </lvc:CartesianChart>
-                                </GroupBox>
-
-                                <!-- NEW: Visual Schematic -->
-                                <GroupBox Grid.Column="4" Header="Vertical Schematic" Style="{StaticResource StandardGroupBox}">
-                                    <geometry:WellboreDrillStringSchematicView Height="250"/>
-                                </GroupBox>
-                            </Grid>
                         </Grid>
                     </ScrollViewer>
                 </Grid>

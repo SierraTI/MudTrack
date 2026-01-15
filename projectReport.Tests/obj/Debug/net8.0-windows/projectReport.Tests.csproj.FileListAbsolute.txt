@@ -161,3 +161,4 @@ C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\refint\projectRepor
 C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.pdb
 C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.genruntimeconfig.cache
 C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\ref\projectReport.Tests.dll
+C:\Dev\MudTrack\projectReport.Tests\bin\Debug\net8.0-windows\Data\ListaFluidos.xlsx

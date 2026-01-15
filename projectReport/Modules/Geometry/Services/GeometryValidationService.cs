@@ -107,7 +107,12 @@ namespace ProjectReport.Services
                 // A6: ID No Puede Ser Cero (Excepto OpenHole)
                 if (cur.Component != ComponentType.OpenHole && cur.ID.GetValueOrDefault() <= 0.001)
                 {
-                    result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = "Error A6: ID cannot be 0.000. Pipe sections must have a valid ID.", Severity = ValidationSeverity.Error });
+                    result.Items.Add(new ValidationError { 
+                        ComponentId = cur.Id.ToString(), 
+                        ComponentName = cur.Name, 
+                        Message = "Error A6: ID cannot be 0.000 for tubular sections (Casing/Liner). An internal diameter is required to calculate annular volume.", 
+                        Severity = ValidationSeverity.Error 
+                    });
                 }
 
                 // Validar que OpenHole SÍ tenga ID = 0
@@ -131,9 +136,14 @@ namespace ProjectReport.Services
                 }
 
                 // A2: Telescopic Diameter Rule
+                // Skip this rule if the current section is an OVERRIDE of the previous one 
+                // (e.g. Surface Casing starts at 0 and replaces Conductor starting at 0).
                 if (prev != null)
                 {
-                    if (cur.OD.GetValueOrDefault() >= prev.ID.GetValueOrDefault() && prev.ID.GetValueOrDefault() > 0.001)
+                    bool isOverride = cur.TopMD.HasValue && prev.TopMD.HasValue && 
+                                     Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01;
+
+                    if (!isOverride && cur.OD.GetValueOrDefault() >= prev.ID.GetValueOrDefault() && prev.ID.GetValueOrDefault() > 0.001)
                     {
                         result.Items.Add(new ValidationError { ComponentId = cur.Id.ToString(), ComponentName = cur.Name, Message = $"Error A2: Telescopic progression violated. OD ({cur.OD.GetValueOrDefault():F3}) >= Previous ID ({prev.ID.GetValueOrDefault():F3})", Severity = ValidationSeverity.Error });
                     }
@@ -168,7 +178,7 @@ namespace ProjectReport.Services
                             { 
                                 ComponentId = cur.Id.ToString(),
                                 ComponentName = cur.Name,
-                                Message = "Casing Override detectado: la sección actual reemplaza la anterior en este intervalo.", 
+                                Message = "Casing Override: This section overlaps and replaces the previous one in the same depth interval for volume calculations.", 
                                 Severity = ValidationSeverity.Warning 
                             });
                         }

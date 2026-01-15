@@ -208,13 +208,8 @@ namespace ProjectReport.Models.Geometry.Survey
         {
             get
             {
-                var errors = GetErrors(null);
-                if (errors != null)
-                {
-                    var errorList = errors.Cast<string>().ToList();
-                    return errorList.Count > 0 ? errorList[0] : string.Empty;
-                }
-                return string.Empty;
+                var errors = GetErrors(null).Cast<string>();
+                return errors.Any() ? string.Join(Environment.NewLine, errors) : string.Empty;
             }
         }
 

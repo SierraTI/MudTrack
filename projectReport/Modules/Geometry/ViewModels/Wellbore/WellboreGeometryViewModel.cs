@@ -49,7 +49,7 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
 
             WellboreComponents = new ObservableCollection<WellboreComponent>();
             WellboreSectionTypes = new ObservableCollection<ComponentType>(
-                Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>().Where(c => c == ComponentType.Casing || c == ComponentType.Liner || c == ComponentType.OpenHole));
+                Enum.GetValues(typeof(ComponentType)).Cast<ComponentType>().Where(c => c == ComponentType.Casing || c == ComponentType.Liner || c == ComponentType.OpenHole || c == ComponentType.Riser));
             WellSectionTypes = new ObservableCollection<WellSectionType>(
                 Enum.GetValues(typeof(WellSectionType)).Cast<WellSectionType>());
 
@@ -157,19 +157,63 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
         /// </summary>
         private void UpdateWellboreContinuity()
         {
-            var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            // RULE: Sorting - Order by Top MD (Ascending) and then by OD (Descending)
+            var sorted = WellboreComponents
+                .OrderBy(c => c.TopMD ?? double.MaxValue)
+                .ThenByDescending(c => c.OD ?? 0)
+                .ToList();
             
             for (int i = 0; i < sorted.Count; i++)
             {
-                if (i == 0)
+                var component = sorted[i];
+                bool isCasingOrLiner = component.Component == ComponentType.Casing || component.Component == ComponentType.Liner;
+
+                // Set History/Active state for Casings/Liners
+                // Logic: In any group of overlapping tubulars, the one with the smallest OD is Active (for that interval)
+                // However, the rule says "El Casing más ancho pasa a estado History". 
+                // So if there is ANY other casing/liner that overlaps this one AND has a smaller OD, this one is History.
+                if (isCasingOrLiner)
                 {
-                    sorted[i].SetAsFirstRow(true);
+                    // Logic: The casing with the smallest OD for an interval is the "Active" one.
+                    // Wider casings behind it are "History".
+                    component.IsHistory = sorted.Any(other => other != component && 
+                                                             (other.Component == ComponentType.Casing || other.Component == ComponentType.Liner) &&
+                                                             (other.TopMD <= component.TopMD + 0.01 && other.BottomMD >= component.BottomMD - 0.01) &&
+                                                             other.OD < component.OD);
+                }
+                else if (component.Component == ComponentType.Riser)
+                {
+                    // Riser is active unless replaced
+                    component.IsHistory = false;
                 }
                 else
                 {
-                    sorted[i].SetAsFirstRow(false);
-                    var previousComponent = sorted[i - 1];
-                    sorted[i].SetPreviousBottomMD(previousComponent.BottomMD);
+                    component.IsHistory = false;
+                }
+
+                if (i == 0)
+                {
+                    component.SetAsFirstRow(true);
+                }
+                else
+                {
+                    component.SetAsFirstRow(false);
+                    
+                    // Continuity only forced if NOT a casing/liner/riser that allows start at surface
+                    // Or if it's the first of its kind in that depth
+                    if (!isCasingOrLiner && component.Component != ComponentType.Riser)
+                    {
+                        // Special case: If user manually set it to 0 (or it's close to 0), don't force link
+                        // unless it's intended to be sequential. 
+                        // But for now, let's respect the "Muñecas Rusas" rule.
+                        
+                        // Find the previous "Active" boundary to link to
+                        var previousActive = sorted.Take(i).LastOrDefault(c => !c.IsHistory);
+                        if (previousActive != null && component.TopMD > 0.01)
+                        {
+                            component.SetPreviousBottomMD(previousActive.BottomMD);
+                        }
+                    }
                 }
             }
         }
@@ -210,6 +254,13 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
             {
                 if (sender is WellboreComponent component)
                 {
+                    if (e.PropertyName == nameof(WellboreComponent.Component) || 
+                        e.PropertyName == nameof(WellboreComponent.TopMD) || 
+                        e.PropertyName == nameof(WellboreComponent.BottomMD))
+                    {
+                        HandleComponentLogic(component);
+                    }
+
                     var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
                     int index = sorted.IndexOf(component);
                     var prev = index > 0 ? sorted[index - 1] : null;
@@ -217,17 +268,19 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                     // If Bottom MD changed, update continuity for following components
                     if (e.PropertyName == nameof(WellboreComponent.BottomMD))
                     {
-                        // Update Top MD of next component
+                        // Update Top MD of next component (if not allowing overlap)
                         if (index >= 0 && index < sorted.Count - 1)
                         {
                             var nextComponent = sorted[index + 1];
-                            nextComponent.SetPreviousBottomMD(component.BottomMD);
+                            if (nextComponent.Component != ComponentType.Casing && nextComponent.Component != ComponentType.Liner)
+                            {
+                                nextComponent.SetPreviousBottomMD(component.BottomMD);
+                            }
                         }
                     }
 
-                    _calculationService.CalculateWellboreComponentVolume(component, "Imperial", prev);
+                    _calculationService.CalculateWellboreComponentVolume(component, WellboreComponents);
                     ValidateWellboreComponent(component);
-                    CheckForCasingOverwrite(component, prev);
                 }
                 RecalculateTotals();
             }
@@ -249,31 +302,62 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
 
             if (index < 0) return;
 
-            var previousComponent = index > 0 ? sorted[index - 1] : null;
+            _calculationService.CalculateWellboreComponentVolume(component, WellboreComponents);
+            component.ValidateTelescopicDiameter(index > 0 ? sorted[index - 1] : null);
+            component.ValidateCasingDepthProgression(index > 0 ? sorted[index - 1] : null);
+            CheckForCasingOverwrite(component, index > 0 ? sorted[index - 1] : null);
+        }
 
-            _calculationService.CalculateWellboreComponentVolume(component, "Imperial", previousComponent);
-            component.ValidateTelescopicDiameter(previousComponent);
-            component.ValidateCasingDepthProgression(previousComponent);
-            CheckForCasingOverwrite(component, previousComponent);
+        private void HandleComponentLogic(WellboreComponent component)
+        {
+            if (component == null || !component.TopMD.HasValue || !component.BottomMD.HasValue) return;
+
+            // Rule: OPEN HOLE - Overwrite (No Overlap)
+            if (component.Component == ComponentType.OpenHole || component.Component == ComponentType.Riser)
+            {
+                var others = WellboreComponents.Where(c => c != component && 
+                                                         (c.Component == ComponentType.OpenHole || c.Component == ComponentType.Riser))
+                                               .ToList();
+
+                foreach (var other in others)
+                {
+                    bool overlaps = component.TopMD < other.BottomMD && component.BottomMD > other.TopMD;
+                    if (overlaps)
+                    {
+                        // Overwrite logic: Adjust or remove previous conflicting hole/riser
+                        if (component.TopMD <= other.TopMD && component.BottomMD >= other.BottomMD)
+                        {
+                            // Completely covered -> remove later to avoid loop issues
+                            _isProcessingCollectionChange = true;
+                            WellboreComponents.Remove(other);
+                            _isProcessingCollectionChange = false;
+                        }
+                        else if (component.TopMD > other.TopMD && component.BottomMD < other.BottomMD)
+                        {
+                            // Splits the previous one in two? 
+                            // This is complex, usually we just truncate or let user decide.
+                            // The user said "overwrite the previous data in that range".
+                            other.BottomMD = component.TopMD;
+                        }
+                        else if (component.TopMD <= other.TopMD && component.BottomMD < other.BottomMD)
+                        {
+                            // Overlaps top part of previous
+                            other.TopMD = component.BottomMD;
+                        }
+                        else if (component.TopMD > other.TopMD && component.BottomMD >= other.BottomMD)
+                        {
+                            // Overlaps bottom part of previous
+                            other.BottomMD = component.TopMD;
+                        }
+                    }
+                }
+            }
+            // Rule: CASING - Stacking (Already handled by allowing overlap in validation and sorting)
         }
 
         private void CheckForCasingOverwrite(WellboreComponent current, WellboreComponent? previous)
         {
-            if (previous != null && 
-                (current.Component == ComponentType.Casing || current.Component == ComponentType.Liner) &&
-                (previous.Component == ComponentType.Casing || previous.Component == ComponentType.Liner))
-            {
-                bool isSameType = current.Component == previous.Component;
-                bool isSameOD = Math.Abs(current.OD.GetValueOrDefault() - previous.OD.GetValueOrDefault()) < 0.001;
-                bool isSameTop = current.TopMD.HasValue && previous.TopMD.HasValue && 
-                                 Math.Abs(current.TopMD.Value - previous.TopMD.Value) < 0.01;
-                bool isExtension = current.BottomMD.GetValueOrDefault() > previous.BottomMD.GetValueOrDefault();
-
-                if (isSameType && isSameOD && isSameTop && isExtension)
-                {
-                    // Lógica de overwrite detectada
-                }
-            }
+            // Already handled by HandleComponentLogic and validation
         }
 
         /// <summary>
@@ -294,8 +378,8 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
         /// </summary>
         public void RecalculateTotals()
         {
-            // Calculate total volume
-            TotalVolume = WellboreComponents.Sum(c => c.Volume);
+            // Calculate total volume using the new logic (sum of active sections)
+            TotalVolume = _calculationService.CalculateTotalWellboreVolume(WellboreComponents);
 
             // TotalWellboreMD Logic (Report Sync)
             // Al guardar o actualizar el "Report MD" en la cabecera del reporte,

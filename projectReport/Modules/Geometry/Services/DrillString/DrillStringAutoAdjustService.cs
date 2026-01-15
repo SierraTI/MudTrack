@@ -107,8 +107,12 @@ namespace ProjectReport.Services.DrillString
             if (bhaComponents.Count == 0)
                 return "No BHA components defined. Add at least a Bit component.";
 
-            // Check if all BHA components have valid lengths
-            var invalidComponents = bhaComponents.Where(c => !c.Length.HasValue || c.Length.Value <= 0).ToList();
+            // Check if BHA components have valid lengths, ignoring unconfigured placeholders
+            var invalidComponents = bhaComponents
+                .Where(c => !c.Length.HasValue || c.Length.Value <= 0)
+                .Where(c => !(c.ComponentType == ComponentType.DrillPipe && string.IsNullOrEmpty(c.Name)))
+                .ToList();
+                
             if (invalidComponents.Any())
             {
                 var names = string.Join(", ", invalidComponents.Select(c => c.Name ?? c.ComponentType.ToString()));

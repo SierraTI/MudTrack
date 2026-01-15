@@ -18,6 +18,9 @@ namespace ProjectReport.Models.Geometry
         // Element description (e.g., "Drill Pipe / Surface Casing")
         public string ElementDescription { get; set; } = string.Empty;
         
+        // Calculated property: Volume per foot (Capacity)
+        public double Capacity => (BottomMD - TopMD) > 0 ? Volume / (BottomMD - TopMD) : 0;
+        
         // Calculated property for depth range display
         public string DepthRange => $"{TopMD:F0} - {BottomMD:F0} ft";
         

@@ -46,7 +46,11 @@ namespace ProjectReport.Services.Wellbore
         public ValidationResult ValidateWellbore(IEnumerable<WellboreComponent> components, double totalWellboreMD)
         {
             var result = new ValidationResult();
-            var list = components.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+            // RULE: Sorting - Order by Top MD (Ascending) and then by OD (Descending)
+            var list = components
+                .OrderBy(c => c.TopMD ?? double.MaxValue)
+                .ThenByDescending(c => c.OD ?? 0)
+                .ToList();
 
             if (!list.Any())
             {
@@ -116,7 +120,7 @@ namespace ProjectReport.Services.Wellbore
                 ValidateDiameters(cur, prev, result);
 
                 // Categoría B: Profundidades
-                ValidateDepths(cur, prev, totalWellboreMD, result);
+                ValidateDepths(cur, prev, totalWellboreMD, result, list);
 
                 // Categoría C: Tipo de sección
                 ValidateComponent(cur, prev, result);
@@ -237,7 +241,7 @@ namespace ProjectReport.Services.Wellbore
                 {
                     ComponentId = cur.Id.ToString(),
                     ComponentName = cur.Name,
-                    Message = "Error A6: ID no puede ser 0.000 para secciones tubulares (Casing/Liner)",
+                    Message = "Error A6: ID cannot be 0.000 for tubular sections (Casing/Liner). An internal diameter is required to calculate annular volume.",
                     Severity = ValidationSeverity.Error
                 });
             }
@@ -257,7 +261,13 @@ namespace ProjectReport.Services.Wellbore
             }
 
             // A2: Telescopic Diameter (OD[n] < ID[n-1])
-            if (prev != null && cur.OD.GetValueOrDefault() >= prev.ID.GetValueOrDefault() && prev.ID.GetValueOrDefault() > 0.001)
+            // Skip this rule if the current section is an OVERRIDE of the previous one
+            // Or if it's a CASING/LINER inside another CASING (Stacking allowed)
+            bool isOverlap = prev != null && cur.TopMD < prev.BottomMD;
+            bool isStackingAllowed = (cur.Component == ComponentType.Casing || cur.Component == ComponentType.Liner) && 
+                                    (prev?.Component == ComponentType.Casing || prev?.Component == ComponentType.Liner);
+
+            if (prev != null && !isStackingAllowed && isOverlap && cur.OD.GetValueOrDefault() >= prev.ID.GetValueOrDefault() && prev.ID.GetValueOrDefault() > 0.001)
             {
                 result.Items.Add(new ValidationError
                 {
@@ -272,7 +282,7 @@ namespace ProjectReport.Services.Wellbore
         /// <summary>
         /// CATEGORÍA B: Validaciones de profundidad (B1-B6).
         /// </summary>
-        private void ValidateDepths(WellboreComponent cur, WellboreComponent? prev, double totalWellboreMD, ValidationResult result)
+        private void ValidateDepths(WellboreComponent cur, WellboreComponent? prev, double totalWellboreMD, ValidationResult result, List<WellboreComponent> list)
         {
             // B1: Bottom > Top
             if (cur.BottomMD.HasValue && cur.TopMD.HasValue && cur.BottomMD.Value <= cur.TopMD.Value)
@@ -300,49 +310,83 @@ namespace ProjectReport.Services.Wellbore
 
             if (prev != null)
             {
-                // BR-WG-002/003: Casing Override
-                // El "Casing Override" ocurre cuando una sección tiene el mismo Top MD que la anterior pero un Bottom MD mayor
-                bool isOverride = false;
-                if (cur.TopMD.HasValue && prev.TopMD.HasValue && 
-                    cur.BottomMD.HasValue && prev.BottomMD.HasValue)
+                // B3: No solapamientos (regla depende del componente)
+                // Componentes que PERMITEN solaparse (Stacking): Casing
+                bool allowsOverlap = cur.Component == ComponentType.Casing;
+                
+                if (!allowsOverlap && cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value < prev.BottomMD.Value - 0.01)
                 {
-                    isOverride = Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01 && 
-                                 cur.BottomMD.Value >= prev.BottomMD.Value;
-
-                    if (isOverride)
+                    // Excepción para Liner: Permite solapamiento parcial únicamente en la cima (Liner Lap)
+                    if (cur.Component == ComponentType.Liner)
                     {
-                        // Regla BR-WG-002/003: Es un override válido. No marcar como error de solapamiento (B3).
-                        result.Items.Add(new ValidationError 
-                        { 
+                        // La validación específica del Liner se hace más abajo
+                    }
+                    else
+                    {
+                        result.Items.Add(new ValidationError
+                        {
                             ComponentId = cur.Id.ToString(),
                             ComponentName = cur.Name,
-                            Message = "Casing Override detectado: la sección actual reemplaza la anterior en este intervalo.", 
-                            Severity = ValidationSeverity.Warning 
+                            Message = $"Error B3: '{cur.Component}' no permite solapamientos con secciones anteriores.",
+                            Severity = ValidationSeverity.Error
                         });
                     }
                 }
-
-                // B3: No solapamientos (solo si no es un override)
-                if (!isOverride && cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value < prev.BottomMD.Value)
+                
+                // Liner specific validation: Top MD must be within a previous Casing
+                if (cur.Component == ComponentType.Liner)
                 {
-                    result.Items.Add(new ValidationError
+                    var previousCasings = list.Take(list.IndexOf(cur))
+                        .Where(p => p.Component == ComponentType.Casing)
+                        .ToList();
+
+                    var containingCasing = previousCasings.FirstOrDefault(p => cur.TopMD >= p.TopMD && cur.TopMD < p.BottomMD);
+                    
+                    if (containingCasing == null)
                     {
-                        ComponentId = cur.Id.ToString(),
-                        ComponentName = cur.Name,
-                        Message = "Error B3: Las secciones se solapan. Revise profundidades.",
-                        Severity = ValidationSeverity.Error
-                    });
+                        result.Items.Add(new ValidationError
+                        {
+                            ComponentId = cur.Id.ToString(),
+                            ComponentName = cur.Name,
+                            Message = "Error Liner: El tope (Top MD) del Liner debe estar dentro de un Casing existente.",
+                            Severity = ValidationSeverity.Error
+                        });
+                    }
+                    else
+                    {
+                        // Check for Lap (300-500 ft overlap with previous casing shoe)
+                        double lap = containingCasing.BottomMD.GetValueOrDefault() - cur.TopMD.GetValueOrDefault();
+                        if (lap < 100)
+                        {
+                            result.Items.Add(new ValidationError
+                            {
+                                ComponentId = cur.Id.ToString(),
+                                ComponentName = cur.Name,
+                                Message = $"Error Liner Lap: El solapamiento ({lap:F1} ft) es insuficiente. El Liner requiere un Lap físico con el Casing previo.",
+                                Severity = ValidationSeverity.Error
+                            });
+                        }
+                        else if (lap < 300 || lap > 600)
+                        {
+                             result.Items.Add(new ValidationError
+                            {
+                                ComponentId = cur.Id.ToString(),
+                                ComponentName = cur.Name,
+                                Message = $"Liner Lap: Solapamiento de {lap:F1} ft. Rango recomendado: 300-500 ft.",
+                                Severity = ValidationSeverity.Warning
+                            });
+                        }
+                    }
                 }
 
-                // B2: No Gaps - Top MD debe ser igual al Bottom MD de la sección anterior
-                if (cur.TopMD.HasValue && prev.BottomMD.HasValue)
+                // B2: No Gaps - Top MD debe ser igual al Bottom MD de la sección anterior (si no permite solapamientos)
+                if (!allowsOverlap && cur.TopMD.HasValue && prev.BottomMD.HasValue)
                 {
                     double gap = cur.TopMD.Value - prev.BottomMD.Value;
                     if (Math.Abs(gap) > 0.01)
                     {
                         if (gap > 0)
                         {
-                            // Gap positivo: hay un espacio sin cubrir
                             result.Items.Add(new ValidationError
                             {
                                 ComponentId = cur.Id.ToString(),
@@ -350,11 +394,6 @@ namespace ProjectReport.Services.Wellbore
                                 Message = $"Error B2: Gap de {gap:F2} ft detectado. Top MD ({cur.TopMD.Value:F2} ft) debe ser igual al Bottom MD anterior ({prev.BottomMD.Value:F2} ft)",
                                 Severity = ValidationSeverity.Error
                             });
-                        }
-                        else
-                        {
-                            // Gap negativo: solapamiento (ya manejado en B3)
-                            // Pero si no es override, ya se marcó como error en B3
                         }
                     }
                 }
@@ -366,16 +405,14 @@ namespace ProjectReport.Services.Wellbore
         /// </summary>
         private void ValidateComponent(WellboreComponent cur, WellboreComponent? prev, ValidationResult result)
         {
-            // C1: Casing Depth Progression
-            if (prev != null &&
+            bool allowsOverlap = cur.Component == ComponentType.Casing || cur.Component == ComponentType.Liner;
+
+            // C1: Casing Depth Progression (Only for strictly sequential components)
+            if (!allowsOverlap && prev != null &&
                 (cur.Component == ComponentType.Casing || cur.Component == ComponentType.Liner) &&
                 (prev.Component == ComponentType.Casing || prev.Component == ComponentType.Liner))
             {
-                bool isCasingOverride = cur.TopMD.HasValue && prev.TopMD.HasValue &&
-                                       Math.Abs(cur.TopMD.Value - prev.TopMD.Value) < 0.01 &&
-                                       cur.BottomMD.GetValueOrDefault() >= prev.BottomMD.GetValueOrDefault();
-
-                if (!isCasingOverride && cur.BottomMD.HasValue && prev.BottomMD.HasValue && 
+                if (cur.BottomMD.HasValue && prev.BottomMD.HasValue && 
                     cur.BottomMD.Value < prev.BottomMD.Value)
                 {
                     result.Items.Add(new ValidationError
@@ -386,6 +423,32 @@ namespace ProjectReport.Services.Wellbore
                         Severity = ValidationSeverity.Error
                     });
                 }
+            }
+
+            // C5: Surface Start Rule
+            if (cur.TopMD.GetValueOrDefault() < 0.01)
+            {
+                if (cur.Component == ComponentType.Liner)
+                {
+                    result.Items.Add(new ValidationError
+                    {
+                        ComponentId = cur.Id.ToString(),
+                        ComponentName = cur.Name,
+                        Message = "Error: Un Liner no puede empezar en superficie (0.00).",
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+                else if (cur.Component == ComponentType.OpenHole)
+                {
+                    result.Items.Add(new ValidationError
+                    {
+                        ComponentId = cur.Id.ToString(),
+                        ComponentName = cur.Name,
+                        Message = "Warning: Open Hole empezando en superficie es inusual (excepto conductor artesanal).",
+                        Severity = ValidationSeverity.Warning
+                    });
+                }
+                // Riser and Casing are allowed at surface (0.00)
             }
 
             // C3/C4: OpenHole Washout Validation

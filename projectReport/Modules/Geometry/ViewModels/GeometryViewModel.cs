@@ -1040,86 +1040,10 @@ namespace ProjectReport.ViewModels.Geometry
 
         public ICommand ImportPumpDataCommand => new RelayCommand(_ => ExecuteImportPumpData(), _ => SelectedWellTest != null && SelectedWellTest.Type == WellTestType.LeakOff);
         
-        // Navigation Commands
-        public ICommand SaveAndNextCommand => new RelayCommand(async _ => await SaveAndNextAsync());
-        public ICommand FinalizeGeometryCommand => new RelayCommand(async _ => await FinalizeGeometryAsync());
 
-        private async Task SaveAndNextAsync()
-        {
-            // 1. Validation for current tab
-            if (!ValidateCurrentTab()) return;
 
-            // 2. Save
-            await SaveProjectAsync();
 
-            // 3. Move to next tab
-            if (SelectedTabIndex < 5) // Assuming 6 tabs (0-5)
-            {
-                SelectedTabIndex++;
-            }
-        }
 
-        private bool ValidateCurrentTab()
-        {
-            // Simple validation based on current tab index
-            switch (SelectedTabIndex)
-            {
-                case 0: // Wellbore
-                    if (WellboreComponents.Any(c => !c.IsValid)) {
-                        ToastNotificationService.Instance.ShowError("Fix Wellbore errors first.");
-                        return false;
-                    }
-                    // Depth consistency validation (Rule: Wellbore cannot be deeper than current drilling depth)
-                    var deepestWellbore = WellboreComponents.Where(c => c.BottomMD.HasValue).Max(c => c.BottomMD) ?? 0;
-                    var depthError = WellContextService.Instance.ValidateDepthConsistency(deepestWellbore);
-                    if (depthError != null) {
-                        ToastNotificationService.Instance.ShowError(depthError);
-                        return false;
-                    }
-                    return true;
-                case 1: // DrillString
-                    if (DrillStringComponents.Any(c => !c.IsValid)) {
-                        ToastNotificationService.Instance.ShowError("Fix Drill String errors first.");
-                        return false;
-                    }
-                    return true;
-                case 2: // Survey
-                     if (SurveyPoints.Any(c => !c.IsValid)) {
-                        ToastNotificationService.Instance.ShowError("Fix Survey errors first.");
-                        return false;
-                    }
-                    return true;
-                case 3: // Thermal Gradient
-                    if (ThermalGradientViewModel.ThermalGradientPoints.Any(c => !c.IsValid)) {
-                        ToastNotificationService.Instance.ShowError("Fix Thermal Gradient errors first.");
-                        return false;
-                    }
-                    return true;
-                case 4: // Well Test
-                    if (WellTests.Any(c => !c.IsValid)) {
-                        ToastNotificationService.Instance.ShowError("Fix Well Test errors first.");
-                        return false;
-                    }
-                    return true;
-            }
-            return true;
-        }
-
-        private async Task FinalizeGeometryAsync()
-        {
-             // 1. Validate All
-             if (WellboreComponents.Any(c => !c.IsValid) || DrillStringComponents.Any(c => !c.IsValid))
-             {
-                 ToastNotificationService.Instance.ShowError("Cannot finalize. Fix validation errors.");
-                 return;
-             }
-
-             // 2. Save
-             await SaveProjectAsync();
-
-             // 3. Navigate to Inventory
-             NavigationService.Instance.NavigateToInventory(_currentWell?.Id ?? 0);
-        }
 
         // Wellbore commands
         public ICommand AddWellboreSectionCommand => new RelayCommand(AddWellboreSection);
@@ -1214,7 +1138,7 @@ namespace ProjectReport.ViewModels.Geometry
             var newComponent = new DrillStringComponent
             {
                 Id = GetNextDrillStringId(),
-                Name = "Selecciona Componente...",
+                Name = string.Empty,
                 ComponentType = ComponentType.DrillPipe,
                 Length = null,
                 OD = null,
@@ -2488,49 +2412,40 @@ namespace ProjectReport.ViewModels.Geometry
             if (TotalWellboreMD <= 0) return;
             if (DrillStringComponents.Count == 0) return;
 
-            // Get the LAST component in the drill string (bottom-most)
-            var lastComponent = DrillStringComponents.LastOrDefault();
-            if (lastComponent == null)
+            // Rule: Adjust only the Drill Pipe component
+            var components = DrillStringComponents.ToList();
+            var drillPipe = _autoAdjustService.GetDrillPipeComponent(components);
+            
+            if (drillPipe == null)
             {
-                ToastNotificationService.Instance.ShowWarning("No drill string components found to adjust.");
+                // If no DP, we cannot safely "stretch" the string automatically
                 return;
             }
 
-            double totalOtherLength = DrillStringComponents
-                .Where(c => c != lastComponent)
-                .Sum(c => c.Length.GetValueOrDefault());
+            var bhaComponents = _autoAdjustService.GetBHAComponents(components);
+            double bhaLength = _autoAdjustService.GetBHATotalLength(bhaComponents);
+            
+            double newLength = TotalWellboreMD - bhaLength;
 
-            double delta = TotalWellboreMD - (totalOtherLength + lastComponent.Length.GetValueOrDefault());
-
-            // If string is shorter than MD, extend last component
-            if (delta > DepthTolerance)
+            // If BHA is shorter than MD, we can adjust the DP
+            if (newLength > DepthTolerance)
             {
-                double oldLength = lastComponent.Length.GetValueOrDefault();
-                double newLength = lastComponent.Length.GetValueOrDefault() + delta;
+                double oldLength = drillPipe.Length.GetValueOrDefault();
                 
-                // Update the last component
-                lastComponent.Length = newLength;
+                // Update the drill pipe length
+                drillPipe.Length = newLength;
                 
                 // Highlight the adjusted field
-                lastComponent.IsHighlighted = true;
+                drillPipe.IsHighlighted = true;
                 
                 // Remove highlight after 2 seconds
                 Task.Delay(2000).ContinueWith(_ => 
                 {
                     Application.Current.Dispatcher.Invoke(() => 
                     {
-                        lastComponent.IsHighlighted = false;
+                        drillPipe.IsHighlighted = false;
                     });
                 });
-                
-                // Show notification
-                ToastNotificationService.Instance.ShowSuccess(
-                    $"Drill String forced to bottom. Last component length adjusted from {oldLength:F2} ft to {newLength:F2} ft (+{delta:F2} ft).");
-            }
-            // If string exceeds MD, show error (but don't auto-adjust)
-            else if (delta < -DepthTolerance)
-            {
-                ShowDepthOverrunError();
             }
         }
 
@@ -2539,7 +2454,6 @@ namespace ProjectReport.ViewModels.Geometry
         /// </summary>
         private void ExecuteAutoAdjustToBottom()
         {
-            // Use Total Wellbore MD as the target depth for bottoming out
             var reportMD = TotalWellboreMD;
             
             if (reportMD <= 0)
@@ -2552,19 +2466,37 @@ namespace ProjectReport.ViewModels.Geometry
                 return;
             }
 
-            if (DrillStringComponents.Count == 0)
+            var components = DrillStringComponents.ToList();
+            var drillPipe = _autoAdjustService.GetDrillPipeComponent(components);
+            
+            if (drillPipe == null)
             {
                 MessageBox.Show(
-                    "No drill string components found. Please add components first.",
-                    "No Components",
+                    "No Drill Pipe component found in the string. Add a Drill Pipe section to use this feature.",
+                    "Drill Pipe Missing",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
 
-            // Calculate difference: Report MD - Total current drill string length
-            double totalCurrentLength = DrillStringComponents.Sum(c => c.Length.GetValueOrDefault());
-            double difference = reportMD - totalCurrentLength;
+            var bhaComponents = _autoAdjustService.GetBHAComponents(components);
+            double bhaLength = _autoAdjustService.GetBHATotalLength(bhaComponents);
+            
+            double newLength = reportMD - bhaLength;
+
+            if (newLength < 0)
+            {
+                MessageBox.Show(
+                    $"Cannot adjust to bottom: BHA length ({bhaLength:F2} ft) exceeds total wellbore depth ({reportMD:F2} ft). " +
+                    "Please reduce BHA component lengths manually.",
+                    "BHA Exceeds Depth",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                return;
+            }
+
+            double oldLength = drillPipe.Length.GetValueOrDefault();
+            double difference = newLength - oldLength;
 
             if (Math.Abs(difference) < DepthTolerance)
             {
@@ -2572,40 +2504,15 @@ namespace ProjectReport.ViewModels.Geometry
                 return;
             }
 
-            // Find the top-most Drill Pipe component (or first component if no Drill Pipe)
-            // Rule: MudTrack list is Top-to-Bottom (DP starts at MD 0)
-            var topDrillPipe = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.DrillPipe);
-            var componentToAdjust = topDrillPipe ?? DrillStringComponents.FirstOrDefault();
-
-            if (componentToAdjust == null)
-            {
-                ToastNotificationService.Instance.ShowError("No component found to adjust.");
-                return;
-            }
-
-            // Adjust the first component's length
-            double oldLength = componentToAdjust.Length.GetValueOrDefault();
-            double newLength = oldLength + difference;
-
-            if (newLength <= 0)
-            {
-                MessageBox.Show(
-                    $"Cannot adjust: difference ({difference:F2} ft) would result in negative length.",
-                    "Invalid Adjustment",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
-            }
-
-            componentToAdjust.Length = newLength;
-            componentToAdjust.IsHighlighted = true;
+            drillPipe.Length = newLength;
+            drillPipe.IsHighlighted = true;
 
             // Remove highlight after 2 seconds
             Task.Delay(2000).ContinueWith(_ => 
             {
                 Application.Current.Dispatcher.Invoke(() => 
                 {
-                    componentToAdjust.IsHighlighted = false;
+                    drillPipe.IsHighlighted = false;
                 });
             });
 
@@ -2613,9 +2520,8 @@ namespace ProjectReport.ViewModels.Geometry
             RecalculateTotals();
 
             // Show notification
-            string componentName = componentToAdjust.ComponentType == ComponentType.DrillPipe ? "Drill Pipe" : componentToAdjust.ComponentType.ToString();
             ToastNotificationService.Instance.ShowSuccess(
-                $"✓ Ajustado al fondo: {componentName} ajustado de {oldLength:F2} ft a {newLength:F2} ft (+{difference:F2} ft). Estado: OnBottom");
+                $"✓ Ajustado al fondo: Drill Pipe ajustado de {oldLength:F2} ft a {newLength:F2} ft ({difference:+0.00;-0.00;0} ft). Estado: OnBottom");
 
             // Validate drill string configuration
             var configError = _autoAdjustService.ValidateDrillStringConfiguration(DrillStringComponents.ToList());

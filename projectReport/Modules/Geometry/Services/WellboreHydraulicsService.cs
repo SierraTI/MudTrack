@@ -50,21 +50,25 @@ namespace ProjectReport.Services
                 if (segmentLength <= 0.001) continue;
 
                 // Identify the wellbore section (wb) present in this range
-                var wb = wellboreComponents.FirstOrDefault(w => 
-                    w.TopMD.HasValue && w.BottomMD.HasValue &&
-                    w.TopMD.Value <= segmentTop && w.BottomMD.Value >= segmentBottom);
+                // Rule: If multiple sections overlap (e.g. Casing Override or Conductor/Surface overlap), 
+                // we pick the INNERMOST one (the one with the smallest ID).
+                var wbCandidates = wellboreComponents.Where(w => 
+                    w.TopMD <= segmentTop + 0.001 && w.BottomMD >= segmentBottom - 0.001)
+                    .Select(w => new { 
+                        Component = w, 
+                        EffectiveID = w.Component == ComponentType.OpenHole 
+                            ? w.OD.GetValueOrDefault() * (1 + (w.Washout.GetValueOrDefault() / 100.0))
+                            : w.ID.GetValueOrDefault()
+                    })
+                    .Where(x => x.EffectiveID > 0)
+                    .OrderBy(x => x.EffectiveID)
+                    .ToList();
 
-                if (wb == null) continue; // No wellbore section here
+                var bestCandidate = wbCandidates.FirstOrDefault();
+                if (bestCandidate == null) continue; // No wellbore section here
 
-                // Get Effective ID_wb
-                double wbID = wb.ID.GetValueOrDefault();
-                if (wb.Component == ComponentType.OpenHole)
-                {
-                    // Formula: ID_wb = OD_wb * (1 + Washout/100)
-                    wbID = wb.OD.GetValueOrDefault() * (1 + (wb.Washout.GetValueOrDefault() / 100.0));
-                }
-
-                if (wbID <= 0) continue;
+                var wb = bestCandidate.Component;
+                double wbID = bestCandidate.EffectiveID;
 
                 // Identify the drill string component (ds) present in this range
                 var ds = drillStringComponents.FirstOrDefault(d => 

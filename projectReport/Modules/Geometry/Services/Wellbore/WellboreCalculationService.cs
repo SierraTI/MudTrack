@@ -17,62 +17,97 @@ namespace ProjectReport.Services.Wellbore
         /// <summary>
         /// Calcula el volumen de un componente de wellbore.
         /// Para OpenHole: Volume = (ID² / 1029.4) × Length × (1 + Washout/100)
-        /// Para Casing/Liner: Volume anular o capacidad interna según contexto.
+        /// Para Casing/Liner: Volumen ANULAR con el casing/agujero previo que lo contiene.
         /// </summary>
-        public void CalculateWellboreComponentVolume(WellboreComponent component, string units, WellboreComponent? previousComponent)
+        public void CalculateWellboreComponentVolume(WellboreComponent component, IEnumerable<WellboreComponent> allComponents)
         {
             if (component == null) return;
 
             double volume = 0;
+            double top = component.TopMD ?? 0;
+            double bottom = component.BottomMD ?? 0;
+            double length = bottom - top;
 
-            if (component.Component == ComponentType.OpenHole)
+            if (length <= 0)
+            {
+                component.Volume = 0;
+                return;
+            }
+
+            if (component.Component == ComponentType.OpenHole || component.Component == ComponentType.Riser)
             {
                 // OpenHole: Volumen = Diámetro del hoyo con washout
-                // Formula: (ID² / 1029.4) × Length × (1 + Washout%)
-                // Donde ID = OD (diámetro del hoyo en Open Hole)
                 if (component.OD.HasValue && component.OD.Value > 0)
                 {
-                    double length = (component.BottomMD ?? 0) - (component.TopMD ?? 0);
-                    
-                    if (length > 0)
-                    {
-                        double washoutFactor = 1.0 + ((component.Washout ?? 0) / 100.0);
-                        double idSquared = Math.Pow(component.OD.Value, 2);
-                        volume = (idSquared / FEET_TO_BBL_DIVISOR) * length * washoutFactor;
-                    }
+                    double washoutFactor = 1.0 + ((component.Washout ?? 0) / 100.0);
+                    double idSquared = Math.Pow(component.OD.Value, 2);
+                    volume = (idSquared / FEET_TO_BBL_DIVISOR) * length * washoutFactor;
                 }
             }
-            else if (component.Component == ComponentType.Casing || 
-                     component.Component == ComponentType.Liner)
+            else if (component.Component == ComponentType.Casing || component.Component == ComponentType.Liner)
             {
-                // Casing/Liner: Volumen anular entre sección anterior e actual
-                // Formula: π/4 * (ID_anterior² - OD_actual²) * Length / 1029.4
-                if (previousComponent != null && previousComponent.ID.HasValue && 
-                    component.OD.HasValue && previousComponent.ID.Value > 0 && component.OD.Value > 0)
-                {
-                    double length = (component.BottomMD ?? 0) - (component.TopMD ?? 0);
-                    
-                    if (length > 0)
-                    {
-                        double idPrev2 = Math.Pow(previousComponent.ID.Value, 2);
-                        double odCur2 = Math.Pow(component.OD.Value, 2);
-                        volume = (Math.PI / 4.0) * (idPrev2 - odCur2) * length / FEET_TO_BBL_DIVISOR;
-                    }
-                }
-                else if (component.ID.HasValue && component.ID.Value > 0)
-                {
-                    // No previous component: capacidad interna del string actual
-                    double length = (component.BottomMD ?? 0) - (component.TopMD ?? 0);
+                // Casing/Liner: Volumen anular con el componente que lo contiene
+                // Si hay múltiples contenedores (ej: Liner que cruza de Casing a Open Hole), 
+                // idealmente deberíamos segmentar, pero aquí buscaremos el componente con mayor ID que lo solapa.
+                
+                var containers = allComponents
+                    .Where(c => c != component && 
+                               c.TopMD < component.BottomMD && 
+                               c.BottomMD > component.TopMD &&
+                               c.ID.GetValueOrDefault() > component.OD.GetValueOrDefault())
+                    .OrderBy(c => c.ID) // El más cercano es el de menor ID que sea mayor al OD actual
+                    .FirstOrDefault();
 
-                    if (length > 0)
+                if (containers != null)
+                {
+                    double idPrev2 = Math.Pow(containers.ID.Value, 2);
+                    double odCur2 = Math.Pow(component.OD.Value, 2);
+                    // Nota: Se calcula el volumen anular para TODA la longitud del componente actual
+                    // asumiendo que el contenedor lo cubre. Para Liners esto suele ser cierto en su tramo superior.
+                    volume = (Math.PI / 4.0) * (idPrev2 - odCur2) * length / FEET_TO_BBL_DIVISOR;
+                }
+                else
+                {
+                    // No hay contenedor (Casing de superficie): usamos capacidad interna? 
+                    // El usuario pide "Volumen para LINER y CASING: Anular con el casing anterior". 
+                    // Si no hay anterior, el volumen anular no existe o es con el exterior del riser.
+                    // Por ahora, devolver 0 o capacidad si es el primero.
+                    if (component.TopMD == 0)
                     {
-                        double id2 = Math.Pow(component.ID.Value, 2);
+                        double id2 = Math.Pow(component.ID.GetValueOrDefault(), 2);
                         volume = (id2 / FEET_TO_BBL_DIVISOR) * length;
                     }
                 }
             }
 
             component.Volume = Math.Max(0, volume);
+        }
+
+        /// <summary>
+        /// Calcula el volumen total del pozo (fluido disponible).
+        /// Solo cuenta las secciones "Active" (innermost).
+        /// </summary>
+        public double CalculateTotalWellboreVolume(IEnumerable<WellboreComponent> components)
+        {
+            // Sumar solo la capacidad interna de los componentes Activos
+            double total = 0;
+            foreach (var c in components.Where(c => !c.IsHistory))
+            {
+                double len = (c.BottomMD ?? 0) - (c.TopMD ?? 0);
+                if (len > 0)
+                {
+                    if (c.Component == ComponentType.OpenHole)
+                    {
+                         double washoutFactor = 1.0 + ((c.Washout ?? 0) / 100.0);
+                         total += (Math.Pow(c.OD.GetValueOrDefault(), 2) / FEET_TO_BBL_DIVISOR) * len * washoutFactor;
+                    }
+                    else
+                    {
+                        total += (Math.Pow(c.ID.GetValueOrDefault(), 2) / FEET_TO_BBL_DIVISOR) * len;
+                    }
+                }
+            }
+            return total;
         }
 
         /// <summary>

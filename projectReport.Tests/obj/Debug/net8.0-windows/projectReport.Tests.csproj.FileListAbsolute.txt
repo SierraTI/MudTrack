@@ -161,6 +161,7 @@ C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\refint\projectRepor
 C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.pdb
 C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.genruntimeconfig.cache
 C:\Dev\MudTrack\projectReport.Tests\obj\Debug\net8.0-windows\ref\projectReport.Tests.dll
+<<<<<<< HEAD
 C:\DEV\projectReport.Tests\bin\Debug\net8.0-windows\CoverletSourceRootsMapping_projectReport.Tests
 C:\DEV\projectReport.Tests\bin\Debug\net8.0-windows\Data\Lista.xlsx
 C:\DEV\projectReport.Tests\bin\Debug\net8.0-windows\testhost.exe
@@ -325,3 +326,6 @@ C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\refint\projectReport.Tests.d
 C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.pdb
 C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\projectReport.Tests.genruntimeconfig.cache
 C:\DEV\projectReport.Tests\obj\Debug\net8.0-windows\ref\projectReport.Tests.dll
+=======
+C:\Dev\MudTrack\projectReport.Tests\bin\Debug\net8.0-windows\Data\ListaFluidos.xlsx
+>>>>>>> 1eba1e9984ad4cbceb6a0056c0ffdc4a9a0078ee

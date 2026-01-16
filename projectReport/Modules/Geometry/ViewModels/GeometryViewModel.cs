@@ -394,32 +394,13 @@ namespace ProjectReport.ViewModels.Geometry
                     _geometryService.CalculateWellboreComponentVolume(component, "Imperial", prev);
                     ValidateWellboreComponent(component);
 
-                    // Check for Casing Overwrite Logic (Rule 4.1)
-                    // If user edited a casing to match the previous one's start, they might intend to overwrite.
-                    if (prev != null && component.SectionType == ComponentType.Casing && prev.SectionType == ComponentType.Casing)
-                    {
-                        bool topMatches = component.TopMD.HasValue && prev.TopMD.HasValue && Math.Abs(component.TopMD.Value - prev.TopMD.Value) < 0.01;
-                        bool odMatches = Math.Abs(component.OD.GetValueOrDefault() - prev.OD.GetValueOrDefault()) < 0.001;
-                        bool isExtension = component.BottomMD.GetValueOrDefault() > prev.BottomMD.GetValueOrDefault();
-
-                        if (topMatches && odMatches && isExtension)
-                        {
-                            // Trigger Overwrite
-                            // 1. Update previous casing depth
-                            prev.BottomMD = component.BottomMD;
-                            prev.Name = component.Name; // Optional update
-                            
-                            ToastNotificationService.Instance.ShowSuccess($"Casing overwritten/extended: {prev.Name} now to {prev.BottomMD} ft.");
-
-                            // 2. Remove the current "duplicate" component that was just edited
-                            // We must do this carefully to avoid re-triggering events in a loop
-                            // Dispatch to UI thread to remove after current event
-                            Application.Current.Dispatcher.InvokeAsync(() => 
-                            {
-                                WellboreComponents.Remove(component);
-                            });
-                        }
-                    }
+                    // Check for Casing Overwrite Logic (Rule 4.1) - REMOVED per User Request to allow History/Stacking
+                    // The user wants to keep the previous casing as "History" even if they overlap.
+                    // We simply allow the new row to exist.
+                    // if (prev != null && component.SectionType == ComponentType.Casing && prev.SectionType == ComponentType.Casing)
+                    // {
+                    //      ... logic removed ...
+                    // }
 
                     // DEPTH CHAINING: Update next component's TopMD if BottomMD changed
                     if (e.PropertyName == nameof(WellboreComponent.BottomMD))
@@ -511,25 +492,8 @@ namespace ProjectReport.ViewModels.Geometry
                 (current.SectionType == ComponentType.Casing || current.SectionType == ComponentType.Liner) &&
                 (previous.SectionType == ComponentType.Casing || previous.SectionType == ComponentType.Liner))
             {
-                // Check for duplicate start (potential overwrite condition)
-                // Condition: Type Matches, OD Matches, TopMD Matches, New BottomMD > Old BottomMD
-                
-                bool isSameType = current.SectionType == previous.SectionType;
-                bool isSameOD = Math.Abs((current.OD ?? 0) - (previous.OD ?? 0)) < 0.001;
-                bool isSameTop = Math.Abs((current.TopMD ?? 0) - (previous.TopMD ?? 0)) < 0.01;
-                bool isExtension = (current.BottomMD ?? 0) > (previous.BottomMD ?? 0);
-                
-                if (isSameType && isSameOD && isSameTop && isExtension)
-                {
-                    // This looks like an intended overwrite/extension
-                    // We can't modify the collection inside a validation loop triggered by collection change/property change strictly speaking,
-                    // but we can queue it or handle it.
-                    // Given the request asks for "Smart Add", maybe we handle this at the "Add" command level predominantly,
-                    // but if the user edits a row to match, we might offer to merge.
-                    
-                    // For now, let's just notify. The "Add" command will handle the auto-merge.
-                    // ToastNotificationService.Instance.ShowInfo("Identical Casing detected. Use 'Add Section' logic to auto-extend.");
-                }
+                // Logic disabled to allow History Stacking without nagging.
+                // The user explicitly wants to allow stacking/history.
             }
         }
 
@@ -597,13 +561,15 @@ namespace ProjectReport.ViewModels.Geometry
         private void OnSurveyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (_isLoading) return;
-
             if (e.NewItems != null)
             {
                 foreach (SurveyPoint point in e.NewItems)
                 {
                     point.PropertyChanged += OnSurveyPointChanged;
                     ValidateSurveyPoint(point);
+                    
+                    // Trigger initial calculation for new points (important for Import)
+                    RecalculateSurveyTrajectory(point);
                 }
             }
             if (e.OldItems != null)
@@ -612,6 +578,10 @@ namespace ProjectReport.ViewModels.Geometry
                 {
                     point.PropertyChanged -= OnSurveyPointChanged;
                 }
+                
+                // If points are removed, we must recalculate subsequent points
+                // The easiest safe way is to recalc everything, or find the "gap"
+                RecalculateAllSurveyTrajectories();
             }
             
             // Ensure surface point exists
@@ -626,20 +596,17 @@ namespace ProjectReport.ViewModels.Geometry
         {
             if (_isLoading) return;
 
-            // Only trigger recalculation when input fields change (MD, HoleAngle, Azimuth)
-            // TVD, Northing, Easting, VerticalSection are auto-calculated and should not trigger recalc
+            // Only trigger calculation when input fields change (MD, HoleAngle, Azimuth)
             if (e.PropertyName == nameof(SurveyPoint.MD) || 
                 e.PropertyName == nameof(SurveyPoint.HoleAngle) ||
                 e.PropertyName == nameof(SurveyPoint.Azimuth))
             {
                 if (sender is SurveyPoint point)
                 {
-                    // Ensure surface point exists
-                    _surveyValidationService.EnsureSurfacePoint(SurveyPoints.ToList());
-                    
                     // Recalculate trajectory for this point and all subsequent points
                     RecalculateSurveyTrajectory(point);
-                    ValidateAllSurveyPoints();
+                    
+                    // Trigger chart update
                     UpdateSurveyChart();
                 }
             }
@@ -2452,6 +2419,15 @@ namespace ProjectReport.ViewModels.Geometry
         /// <summary>
         /// Adjusts the first component (usually Drill Pipe) to reach the wellbore bottom depth.
         /// </summary>
+        /// <summary>
+        /// Adjusts the Drill Pipe length to reach the wellbore bottom depth, explicitly protecting BHA components.
+        /// Formula: DP_Length = Total_MD - Sum(All_Other_Components)
+        /// </summary>
+        /// <summary>
+        /// Adjusts the FIRST component (Index 0) to reach the wellbore bottom depth.
+        /// Rule: Top Component (Index 0) is elastic; all others (Index 1+) are Fixed/BHA.
+        /// Formula: TopComponent_Length = Total_MD - Sum(Fixed_Components)
+        /// </summary>
         private void ExecuteAutoAdjustToBottom()
         {
             var reportMD = TotalWellboreMD;
@@ -2467,36 +2443,42 @@ namespace ProjectReport.ViewModels.Geometry
             }
 
             var components = DrillStringComponents.ToList();
-            var drillPipe = _autoAdjustService.GetDrillPipeComponent(components);
             
-            if (drillPipe == null)
+            if (components.Count == 0)
             {
                 MessageBox.Show(
-                    "No Drill Pipe component found in the string. Add a Drill Pipe section to use this feature.",
-                    "Drill Pipe Missing",
+                    "Drill string is empty. Please add components.",
+                    "Empty String",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 return;
             }
 
-            var bhaComponents = _autoAdjustService.GetBHAComponents(components);
-            double bhaLength = _autoAdjustService.GetBHATotalLength(bhaComponents);
-            
-            double newLength = reportMD - bhaLength;
+            // 1. Identify Top Component (Index 0) - The only one to adjust
+            var topComponent = components[0];
 
-            if (newLength < 0)
+            // 2. Calculate Fixed Length (BHA + HWDP + etc.)
+            // Sum of ALL components EXCEPT the first one (Index 1 to End)
+            double fixedComponentsLength = components.Skip(1).Sum(c => c.Length.GetValueOrDefault());
+            
+            // 3. Calculate Required Top Component Length
+            // Formula: Length_{Top} = MD_{Total} - Sum(Rest)
+            double requiredLength = reportMD - fixedComponentsLength;
+
+            // 4. Safety Lock (Validation)
+            if (requiredLength < 0)
             {
                 MessageBox.Show(
-                    $"Cannot adjust to bottom: BHA length ({bhaLength:F2} ft) exceeds total wellbore depth ({reportMD:F2} ft). " +
-                    "Please reduce BHA component lengths manually.",
+                    $"Error: BHA/Fixed length ({fixedComponentsLength:F2} ft) exceeds Well Depth ({reportMD:F2} ft).\n" + 
+                    "The top component cannot have negative length.",
                     "BHA Exceeds Depth",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
                 return;
             }
 
-            double oldLength = drillPipe.Length.GetValueOrDefault();
-            double difference = newLength - oldLength;
+            double oldLength = topComponent.Length.GetValueOrDefault();
+            double difference = requiredLength - oldLength;
 
             if (Math.Abs(difference) < DepthTolerance)
             {
@@ -2504,34 +2486,35 @@ namespace ProjectReport.ViewModels.Geometry
                 return;
             }
 
-            drillPipe.Length = newLength;
-            drillPipe.IsHighlighted = true;
-
-            // Remove highlight after 2 seconds
-            Task.Delay(2000).ContinueWith(_ => 
+            // 5. Update and Feedback
+            try 
             {
-                Application.Current.Dispatcher.Invoke(() => 
+                topComponent.Length = requiredLength;
+                topComponent.IsHighlighted = true;
+
+                // Remove highlight after 2 seconds
+                Task.Delay(2000).ContinueWith(_ => 
                 {
-                    drillPipe.IsHighlighted = false;
+                    Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        topComponent.IsHighlighted = false;
+                    });
                 });
-            });
 
-            // Recalculate totals
-            RecalculateTotals();
+                // Recalculate totals
+                RecalculateTotals();
 
-            // Show notification
-            ToastNotificationService.Instance.ShowSuccess(
-                $"✓ Ajustado al fondo: Drill Pipe ajustado de {oldLength:F2} ft a {newLength:F2} ft ({difference:+0.00;-0.00;0} ft). Estado: OnBottom");
-
-            // Validate drill string configuration
-            var configError = _autoAdjustService.ValidateDrillStringConfiguration(DrillStringComponents.ToList());
-            if (configError != null)
+                // Show notification
+                ToastNotificationService.Instance.ShowSuccess(
+                    $"✓ Adjusted to Bottom: Top Component ({topComponent.ComponentTypeString}) updated from {oldLength:F2} ft to {requiredLength:F2} ft.");
+            }
+            catch (Exception ex)
             {
-                MessageBox.Show(
-                    configError,
-                    "Configuration Error",
+                 MessageBox.Show(
+                    $"Error adjusting length: {ex.Message}",
+                    "Adjustment Error",
                     MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    MessageBoxImage.Error);
             }
         }
 
@@ -2557,6 +2540,9 @@ namespace ProjectReport.ViewModels.Geometry
 
         public void RecalculateTotals()
         {
+            // Update "Behind Pipe" status (Recipe 3: The 20" remains but is inactive)
+            UpdateBehindPipeStatus();
+
             TotalWellboreVolume = _geometryService.CalculateTotalWellboreVolume(WellboreComponents, "Imperial");
             TotalDrillStringVolume = _geometryService.CalculateTotalDrillStringVolume(DrillStringComponents, false, "Imperial"); // Internal Volume
             
@@ -2633,6 +2619,39 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(AnnularVolumePercent));
             OnPropertyChanged(nameof(StringVolumePercent));
             RecalculateSafetyMetrics();
+        }
+
+        /// <summary>
+        /// Updates the 'IsHistory' flag for wellbore components.
+        /// Logic: If Component A is completely covered by Component B (and B is inside A), A is "Behind Pipe".
+        /// </summary>
+        private void UpdateBehindPipeStatus()
+        {
+            if (WellboreComponents == null || WellboreComponents.Count == 0) return;
+
+            // Reset all first
+            foreach (var c in WellboreComponents) c.IsHistory = false;
+
+            // Iterate to find covered components
+            // We only check Casing/Liner interactions usually, but theoretically Riser too.
+            var candidates = WellboreComponents.Where(c => c.Component == ComponentType.Casing || c.Component == ComponentType.Liner).ToList();
+
+            foreach (var outer in candidates)
+            {
+                // Check if 'outer' is covered by any 'inner'
+                // Covered means: Inner Top <= Outer Top AND Inner Bottom >= Outer Bottom
+                // And Inner ID < Outer ID (Inside)
+                bool isCovered = candidates.Any(inner => 
+                    inner != outer && 
+                    (inner.TopMD ?? 0) <= (outer.TopMD ?? 0) && 
+                    (inner.BottomMD ?? 0) >= (outer.BottomMD ?? 0) && 
+                    inner.ID.GetValueOrDefault() < outer.ID.GetValueOrDefault());
+
+                if (isCovered)
+                {
+                    outer.IsHistory = true;
+                }
+            }
         }
 
         private void UpdateAnnularVolumeDetails()
@@ -3045,12 +3064,18 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void AddWellTest(object? parameter)
         {
+            int nextId = 1;
+            if (WellTests.Any())
+            {
+                nextId = WellTests.Max(t => t.Id) + 1;
+            }
+
             var newTest = new WellTest
             {
-                Id = GetNextWellTestId(),
+                Id = nextId,
                 Type = WellTestType.LeakOff,
-                MD = 0,
-                TVD = 0
+                Section = WellboreSectionNames.FirstOrDefault(), // Default to first section
+                TestValue = 0
             };
 
             WellTests.Add(newTest);

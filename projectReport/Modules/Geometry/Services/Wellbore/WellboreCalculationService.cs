@@ -60,8 +60,8 @@ namespace ProjectReport.Services.Wellbore
 
                 if (containers != null)
                 {
-                    double idPrev2 = Math.Pow(containers.ID.Value, 2);
-                    double odCur2 = Math.Pow(component.OD.Value, 2);
+                    double idPrev2 = Math.Pow(containers.ID.GetValueOrDefault(), 2);
+                    double odCur2 = Math.Pow(component.OD.GetValueOrDefault(), 2);
                     // Nota: Se calcula el volumen anular para TODA la longitud del componente actual
                     // asumiendo que el contenedor lo cubre. Para Liners esto suele ser cierto en su tramo superior.
                     volume = (Math.PI / 4.0) * (idPrev2 - odCur2) * length / FEET_TO_BBL_DIVISOR;

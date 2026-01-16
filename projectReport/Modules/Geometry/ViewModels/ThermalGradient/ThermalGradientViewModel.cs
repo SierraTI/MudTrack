@@ -86,34 +86,8 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             // Subscribe to Report thermal data updates for automatic synchronization
             WellContextService.Instance.ReportThermalDataUpdated += OnReportThermalDataUpdated;
 
-            // Ensure default points (as per specification)
-            // For offshore wells: Surface, Mudline, BHT
-            // For land wells: Surface, BHT only
-            if (ThermalGradientPoints.Count == 0)
-            {
-                var p1 = new ThermalGradientPoint(_nextId++, 0, AmbientTemperature) { Label = "Surface" };
-                p1.PropertyChanged += OnThermalPointPropertyChanged;
-                ThermalGradientPoints.Add(p1);
-
-                // Only add Mudline for offshore wells
-                if (IsOffshoreWell)
-                {
-                    var p2 = new ThermalGradientPoint(_nextId++, 4500, 110.0) { Label = "Mudline" };
-                    p2.PropertyChanged += OnThermalPointPropertyChanged;
-                    ThermalGradientPoints.Add(p2);
-                }
-
-                // Add BHT point (will be synced with report if available)
-                var defaultBHTTVD = MaxWellboreTVD > 0 ? MaxWellboreTVD : 10000;
-                var defaultBHT = ReportMaxBHT ?? 180.0;
-                var p3 = new ThermalGradientPoint(_nextId++, defaultBHTTVD, defaultBHT) { Label = "BHT" };
-                if (ReportMaxBHT.HasValue && ReportMaxBHT.Value > 0)
-                {
-                    p3.IsLocked = true; // Lock if synced from report
-                }
-                p3.PropertyChanged += OnThermalPointPropertyChanged;
-                ThermalGradientPoints.Add(p3);
-            }
+            // Ensure default points
+            InitializeDefaults();
 
             // Initialize Chart
             var gradientFill = new LinearGradientBrush
@@ -130,14 +104,26 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 {
                     Title = "Temperature",
                     Values = new ChartValues<ObservablePoint>(),
-                    PointGeometry = DefaultGeometries.Circle,
+                    PointGeometry = DefaultGeometries.Square, // User requested Square markers
                     PointGeometrySize = 8,
-                    PointForeground = Brushes.Red,
-                    LineSmoothness = 0,
-                    Stroke = Brushes.Red,
-                    StrokeThickness = 3,
-                    Fill = Brushes.Transparent, // No background fill for professional look
+                    PointForeground = (Brush?)new BrushConverter().ConvertFrom("#3B82F6") ?? Brushes.Blue, // Blue markers
+                    LineSmoothness = 0.5, // Smooth line
+                    Stroke = (Brush?)new BrushConverter().ConvertFrom("#3B82F6") ?? Brushes.Blue, // Blue line
+                    StrokeThickness = 2,
+                    Fill = Brushes.Transparent, 
                     LabelPoint = point => $"Depth: {Math.Abs(point.Y):N0} ft | Temp: {point.X:N1} °F"
+                },
+                new LineSeries // Series for Anomalies (Red markers)
+                {
+                    Title = "Anomalies",
+                    Values = new ChartValues<ObservablePoint>(),
+                    PointGeometry = DefaultGeometries.Diamond,
+                    PointGeometrySize = 12,
+                    PointForeground = Brushes.Red,
+                    Fill = Brushes.Transparent,
+                    Stroke = Brushes.Transparent, // No connecting line
+                    StrokeThickness = 0,
+                    LabelPoint = point => $"⚠ ANOMALY\nDepth: {Math.Abs(point.Y):N0} ft | Temp: {point.X:N1} °F"
                 },
                 new LineSeries
                 {
@@ -147,14 +133,14 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     Fill = Brushes.Transparent,
                     PointGeometry = null,
                     LineSmoothness = 0,
-                    Stroke = (Brush?)new BrushConverter().ConvertFrom("#3B82F6") ?? Brushes.Blue,
+                    Stroke = Brushes.Gray,
                     StrokeThickness = 1
                 },
                 new LineSeries
                 {
                     Title = "Prediction (TD)",
                     Values = new ChartValues<ObservablePoint>(),
-                    Stroke = Brushes.Gray,
+                    Stroke = Brushes.Orange,
                     StrokeThickness = 1.5,
                     StrokeDashArray = new DoubleCollection { 4, 4 },
                     Fill = Brushes.Transparent,
@@ -472,6 +458,61 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
         #endregion
 
         #region Command Implementations
+
+        private void InitializeDefaults()
+        {
+            // 1. Ensure Surface Point (TVD 0)
+            var surfacePoint = ThermalGradientPoints.FirstOrDefault(p => Math.Abs(p.TVD) < 0.001 || p.Label == "Surface");
+            if (surfacePoint == null)
+            {
+                surfacePoint = new ThermalGradientPoint(_nextId++, 0, AmbientTemperature);
+                surfacePoint.Label = "Surface";
+                surfacePoint.IsLocked = true;
+                surfacePoint.PropertyChanged += OnThermalPointPropertyChanged;
+                ThermalGradientPoints.Insert(0, surfacePoint);
+            }
+            else
+            {
+                surfacePoint.Label = "Surface";
+                surfacePoint.TVD = 0;
+                surfacePoint.IsLocked = true;
+            }
+            
+            // 2. Ensure BHT Point (if MaxTVD > 0)
+            if (MaxWellboreTVD > 0)
+            {
+                 var bhtPoint = ThermalGradientPoints.FirstOrDefault(p => p.Label == "BHT");
+                 if (bhtPoint == null)
+                 {
+                     double bhtTemp = 180; 
+                     bhtPoint = new ThermalGradientPoint(_nextId++, MaxWellboreTVD, bhtTemp);
+                     bhtPoint.Label = "BHT";
+                     bhtPoint.PropertyChanged += OnThermalPointPropertyChanged;
+                     ThermalGradientPoints.Add(bhtPoint);
+                 }
+                 else
+                 {
+                     if (Math.Abs(bhtPoint.TVD - MaxWellboreTVD) > 0.1)
+                         bhtPoint.TVD = MaxWellboreTVD; 
+                 }
+            }
+            
+            // 3. Ensure Mudline if Offshore
+            if (IsOffshoreWell)
+            {
+                 var mudline = ThermalGradientPoints.FirstOrDefault(p => p.Label == "Mudline");
+                 if (mudline == null)
+                 {
+                     double mudlineDepth = MaxWellboreTVD > 0 ? MaxWellboreTVD * 0.45 : 4500;
+                     var newMudline = new ThermalGradientPoint(_nextId++, mudlineDepth, 110);
+                     newMudline.Label = "Mudline";
+                     newMudline.PropertyChanged += OnThermalPointPropertyChanged;
+                     ThermalGradientPoints.Add(newMudline);
+                 }
+            }
+            
+            AutoSortPoints();
+        }
 
         private void AddThermalPoint()
         {
@@ -823,65 +864,65 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             }
 
             var errors = new List<string>();
+            var warnings = new List<string>();
 
-            // BR-TG-001: TVD Ordering
+            // BR-TG-001: TVD Ordering (Error)
             var orderingErrors = _thermalService.ValidateTVDOrdering(ThermalGradientPoints.ToList());
             errors.AddRange(orderingErrors);
 
-            // BR-TG-002: TVD Range Validation (Clip to CurrentDepth/Report TVD)
+            // BR-TG-002: TVD Range Validation (Warning)
             double depthLimit = CurrentDepth > 0 ? CurrentDepth : (MaxWellboreTVD > 0 ? MaxWellboreTVD : double.MaxValue);
             
-            var rangeErrors = _thermalService.ValidateTVDRange(ThermalGradientPoints.ToList(), depthLimit);
-            errors.AddRange(rangeErrors);
+            var rangeWarnings = _thermalService.ValidateTVDRange(ThermalGradientPoints.ToList(), depthLimit);
+            warnings.AddRange(rangeWarnings);
 
-            // BR-TG-003: Temperature Gradient Logic (includes validation for decreasing temperature)
+            // BR-TG-003: Temperature Gradient Logic
             var gradientWarnings = _thermalService.ValidateTemperatureGradient(ThermalGradientPoints.ToList());
-            errors.AddRange(gradientWarnings);
+            warnings.AddRange(gradientWarnings);
             
-            // Additional validation: Check for temperature decreasing with depth (critical error)
-            var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
-            for (int i = 0; i < sortedPoints.Count - 1; i++)
+            // Surface temperature reasonableness
+            var surfacePoint = ThermalGradientPoints.OrderBy(p => p.TVD).FirstOrDefault();
+            var surfaceWarning = surfacePoint != null ? _thermalService.ValidateSurfaceTemperature(surfacePoint) : null;
+            if (!string.IsNullOrEmpty(surfaceWarning))
             {
-                var p1 = sortedPoints[i];
-                var p2 = sortedPoints[i + 1];
-                
-                if (p2.Temperature < p1.Temperature)
-                {
-                    errors.Add($"❌ ERROR CRÍTICO: La temperatura disminuye con la profundidad (ID {p2.Id}: {p1.Temperature:F1}°F @ {p1.TVD:F0}ft → {p2.Temperature:F1}°F @ {p2.TVD:F0}ft). Esto es físicamente imposible.");
-                    // Mark the point with error
-                    p2.HasValidationWarning = true;
-                    p2.ValidationMessage = "Temperatura decreciente - físicamente imposible";
-                }
+                warnings.Add(surfaceWarning);
             }
 
-            // Clear per-point warnings
+            // BR-TG-004: Minimum Data Points
+            if (ThermalGradientPoints.Count < 2)
+            {
+                warnings.Add("Add at least 2 thermal points to generate temperature profile");
+            }
+
+            // Clear per-point warnings first
             foreach (var p in ThermalGradientPoints)
             {
                 p.HasValidationWarning = false;
                 p.ValidationMessage = string.Empty;
             }
 
-            // Mark rows with warnings when gradient validation returns an ID (format includes "ID {id}:")
-            foreach (var warn in gradientWarnings)
+            // Mark rows with warnings (search for ID match in messages)
+            var allMessages = errors.Concat(warnings).ToList();
+            foreach (var msg in allMessages)
             {
                 try
                 {
                     var marker = "ID ";
-                    var idx = warn.IndexOf(marker);
+                    var idx = msg.IndexOf(marker);
                     if (idx >= 0)
                     {
                         var start = idx + marker.Length;
-                        var end = warn.IndexOf(':', start);
+                        var end = msg.IndexOf(':', start);
                         if (end > start)
                         {
-                            var idStr = warn.Substring(start, end - start).Trim();
-                            if (int.TryParse(idStr, out int warnId))
+                            var idStr = msg.Substring(start, end - start).Trim();
+                            if (int.TryParse(idStr, out int alertId))
                             {
-                                var point = ThermalGradientPoints.FirstOrDefault(pt => pt.Id == warnId);
+                                var point = ThermalGradientPoints.FirstOrDefault(pt => pt.Id == alertId);
                                 if (point != null)
                                 {
                                     point.HasValidationWarning = true;
-                                    point.ValidationMessage = warn;
+                                    point.ValidationMessage = msg;
                                 }
                             }
                         }
@@ -890,32 +931,26 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 catch { /* non-fatal parsing */ }
             }
 
-            // Surface temperature reasonableness (T4 surface check)
-            var surfacePoint = ThermalGradientPoints.OrderBy(p => p.TVD).FirstOrDefault();
-            var surfaceWarning = surfacePoint != null ? _thermalService.ValidateSurfaceTemperature(surfacePoint) : null;
-            if (!string.IsNullOrEmpty(surfaceWarning))
-            {
-                errors.Add(surfaceWarning);
-            }
-
-            // BR-TG-004: Minimum Data Points
-            if (ThermalGradientPoints.Count < 2)
-            {
-                errors.Add("Add at least 2 thermal points to generate temperature profile");
-            }
-
+            // Construct Final Message
+            var finalMessage = string.Empty;
+            
             if (errors.Any())
             {
-                ValidationMessage = string.Join("\n", errors);
+                finalMessage = string.Join("\n", errors);
                 HasValidationError = true;
             }
             else
             {
-                ValidationMessage = string.Empty;
                 HasValidationError = false;
+                if (warnings.Any())
+                {
+                    finalMessage = string.Join("\n", warnings);
+                }
             }
+            
+            ValidationMessage = finalMessage;
 
-            // Notificar que ShowChart puede haber cambiado
+            // Notify chart visibility update
             OnPropertyChanged(nameof(ShowChart));
         }
 
@@ -1112,50 +1147,14 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
             // Ensure SeriesCollection is initialized
             if (SeriesCollection == null || SeriesCollection.Count == 0)
             {
-                // Re-initialize if needed (shouldn't happen, but safety check)
-                SeriesCollection = new SeriesCollection
-                {
-                    new LineSeries
-                    {
-                        Title = "Temperature",
-                        Values = new ChartValues<ObservablePoint>(),
-                        PointGeometry = DefaultGeometries.Circle,
-                        PointGeometrySize = 8,
-                        PointForeground = Brushes.Red,
-                        LineSmoothness = 0,
-                        Stroke = Brushes.Red,
-                        StrokeThickness = 3,
-                        Fill = Brushes.Transparent,
-                        LabelPoint = point => $"Depth: {Math.Abs(point.Y):N0} ft | Temp: {point.X:N1} °F"
-                    },
-                    new LineSeries
-                    {
-                        Title = "Reference",
-                        Values = new ChartValues<ObservablePoint>(),
-                        StrokeDashArray = new DoubleCollection { 2, 2 },
-                        Fill = Brushes.Transparent,
-                        PointGeometry = null,
-                        LineSmoothness = 0,
-                        Stroke = (Brush?)new BrushConverter().ConvertFrom("#3B82F6") ?? Brushes.Blue,
-                        StrokeThickness = 1
-                    },
-                    new LineSeries
-                    {
-                        Title = "Prediction (TD)",
-                        Values = new ChartValues<ObservablePoint>(),
-                        Stroke = Brushes.Gray,
-                        StrokeThickness = 1.5,
-                        StrokeDashArray = new DoubleCollection { 4, 4 },
-                        Fill = Brushes.Transparent,
-                        PointGeometry = null,
-                        LineSmoothness = 0
-                    }
-                };
+                // Should have been initialized in constructor, but safe ref
+                return; 
             }
 
             if (SeriesCollection != null && SeriesCollection.Count > 0)
             {
                 var values = new ChartValues<ObservablePoint>();
+                var anomalyValues = new ChartValues<ObservablePoint>();
                 
                 // Create NEW collections to avoid LiveCharts threading/update crash on Clear()
                 var newVisualElements = new VisualElementsCollection();
@@ -1171,7 +1170,6 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     // Add shading section
                     newSections.Add(new AxisSection
                     {
-                        // Label removed (Obsolete)
                         Value = -formation.BottomTVD,
                         SectionWidth = Math.Abs(formation.BottomTVD - formation.TopTVD),
                         Fill = (Brush?)new BrushConverter().ConvertFrom(formation.Color) ?? Brushes.LightGray,
@@ -1182,7 +1180,7 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     // Add text label as VisualElement
                     newVisualElements.Add(new VisualElement
                     {
-                        X = 40, // Position on left/middle of chart roughly
+                        X = 40, 
                         Y = midY,
                         HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
                         VerticalAlignment = System.Windows.VerticalAlignment.Center,
@@ -1198,27 +1196,24 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                 }
 
                 var sortedPoints = ThermalGradientPoints.OrderBy(p => p.TVD).ToList();
-                var alertValues = new ChartValues<ObservablePoint>();
-
+                
+                // Populate Temperature Series and Anomalies Series
                 for (int i = 0; i < sortedPoints.Count; i++)
                 {
                     var point = sortedPoints[i];
                     // X = Temperature, Y = TVD (negative for inversion)
                     values.Add(new ObservablePoint(point.Temperature, -point.TVD));
 
-                    // Diagnostic Highlighting: If gradient to next point > 2.0, add segment to alert series
-                    if (i < sortedPoints.Count - 1)
+                    // Add to Anomalies series if marked
+                    if (point.IsAnomalous || point.HasValidationWarning)
                     {
-                        var nextPoint = sortedPoints[i + 1];
-                        double grad = _thermalService.CalculateGradient(point.TVD, point.Temperature, nextPoint.TVD, nextPoint.Temperature);
-                        if (grad > 2.0)
-                        {
-                            alertValues.Add(new ObservablePoint(point.Temperature, -point.TVD));
-                            alertValues.Add(new ObservablePoint(nextPoint.Temperature, -nextPoint.TVD));
-                            alertValues.Add(new ObservablePoint(double.NaN, double.NaN)); // Disconnect segment
-                        }
+                        anomalyValues.Add(new ObservablePoint(point.Temperature, -point.TVD));
                     }
-// ... (labels logic)
+                    else
+                    {
+                         // Maintain index alignment or just skip? ScatterSeries doesn't need alignment
+                    }
+
                     // Add label if present
                     if (!string.IsNullOrEmpty(point.Label))
                     {
@@ -1232,76 +1227,77 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                             {
                                 Text = point.Label,
                                 FontWeight = System.Windows.FontWeights.Bold,
-                                Foreground = (Brush?)new BrushConverter().ConvertFrom("#6366F1") ?? Brushes.Indigo, // Indigo
+                                Foreground = (Brush?)new BrushConverter().ConvertFrom("#6366F1") ?? Brushes.Indigo, 
                                 Padding = new System.Windows.Thickness(6, 0, 0, 0),
                                 Background = Brushes.Transparent,
-                                IsHitTestVisible = false // prevent interference
+                                IsHitTestVisible = false 
                             }
                         });
                     }
                 }
 
-                // Mapping to 3-series structure:
-                // [0] Temperature
-                // [1] Reference
-                // [2] Prediction (TD)
-
+                // [0] Temperature Series
                 if (SeriesCollection.Count > 0 && SeriesCollection[0] != null)
                 {
-                    // Ensure Values collection is initialized and update safely to avoid LiveCharts NRE
-                    if (SeriesCollection[0].Values == null)
-                    {
-                        SeriesCollection[0].Values = new ChartValues<ObservablePoint>();
-                    }
-
-                    // Update existing ChartValues to avoid swapping the collection while LiveCharts is iterating
+                    if (SeriesCollection[0].Values == null) SeriesCollection[0].Values = new ChartValues<ObservablePoint>();
+                    
                     if (SeriesCollection[0].Values is ChartValues<ObservablePoint> existingValues)
                     {
                         existingValues.Clear();
-                        foreach (var v in values)
-                            existingValues.Add(v);
+                        foreach (var v in values) existingValues.Add(v);
                     }
                     else
                     {
-                        // Fallback: assign new collection
                         SeriesCollection[0].Values = values;
                     }
                 }
 
-                // Reference Gradient Line
+                // [1] Anomalies Series
                 if (SeriesCollection.Count > 1 && SeriesCollection[1] != null)
+                {
+                    if (SeriesCollection[1].Values == null) SeriesCollection[1].Values = new ChartValues<ObservablePoint>();
+
+                    if (SeriesCollection[1].Values is ChartValues<ObservablePoint> existingAnomalies)
+                    {
+                        existingAnomalies.Clear();
+                         foreach (var v in anomalyValues) existingAnomalies.Add(v);
+                    }
+                    else
+                    {
+                        SeriesCollection[1].Values = anomalyValues;
+                    }
+                }
+
+                // [2] Reference Gradient Line
+                if (SeriesCollection.Count > 2 && SeriesCollection[2] != null)
                 {
                     var refValues = new ChartValues<ObservablePoint>();
                     if (ShowReferenceLine && ThermalGradientPoints.Count > 0)
                     {
                         double startTemp = SurfaceTemperature;
                         double maxTVD = MaxWellboreTVD > 0 ? MaxWellboreTVD : (ThermalGradientPoints.Any() ? ThermalGradientPoints.Max(p => p.TVD) : 10000);
-                        
-                        // Reference Gradient is typically in °F/100ft
-                        // Slope = (RefGrad / 100)
                         double slope = ReferenceGradient / 100.0;
                         double endTemp = startTemp + (slope * maxTVD);
                         
                         refValues.Add(new ObservablePoint(startTemp, 0));
                         refValues.Add(new ObservablePoint(endTemp, -maxTVD));
                     }
-                    if (SeriesCollection[1].Values == null)
-                        SeriesCollection[1].Values = new ChartValues<ObservablePoint>();
+                    
+                    if (SeriesCollection[2].Values == null) SeriesCollection[2].Values = new ChartValues<ObservablePoint>();
 
-                    if (SeriesCollection[1].Values is ChartValues<ObservablePoint> existingRef)
+                    if (SeriesCollection[2].Values is ChartValues<ObservablePoint> existingRef)
                     {
                         existingRef.Clear();
-                        foreach (var v in refValues)
-                            existingRef.Add(v);
+                        foreach (var v in refValues) existingRef.Add(v);
                     }
                     else
                     {
-                        SeriesCollection[1].Values = refValues;
+                        SeriesCollection[2].Values = refValues;
                     }
                 }
 
-                // Prediction Line (dotted to TD)
-                if (SeriesCollection.Count > 2 && SeriesCollection[2] != null)
+                // [3] Prediction Line (dotted to TD)
+                if (SeriesCollection.Count > 3 && SeriesCollection[3] != null)
                 {
                     var predictionValues = new ChartValues<ObservablePoint>();
                     if (sortedPoints.Count >= 2 && MaxWellboreTVD > sortedPoints.Last().TVD)
@@ -1312,18 +1308,17 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                         predictionValues.Add(new ObservablePoint(lastPoint.Temperature, -lastPoint.TVD));
                         predictionValues.Add(new ObservablePoint(predictedTempTD, -MaxWellboreTVD));
                     }
-                    if (SeriesCollection[2].Values == null)
-                        SeriesCollection[2].Values = new ChartValues<ObservablePoint>();
+                    
+                    if (SeriesCollection[3].Values == null) SeriesCollection[3].Values = new ChartValues<ObservablePoint>();
 
-                    if (SeriesCollection[2].Values is ChartValues<ObservablePoint> existingPred)
+                    if (SeriesCollection[3].Values is ChartValues<ObservablePoint> existingPred)
                     {
                         existingPred.Clear();
-                        foreach (var v in predictionValues)
-                            existingPred.Add(v);
+                        foreach (var v in predictionValues) existingPred.Add(v);
                     }
                     else
                     {
-                        SeriesCollection[2].Values = predictionValues;
+                        SeriesCollection[3].Values = predictionValues;
                     }
                 }
 
@@ -1357,7 +1352,7 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
                     });
                 }
 
-                // Assign the completely built collections atomically to prevent concurrency crashes
+                // Assign the completely built collections atomically
                 VisualElements = newVisualElements;
                 AxisSections = newSections;
             }
@@ -1562,10 +1557,24 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
         {
             CurrentDepth = newDepth;
             
-            // If MaxWellboreTVD hasn't been set from Survey, use CurrentDepth as fallback
-            if (MaxWellboreTVD == 0 && newDepth > 0)
+            // Auto-Sync BHT Point logic
+            // Find BHT point
+            var bhtPoint = ThermalGradientPoints.FirstOrDefault(p => p.Label == "BHT");
+            
+            if (newDepth > 0)
             {
                 MaxWellboreTVD = newDepth;
+                
+                if (bhtPoint != null)
+                {
+                    // Update BHT depth automatically 
+                    bhtPoint.TVD = newDepth;
+                }
+                else
+                {
+                    // If missing, add it
+                    InitializeDefaults();
+                }
             }
         }
 

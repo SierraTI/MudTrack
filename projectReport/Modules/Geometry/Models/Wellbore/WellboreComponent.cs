@@ -370,7 +370,10 @@ namespace ProjectReport.Models.Geometry.Wellbore
             }
 
             // Rule: Continuity Top MD[n] = Bottom MD[n-1]
-            if (!_isFirstRow && _previousBottomMD.HasValue && Math.Abs(TopMD.Value - _previousBottomMD.Value) > 0.01)
+            // Exception: Casing and Locker can overlap (start at 0 or anywhere)
+            bool allowsOverlap = Component == ComponentType.Casing;
+            
+            if (!allowsOverlap && !_isFirstRow && _previousBottomMD.HasValue && Math.Abs(TopMD.Value - _previousBottomMD.Value) > 0.01)
             {
                 AddError(nameof(TopMD), $"Continuity Error: Top MD ({TopMD.Value:F1} ft) must be equal to previous section's Bottom MD ({_previousBottomMD.Value:F1} ft).");
             }

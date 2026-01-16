@@ -154,33 +154,26 @@ namespace ProjectReport.Services
         }
 
         /// <summary>
-        /// Validates that TVD values are within wellbore depth
+        /// Validates that TVD values are within wellbore depth.
+        /// Returns WARNINGS if depth exceeds survey (not errors).
         /// </summary>
         public List<string> ValidateTVDRange(List<ThermalGradientPoint> points, double maxWellboreTVD)
         {
-            var errors = new List<string>();
+            var warnings = new List<string>();
 
             if (points == null || points.Count == 0)
-                return errors;
+                return warnings;
 
             if (maxWellboreTVD <= 0)
-                return errors; // No survey data available, skip validation
+                return warnings; // No survey data available, skip validation
 
             var maxTVD = points.Max(p => p.TVD);
             if (maxTVD > maxWellboreTVD)
             {
-                errors.Add($"Error: El TVD final de la gráfica ({maxTVD:F2} ft) es mayor al TVD del Survey ({maxWellboreTVD:F2} ft). No se puede guardar hasta corregir este valor.");
+                warnings.Add($"⚠️ Warning: Thermal Grid TVD ({maxTVD:F0} ft) exceeds Survey TVD ({maxWellboreTVD:F0} ft). Treating as projected/extrapolated data.");
             }
 
-            foreach (var point in points)
-            {
-                if (point.TVD > maxWellboreTVD)
-                {
-                    errors.Add($"Punto ID {point.Id}: TVD ({point.TVD:F2} ft) excede la profundidad total del Survey ({maxWellboreTVD:F2} ft)");
-                }
-            }
-
-            return errors;
+            return warnings;
         }
 
         /// <summary>
@@ -336,7 +329,8 @@ namespace ProjectReport.Services
         }
 
         /// <summary>
-        /// Detects gradient anomalies where the gradient differs significantly from the average.
+        /// Detects gradient anomalies where the gradient differs significantly from the average
+        /// OR exceeds physical/logical limits (> 4.0 or < 0).
         /// Returns list of point IDs that have anomalous gradients.
         /// </summary>
         /// <param name="points">Thermal gradient points (should be sorted by TVD)</param>
@@ -346,14 +340,11 @@ namespace ProjectReport.Services
         {
             var anomalousIds = new List<int>();
 
-            if (points == null || points.Count < 3)
-                return anomalousIds; // Need at least 3 points to detect anomalies
+            if (points == null || points.Count < 2)
+                return anomalousIds;
 
             var sortedPoints = points.OrderBy(p => p.TVD).ToList();
             double avgGradient = CalculateAverageGradient(sortedPoints);
-
-            if (Math.Abs(avgGradient) < 0.01)
-                return anomalousIds; // No meaningful gradient
 
             // Check each segment
             for (int i = 0; i < sortedPoints.Count - 1; i++)
@@ -363,23 +354,30 @@ namespace ProjectReport.Services
 
                 double segmentGradient = CalculateGradient(p1.TVD, p1.Temperature, p2.TVD, p2.Temperature);
 
-                // Check for negative gradient (Temperature drop) - Always anomalous
+                // Rule 1: Negative gradient (Temperature drop) - Always anomalous
                 if (segmentGradient < 0)
                 {
-                    if (!anomalousIds.Contains(p2.Id))
-                        anomalousIds.Add(p2.Id);
+                    if (!anomalousIds.Contains(p2.Id)) anomalousIds.Add(p2.Id);
                     continue; 
                 }
 
-                double difference = Math.Abs(segmentGradient - avgGradient);
-                double percentDifference = difference / Math.Abs(avgGradient);
-
-                // If this segment's gradient differs by more than threshold from average, flag it
-                if (percentDifference > threshold)
+                // Rule 2: Excessive gradient (> 4.0 °F/100ft) - Always anomalous
+                if (segmentGradient > 4.0)
                 {
-                    // Flag the second point as anomalous (the one causing the change)
-                    if (!anomalousIds.Contains(p2.Id))
-                        anomalousIds.Add(p2.Id);
+                    if (!anomalousIds.Contains(p2.Id)) anomalousIds.Add(p2.Id);
+                    continue;
+                }
+
+                // Rule 3: Significant deviation from average (if we have a meaningful average)
+                if (Math.Abs(avgGradient) > 0.01)
+                {
+                    double difference = Math.Abs(segmentGradient - avgGradient);
+                    double percentDifference = difference / Math.Abs(avgGradient);
+
+                    if (percentDifference > threshold)
+                    {
+                        if (!anomalousIds.Contains(p2.Id)) anomalousIds.Add(p2.Id);
+                    }
                 }
             }
 

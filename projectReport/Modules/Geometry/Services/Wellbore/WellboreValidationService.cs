@@ -261,21 +261,23 @@ namespace ProjectReport.Services.Wellbore
             }
 
             // A2: Telescopic Diameter (OD[n] < ID[n-1])
-            // Skip this rule if the current section is an OVERRIDE of the previous one
-            // Or if it's a CASING/LINER inside another CASING (Stacking allowed)
-            bool isOverlap = prev != null && cur.TopMD < prev.BottomMD;
-            bool isStackingAllowed = (cur.Component == ComponentType.Casing || cur.Component == ComponentType.Liner) && 
-                                    (prev?.Component == ComponentType.Casing || prev?.Component == ComponentType.Liner);
-
-            if (prev != null && !isStackingAllowed && isOverlap && cur.OD.GetValueOrDefault() >= prev.ID.GetValueOrDefault() && prev.ID.GetValueOrDefault() > 0.001)
+            if (prev != null && prev.ID.GetValueOrDefault() > 0.001)
             {
-                result.Items.Add(new ValidationError
+                // Check mechanical fit: new casing MUST fit inside previous casing/hole
+                // This applies to ALL sequential components unless it's a "Liner Top" situation where we check differently,
+                // but generally OD must be < Prev ID if we are going deeper or inside.
+                // Special case for Overlap (Stacking): Even if we stack at surface, the inner pipe must be smaller.
+                
+                if (cur.OD.GetValueOrDefault() >= prev.ID.GetValueOrDefault())
                 {
-                    ComponentId = cur.Id.ToString(),
-                    ComponentName = cur.Name,
-                    Message = $"Error A2: Progresión telescópica violada. OD ({cur.OD.GetValueOrDefault():F3}) >= ID anterior ({prev.ID.GetValueOrDefault():F3})",
-                    Severity = ValidationSeverity.Error
-                });
+                    result.Items.Add(new ValidationError
+                    {
+                        ComponentId = cur.Id.ToString(),
+                        ComponentName = cur.Name,
+                        Message = $"Error A2: Violación de Integridad Mecánica. El OD ({cur.OD.GetValueOrDefault():F3}) es mayor o igual que el ID anterior ({prev.ID.GetValueOrDefault():F3}). La tubería debe caber dentro de la anterior.",
+                        Severity = ValidationSeverity.Error
+                    });
+                }
             }
         }
 
@@ -313,6 +315,9 @@ namespace ProjectReport.Services.Wellbore
                 // B3: No solapamientos (regla depende del componente)
                 // Componentes que PERMITEN solaparse (Stacking): Casing
                 bool allowsOverlap = cur.Component == ComponentType.Casing;
+                
+                // Relaxed Rule: If it's Casing, we allow overlap (don't error on B3).
+                // We only check B3 for non-casing components that shouldn't overlap (like OpenHole on top of OpenHole? actually OpenHole usually continuous).
                 
                 if (!allowsOverlap && cur.TopMD.HasValue && prev.BottomMD.HasValue && cur.TopMD.Value < prev.BottomMD.Value - 0.01)
                 {
@@ -380,6 +385,11 @@ namespace ProjectReport.Services.Wellbore
                 }
 
                 // B2: No Gaps - Top MD debe ser igual al Bottom MD de la sección anterior (si no permite solapamientos)
+                // If distinct Casing strings, gaps might be physically possible (e.g. distinct runs), but usually continuous?
+                // The user request emphasizes "Allow Overlap". It doesn't explicitly say "Allow Gaps".
+                // But generally "Stacking" implies independent depth control.
+                // We will skip B2 for Casings too to allow flexibility, or keep it warning?
+                // Let's keep B2 strict for continuity unless it's Casing.
                 if (!allowsOverlap && cur.TopMD.HasValue && prev.BottomMD.HasValue)
                 {
                     double gap = cur.TopMD.Value - prev.BottomMD.Value;

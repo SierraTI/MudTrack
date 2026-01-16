@@ -22,11 +22,33 @@ namespace ProjectReport.Models.Geometry.WellTest
 
     public class WellTest : BaseModel
     {
+        private int _id;
+        private string? _section;
         private WellTestType _type;
+        private double _testValue;
+        
+        // Legacy fields for backward compatibility
         private double _md;
         private double _tvd;
         private double _testPressurePsi;
-        private double _emw;
+
+        /// <summary>
+        /// Display ID for ordering
+        /// </summary>
+        public new int Id
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
+
+        /// <summary>
+        /// Wellbore section name this test is associated with
+        /// </summary>
+        public string? Section
+        {
+            get => _section;
+            set => SetProperty(ref _section, value);
+        }
 
         public WellTestType Type
         {
@@ -36,7 +58,6 @@ namespace ProjectReport.Models.Geometry.WellTest
                 if (SetProperty(ref _type, value))
                 {
                     OnPropertyChanged(nameof(TypeString));
-                    RecalculateEMW();
                 }
             }
         }
@@ -65,6 +86,16 @@ namespace ProjectReport.Models.Geometry.WellTest
             }
         }
 
+        /// <summary>
+        /// Test value in ppg (pounds per gallon)
+        /// </summary>
+        public double TestValue
+        {
+            get => _testValue;
+            set => SetProperty(ref _testValue, value);
+        }
+
+        // Legacy properties for backward compatibility
         public double MD
         {
             get => _md;
@@ -74,47 +105,13 @@ namespace ProjectReport.Models.Geometry.WellTest
         public double TVD
         {
             get => _tvd;
-            set
-            {
-                if (SetProperty(ref _tvd, value))
-                {
-                    RecalculateEMW();
-                }
-            }
+            set => SetProperty(ref _tvd, value);
         }
 
         public double TestPressurePsi
         {
             get => _testPressurePsi;
-            set
-            {
-                if (SetProperty(ref _testPressurePsi, value))
-                {
-                    RecalculateEMW();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Equivalent Mud Weight (ppg)
-        /// Formula: EMW = (Pressure / (0.052 * TVD))
-        /// </summary>
-        public double TestValue
-        {
-            get => _emw;
-            private set => SetProperty(ref _emw, value);
-        }
-
-        private void RecalculateEMW()
-        {
-            if (TVD > 0)
-            {
-                TestValue = TestPressurePsi / (0.052 * TVD);
-            }
-            else
-            {
-                TestValue = 0;
-            }
+            set => SetProperty(ref _testPressurePsi, value);
         }
     }
 }

@@ -12,6 +12,8 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         <converters:InvertedBooleanToVisibilityConverter x:Key="InvertedBoolToVisibility"/>
+        <converters:IsGreaterThanConverter x:Key="GreaterThanConverter"/>
+        <converters:LessThanConverter x:Key="LessThanConverter"/>
 
         <!-- Palette -->
         <SolidColorBrush x:Key="AccentBrush" Color="#F97316"/>
@@ -24,6 +26,12 @@
         <SolidColorBrush x:Key="TextSecondary" Color="#374151"/>
         <SolidColorBrush x:Key="TextMuted" Color="#6B7280"/>
         <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+        
+        <!-- Brand Gradients -->
+        <LinearGradientBrush x:Key="BrandGradientPrimary" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#3B82F6" Offset="0"/>
+            <GradientStop Color="#2563EB" Offset="1"/>
+        </LinearGradientBrush>
 
         <!-- Card Style -->
         <Style x:Key="Card" TargetType="Border">
@@ -33,29 +41,6 @@
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
-        </Style>
-
-        <!-- Summary Card Styles -->
-        <Style x:Key="SummaryCard" TargetType="Border">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#E6E8EB"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-        </Style>
-
-        <Style x:Key="SummaryCardTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#6B7280"/>
-            <Setter Property="Margin" Value="0,0,0,6"/>
-        </Style>
-
-        <Style x:Key="SummaryCardValue" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#111827"/>
         </Style>
 
         <!-- Button Styles -->
@@ -120,31 +105,22 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <Style x:Key="DangerIconButton" TargetType="Button">
-            <Setter Property="Width" Value="32"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
-            <Setter Property="Background" Value="#FEF2F2"/>
-            <Setter Property="BorderBrush" Value="#FECACA"/>
-            <Setter Property="BorderThickness" Value="1"/>
+        
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#FEE2E2"/>
+                                <Setter Property="Background" Value="#F3F4F6"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -222,561 +198,257 @@
     </UserControl.Resources>
 
     <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>   <!-- Summary Cards -->
-            <RowDefinition Height="Auto"/>   <!-- Configuration & Table -->
-            <RowDefinition Height="Auto"/>   <!-- Banner Summary -->
-            <RowDefinition Height="*"/>      <!-- Chart (takes remaining space) -->
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="380" /> <!-- Input Panel -->
+            <ColumnDefinition Width="*" />   <!-- Chart Panel -->
+        </Grid.ColumnDefinitions>
 
-        <!-- PARTE 1: SUMMARY CARDS (6 tarjetas informativas) -->
-        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,12">
-            <StackPanel Orientation="Horizontal">
-                <!-- Card 1: Surface Temperature -->
-                <Border Style="{StaticResource SummaryCard}" MinWidth="140">
-                    <StackPanel>
-                        <TextBlock Text="Surface Temp" Style="{StaticResource SummaryCardTitle}"/>
-                        <TextBlock Text="{Binding SurfaceTemperature, StringFormat='{}{0:F1}°F'}" Style="{StaticResource SummaryCardValue}" Foreground="#3B82F6"/>
-                    </StackPanel>
-                </Border>
+        <!-- LEFT COLUMN: INPUTS & SUMMARY -->
+        <Grid Grid.Column="0" Margin="0,0,16,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" /> <!-- Summary Cards -->
+                <RowDefinition Height="*" />    <!-- DataGrid -->
+                <RowDefinition Height="Auto" /> <!-- Actions -->
+            </Grid.RowDefinitions>
 
-                <!-- Card 2: Bottom Hole Temperature (BHT) -->
-                <Border Style="{StaticResource SummaryCard}" MinWidth="140">
-                    <StackPanel>
-                        <TextBlock Text="Bottom Hole Temp" Style="{StaticResource SummaryCardTitle}"/>
-                        <TextBlock Text="{Binding BottomHoleTemperature, StringFormat='{}{0:F1}°F'}" Style="{StaticResource SummaryCardValue}" Foreground="#DC2626"/>
-                    </StackPanel>
-                </Border>
+            <!-- Summary Cards (Vertical Stack) -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                <!-- Surface & BHT -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Surface Temp -->
+                    <Border Grid.Column="0" Style="{StaticResource Card}" Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Surface Temp" FontSize="11" Foreground="{StaticResource TextSecondary}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding SurfaceTemperature, StringFormat=N1}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock Text="°F" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="4,6,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
 
-                <!-- Card 3: Temperature Range -->
-                <Border Style="{StaticResource SummaryCard}" MinWidth="140">
-                    <StackPanel>
-                        <TextBlock Text="Temperature Range" Style="{StaticResource SummaryCardTitle}"/>
-                        <TextBlock Text="{Binding TemperatureRange, StringFormat='{}{0:F1}°F'}" Style="{StaticResource SummaryCardValue}" Foreground="#F97316"/>
-                    </StackPanel>
-                </Border>
+                    <!-- BHT -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Bottom Hole Temp" FontSize="11" Foreground="{StaticResource TextSecondary}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding BottomHoleTemperature, StringFormat=N1}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" />
+                                <TextBlock Text="°F" FontSize="12" Foreground="{StaticResource TextSecondary}" Margin="4,6,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
-                <!-- Card 4: Average Gradient -->
-                <Border Style="{StaticResource SummaryCard}" MinWidth="140">
+                <!-- Average Gradient -->
+                <Border Style="{StaticResource Card}" Padding="12" Background="{StaticResource BrandGradientPrimary}">
                     <StackPanel>
-                        <TextBlock Text="Avg Gradient" Style="{StaticResource SummaryCardTitle}"/>
-                        <TextBlock Text="{Binding AverageGradient, StringFormat='{}{0:F2}°F/100ft'}" Style="{StaticResource SummaryCardValue}" Foreground="#8B5CF6"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Card 5: Data Points Count -->
-                <Border Style="{StaticResource SummaryCard}" MinWidth="140">
-                    <StackPanel>
-                        <TextBlock Text="Data Points" Style="{StaticResource SummaryCardTitle}"/>
-                        <TextBlock Text="{Binding DataPointsCount}" Style="{StaticResource SummaryCardValue}" Foreground="#10B981"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Card 6: Anomalies Detected -->
-                <Border Style="{StaticResource SummaryCard}" MinWidth="140">
-                    <StackPanel>
-                        <TextBlock Text="Anomalies" Style="{StaticResource SummaryCardTitle}"/>
-                        <TextBlock Text="{Binding AnomaliesDetectedCount}" Style="{StaticResource SummaryCardValue}" Foreground="#EF4444"/>
+                        <TextBlock Text="Avg Gradient (Surface - BHT)" FontSize="11" Foreground="White" Opacity="0.9" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding AverageGradient, StringFormat=N2}" FontSize="24" FontWeight="Bold" Foreground="White" />
+                            <TextBlock Text="°F / 100ft" FontSize="12" Foreground="White" Opacity="0.9" Margin="6,10,0,0" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
-        </ScrollViewer>
 
-        <!-- PARTE 2: Configuration Panel & Data Table -->
-        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,10">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <!-- Configuration Panel: Offshore Toggle & Ambient Temperature -->
-                <Border Grid.Row="0"
-                        Background="#F0F4F8"
-                        CornerRadius="8"
-                        Padding="15,12"
-                        Margin="0,0,0,12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="150"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Offshore Toggle -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,25,0">
-                            <TextBlock Text="Well Type:" FontSize="12" FontWeight="SemiBold" Foreground="#374151" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <CheckBox IsChecked="{Binding IsOffshoreWell}" 
-                                      VerticalAlignment="Center"
-                                      ToolTip="Toggle between Offshore (with Mudline) and Land (no Mudline)"/>
-                            <TextBlock Text="{Binding IsOffshoreWell, StringFormat='📍 {0:Yes Offshore,No Land}'}" 
-                                       FontSize="11" 
-                                       FontWeight="SemiBold"
-                                       Foreground="#1F2937"
-                                       VerticalAlignment="Center"
-                                       Margin="8,0,0,0"/>
-                        </StackPanel>
-
-                        <!-- Ambient Temperature Input -->
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
-                            <TextBlock Text="Surface Ambient Temp:" FontSize="12" FontWeight="SemiBold" Foreground="#374151" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBox Text="{Binding AmbientTemperature, StringFormat=N1}" 
-                                     Width="80"
-                                     Style="{StaticResource InputField}"
-                                     ToolTip="Edit Surface/Ambient Temperature (°F)"
-                                     VerticalAlignment="Center"
-                                     Padding="8,6"/>
-                            <TextBlock Text="°F" FontSize="11" FontWeight="SemiBold" Foreground="#6B7280" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                        </StackPanel>
-
-                        <!-- Mudline Controls (Visible only in Offshore mode) -->
-                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,0">
-                            <Button Content="➕ Mudline"
-                                    Command="{Binding AddMudlineCommand}"
-                                    Style="{StaticResource SecondaryButton}"
-                                    Margin="0,0,6,0"
-                                    Visibility="{Binding IsOffshoreWell, Converter={StaticResource BoolToVisibility}}"
-                                    FontSize="11"
-                                    Padding="8,4"
-                                    ToolTip="Add Mudline depth point"/>
-                            <Button Content="➖ Mudline"
-                                    Command="{Binding RemoveMudlineCommand}"
-                                    Style="{StaticResource DangerIconButton}"
-                                    Visibility="{Binding IsOffshoreWell, Converter={StaticResource BoolToVisibility}}"
-                                    Width="Auto"
-                                    Padding="8,4"
-                                    ToolTip="Remove Mudline depth point"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- Action Bar -->
-                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-                    <Button Content="+ Add Point"
-                            Command="{Binding AddPointCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            Margin="0,0,8,0"/>
-                    <Button Content="📥 Import Data"
-                            Command="{Binding ImportDataCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            Margin="0,0,8,0"
-                            ToolTip="Import thermal gradient data from Excel/CSV"/>
-                    <Button Content="📄 Import from Survey"
-                            Command="{Binding ImportFromSurveyCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            Margin="0,0,8,0"
-                            IsEnabled="{Binding CanImportFromSurvey}"
-                            ToolTip="Import TVD from survey module"/>
-                    <Button Content="+ Control Point"
-                            Command="{Binding AddControlPointCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            Margin="0,0,8,0"
-                            ToolTip="Add intermediate control point for better gradient modeling"/>
-                    <Button Content="🔄 Sync TVD"
-                            Command="{Binding SyncWithSurveyCommand}"
-                            Style="{StaticResource SecondaryButton}"
-                            ToolTip="Synchronize TVD from survey and update ambient temperature"/>
-                </StackPanel>
-
-                <!-- Data Table -->
-                <DataGrid Grid.Row="2"
-                          x:Name="ThermalDataGrid"
-                          ItemsSource="{Binding ThermalGradientPoints}"
+            <!-- DataGrid -->
+            <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+                <DataGrid ItemsSource="{Binding ThermalGradientPoints}" 
                           Style="{StaticResource ModernDataGrid}"
-                          SelectionMode="Single"
-                          MaxHeight="180"
-                          VerticalScrollBarVisibility="Auto">
+                          BorderThickness="0"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          HeadersVisibility="Column">
+                    <DataGrid.Columns>
+                        <!-- Label (Read Only for Fixed) -->
+                        <DataGridTextColumn Header="Point" Binding="{Binding Label}" Width="80" IsReadOnly="False" />
+                        
+                        <!-- TVD -->
+                        <DataGridTextColumn Header="TVD (ft)" Binding="{Binding TVD, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" Width="80">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Right" />
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
 
+                        <!-- Temperature -->
+                        <DataGridTextColumn Header="Temp (°F)" Binding="{Binding Temperature, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsAnomalous}" Value="True">
+                                            <Setter Property="Foreground" Value="#EF4444" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Right" />
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Gradient (Calculated) -->
+                        <DataGridTextColumn Header="Grad." Binding="{Binding CalculatedGradient, StringFormat=N2, TargetNullValue='-'}" Width="60" IsReadOnly="True" Foreground="{StaticResource TextSecondary}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="VerticalAlignment" Value="Center" />
+                                    <Setter Property="HorizontalAlignment" Value="Right" />
+                                    <Setter Property="Padding" Value="0,0,8,0" />
+                                    <Setter Property="Foreground" Value="{StaticResource TextSecondary}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CalculatedGradient, Converter={StaticResource GreaterThanConverter}, ConverterParameter=4.0}" Value="True">
+                                            <Setter Property="Foreground" Value="#EF4444" />
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding CalculatedGradient, Converter={StaticResource LessThanConverter}, ConverterParameter=0.0}" Value="True">
+                                            <Setter Property="Foreground" Value="#EF4444" /> <!-- Negative gradient -->
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        
+                        <!-- Delete Action -->
+                        <DataGridTemplateColumn Header="" Width="40">
+                             <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Command="{Binding DataContext.DeletePointCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            ToolTip="Delete Point">
+                                        <Path Data="M6,19C6,20.1 6.9,21 8,21H16C17.1,21 18,20.1 18,19V7H6V19ZM19,4H15.5L14.5,3H9.5L8.5,4H5V6H19V4Z" 
+                                              Fill="#9CA3AF" Width="14" Height="14" Stretch="Uniform" />
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                    
                     <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsAnomalous}" Value="True">
-                                    <Setter Property="Background" Value="#FFFFF4E6"/>
-                                    <Setter Property="BorderBrush" Value="#FFFF9800"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="Background" Value="#FEF2F2" /> <!-- Red-50 tint -->
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding HasValidationWarning}" Value="True">
-                                    <Setter Property="Background" Value="#FFFEF2F2"/>
+                                    <Setter Property="Background" Value="#FEF2F2" />
+                                    <Setter Property="ToolTip" Value="{Binding ValidationMessage}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </DataGrid.RowStyle>
-
-                    <DataGrid.Columns>
-                        <!-- No. -->
-                        <DataGridTextColumn Header="No."
-                                            Binding="{Binding Id}"
-                                            Width="40"
-                                            IsReadOnly="True">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="HorizontalAlignment" Value="Center"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-
-                        <!-- Punto de Control -->
-                        <DataGridTextColumn Header="Control Point"
-                                            Binding="{Binding Label, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="*">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Foreground" Value="#6366F1"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-
-                        <!-- TVD (ft) -->
-                        <DataGridTemplateColumn Header="TVD (ft)" Width="100">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding TVD, StringFormat=N0}" 
-                                               TextAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Padding="10,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                        <Setter Property="Foreground" Value="#6B7280"/>
-                                                        <Setter Property="FontStyle" Value="Italic"/>
-                                                        <Setter Property="ToolTip" Value="Bloqueado - Sincronizado desde Daily Report"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasValidationWarning}" Value="True">
-                                                        <Setter Property="Foreground" Value="#856404"/>
-                                                        <Setter Property="Background" Value="#FFF7ED"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                            <DataGridTemplateColumn.CellEditingTemplate>
-                                <DataTemplate>
-                                    <TextBox Text="{Binding TVD, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" 
-                                             IsReadOnly="{Binding IsLocked}"
-                                             TextAlignment="Right"
-                                             VerticalContentAlignment="Center"
-                                             Padding="10,0">
-                                        <TextBox.Style>
-                                            <Style TargetType="TextBox" BasedOn="{StaticResource InputField}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                        <Setter Property="Background" Value="#F3F4F6"/>
-                                                        <Setter Property="Foreground" Value="#6B7280"/>
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                        <Setter Property="ToolTip" Value="Bloqueado - Sincronizado desde Daily Report"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-                                    </TextBox>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellEditingTemplate>
-                        </DataGridTemplateColumn>
-
-                        <!-- Temperatura (°F) -->
-                        <DataGridTemplateColumn Header="Temperature (°F)" Width="110">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Temperature, StringFormat=N1}" 
-                                               TextAlignment="Right"
-                                               VerticalAlignment="Center"
-                                               Padding="10,0">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                        <Setter Property="Foreground" Value="#6B7280"/>
-                                                        <Setter Property="FontStyle" Value="Italic"/>
-                                                        <Setter Property="ToolTip" Value="Bloqueado - Sincronizado desde Daily Report"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding HasValidationWarning}" Value="True">
-                                                        <Setter Property="Foreground" Value="#856404"/>
-                                                        <Setter Property="Background" Value="#FFF7ED"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                            <DataGridTemplateColumn.CellEditingTemplate>
-                                <DataTemplate>
-                                    <TextBox Text="{Binding Temperature, StringFormat=N1, UpdateSourceTrigger=PropertyChanged}" 
-                                             IsReadOnly="{Binding IsLocked}"
-                                             TextAlignment="Right"
-                                             VerticalContentAlignment="Center"
-                                             Padding="10,0">
-                                        <TextBox.Style>
-                                            <Style TargetType="TextBox" BasedOn="{StaticResource InputField}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsLocked}" Value="True">
-                                                        <Setter Property="Background" Value="#F3F4F6"/>
-                                                        <Setter Property="Foreground" Value="#6B7280"/>
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                        <Setter Property="ToolTip" Value="Bloqueado - Sincronizado desde Daily Report"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBox.Style>
-                                    </TextBox>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellEditingTemplate>
-                        </DataGridTemplateColumn>
-
-                        <!-- Gradient (°F/100ft) -->
-                        <DataGridTextColumn Header="Gradient (°F/100ft)"
-                                            Binding="{Binding CalculatedGradient, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"
-                                            Width="120"
-                                            IsReadOnly="True">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="TextAlignment" Value="Right"/>
-                                    <Setter Property="Foreground" Value="#059669"/>
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-
-                        <!-- Actions -->
-                        <DataGridTemplateColumn Header="Actions" Width="70" CanUserResize="False">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="🗑️"
-                                            Style="{StaticResource DangerIconButton}"
-                                            Command="{Binding DataContext.DeletePointCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"
-                                            ToolTip="Delete point"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-
-                    </DataGrid.Columns>
                 </DataGrid>
+            </Border>
 
-                <!-- Validation Message -->
-                <TextBlock Grid.Row="2"
-                           Text="{Binding ValidationMessage}"
-                           Foreground="{StaticResource DangerBrush}"
-                           FontSize="12"
-                           FontWeight="Medium"
-                           FontStyle="Italic"
-                           TextWrapping="Wrap"
-                           Margin="0,8,0,0"
-                           HorizontalAlignment="Left"
-                           Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVisibility}}"/>
-            </Grid>
-        </Border>
+            <!-- Actions -->
+            <StackPanel Grid.Row="2" Margin="0,16,0,0">
+                <Button Command="{Binding AddControlPointCommand}" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" Width="12" Height="12" Margin="0,0,8,0" Stretch="Uniform" />
+                        <TextBlock Text="Add Intermediate Point" />
+                    </StackPanel>
+                </Button>
+                
+                <TextBlock Text="{Binding ValidationMessage}" 
+                           Foreground="#EF4444" 
+                           FontSize="12" 
+                           TextWrapping="Wrap" 
+                           Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
+        </Grid>
 
-        <!-- PARTE 3: Banner de Resumen de Gradiente -->
-        <Border Grid.Row="2"
-                Background="#FEF2F2"
-                BorderBrush="#EF4444"
-                BorderThickness="2"
-                CornerRadius="8"
-                Padding="20,12"
-                Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Overall Average Gradient -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Avg Gradient:"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               Foreground="#1F2937"
-                               VerticalAlignment="Center"
-                               Margin="0,0,10,0"/>
-                    <Border Background="#EF4444" CornerRadius="4" Padding="8,4">
-                        <TextBlock Text="{Binding AverageGradient, StringFormat='{}{0:F2} °F/100ft'}"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Foreground="White"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- Water Gradient (Offshore only) -->
-                <StackPanel Grid.Column="1" 
-                            Orientation="Horizontal" 
-                            VerticalAlignment="Center"
-                            Margin="25,0,0,0"
-                            Visibility="{Binding IsOffshoreWell, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="Water:"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="#1F2937"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
-                    <Border Background="#3B82F6" CornerRadius="3" Padding="6,3">
-                        <TextBlock Text="{Binding WaterGradient, StringFormat='{}{0:F2}°F/100ft'}"
-                                   FontSize="13"
-                                   FontWeight="Bold"
-                                   Foreground="White"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- Geothermal Gradient (Offshore only) -->
-                <StackPanel Grid.Column="2" 
-                            Orientation="Horizontal" 
-                            VerticalAlignment="Center"
-                            Margin="15,0,0,0"
-                            Visibility="{Binding IsOffshoreWell, Converter={StaticResource BoolToVisibility}}">
-                    <TextBlock Text="Geothermal:"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="#1F2937"
-                               VerticalAlignment="Center"
-                               Margin="0,0,8,0"/>
-                    <Border Background="#DC2626" CornerRadius="3" Padding="6,3">
-                        <TextBlock Text="{Binding GeothermalGradient, StringFormat='{}{0:F2}°F/100ft'}"
-                                   FontSize="13"
-                                   FontWeight="Bold"
-                                   Foreground="White"/>
-                    </Border>
-                </StackPanel>
-
-                <!-- Temperature Range Info -->
-                <StackPanel Grid.Column="4" 
-                            Orientation="Horizontal" 
-                            VerticalAlignment="Center"
-                            HorizontalAlignment="Right">
-                    <TextBlock Text="Range:"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               Foreground="#6B7280"
-                               Margin="0,0,8,0"/>
-                    <TextBlock Text="{Binding TemperatureRange, StringFormat='{}{0:F1}°F'}"
-                               FontSize="13"
-                               FontWeight="Bold"
-                               Foreground="#1F2937"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- PARTE 4: Gráfica Profesional -->
-        <Border Grid.Row="3"
-                Style="{StaticResource Card}"
-                Padding="0"
-                Margin="0"
-                ClipToBounds="True">
+        <!-- RIGHT COLUMN: PROFESSIONAL CHART -->
+        <Border Grid.Column="1" Style="{StaticResource Card}" Padding="16">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Chart Title -->
-                <TextBlock Grid.Row="0"
-                           Text="Temperature Profile (Temperature vs Depth)"
-                           FontSize="15"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource TextPrimary}"
-                           Margin="18,16,18,0"
-                           Visibility="{Binding ShowChart, Converter={StaticResource BoolToVisibility}}"/>
+                <TextBlock Text="Thermal Profile (Temperature vs TVD)" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,16" />
 
-                <!-- Placeholder when no data -->
-                <Border Grid.Row="1"
-                        Background="#F9FAFB"
-                        BorderBrush="{StaticResource BorderBrushSoft}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Margin="18"
-                        Padding="40"
-                        Visibility="{Binding ShowChart, Converter={StaticResource InvertedBoolToVisibility}}">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="📉" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12" Foreground="#C7CBD1"/>
-                        <TextBlock Text="Insufficient data to render chart"
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="{StaticResource TextPrimary}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,6"/>
-                        <TextBlock Text="Add at least 2 thermal gradient points to visualize the temperature profile."
-                                   FontSize="12"
-                                   Foreground="{StaticResource TextMuted}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
+                <!-- Chart: Inverted Y-Axis, Top X-Axis -->
+                <lvc:CartesianChart Grid.Row="1" LegendLocation="None" Hoverable="True" DataTooltip="{x:Null}">
+                    <lvc:CartesianChart.AxisY>
+                        <lvc:Axis Title="True Vertical Depth (ft)" 
+                                  MinValue="{Binding YAxisMinValue}" 
+                                  MaxValue="{Binding YAxisMaxValue}" 
+                                  LabelFormatter="{Binding YFormatter}"
+                                  Sections="{Binding AxisSections}"
+                                  Foreground="{StaticResource TextSecondary}">
+                            <lvc:Axis.Separator>
+                                <lvc:Separator Stroke="#E5E7EB" StrokeThickness="1" StrokeDashArray="2,2" />
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisY>
 
-                <!-- Chart Area -->
-                <Grid Grid.Row="1"
-                      Margin="18,10,18,18"
-                      Visibility="{Binding ShowChart, Converter={StaticResource BoolToVisibility}}">
+                    <!-- X-Axis on Top (LeftBottom in LiveCharts but styled here) -->
+                    <lvc:CartesianChart.AxisX>
+                        <lvc:Axis Title="Temperature (°F)" 
+                                  MinValue="{Binding XAxisMinValue}" 
+                                  MaxValue="{Binding XAxisMaxValue}" 
+                                  LabelFormatter="{Binding XFormatter}"
+                                  Position="RightTop" 
+                                  Foreground="{StaticResource TextSecondary}"> 
+                            <lvc:Axis.Separator>
+                                <lvc:Separator Stroke="#E5E7EB" StrokeThickness="1" />
+                            </lvc:Axis.Separator>
+                        </lvc:Axis>
+                    </lvc:CartesianChart.AxisX>
+
+                    <lvc:CartesianChart.Series>
+                        <!-- Main Line (Blue) -->
+                        <lvc:LineSeries Title="Thermal Profile"
+                                        Values="{Binding SeriesCollection[0].Values}"
+                                        PointGeometry="{x:Static lvc:DefaultGeometries.Square}"
+                                        PointGeometrySize="8"
+                                        Stroke="#3B82F6"
+                                        StrokeThickness="2"
+                                        Fill="Transparent" 
+                                        LineSmoothness="0.5" />
+                        
+                        <!-- Anomalies (Red Segments/Points) -->
+                        <lvc:LineSeries Title="Anomalies"
+                                        Values="{Binding SeriesCollection[1].Values}"
+                                        PointGeometry="{x:Static lvc:DefaultGeometries.Diamond}"
+                                        PointGeometrySize="10"
+                                        PointForeground="Red"
+                                        Stroke="#EF4444"
+                                        Fill="Transparent"
+                                        StrokeThickness="0" /> 
+                        
+                        <!-- Reference Line -->
+                        <lvc:LineSeries Values="{Binding SeriesCollection[2].Values}" 
+                                        Stroke="Gray" StrokeThickness="1" StrokeDashArray="4" Fill="Transparent" PointGeometry="{x:Null}" />
+                        
+                        <!-- Prediction Line -->
+                         <lvc:LineSeries Values="{Binding SeriesCollection[3].Values}" 
+                                         Stroke="Orange" StrokeThickness="2" StrokeDashArray="2" Fill="Transparent" PointGeometry="{x:Null}" />
+                    </lvc:CartesianChart.Series>
                     
-                    <!-- Background Heat Gradient -->
-                    <Border CornerRadius="6"
-                            BorderBrush="{StaticResource BorderBrushSoft}"
-                            BorderThickness="1">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#F0F9FF" Offset="0"/>
-                                <GradientStop Color="#FFF1F2" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                    
-                    <!-- Chart -->
-                    <lvc:CartesianChart Series="{Binding SeriesCollection}"
-                                        LegendLocation="None"
-                                        Zoom="None"
-                                        Hoverable="True"
-                                        VisualElements="{Binding VisualElements}"
-                                        Background="Transparent">
-                        
-                        <lvc:CartesianChart.DataTooltip>
-                            <lvc:DefaultTooltip SelectionMode="SharedYValues" 
-                                                ShowTitle="False"
-                                                BulletSize="10"/>
-                        </lvc:CartesianChart.DataTooltip>
-                        
-                        <lvc:CartesianChart.AxisX>
-                            <lvc:Axis Title="Temperature (°F)" 
-                                      Position="RightTop"
-                                      LabelFormatter="{Binding XFormatter}"
-                                      MinValue="{Binding XAxisMinValue}"
-                                      MaxValue="{Binding XAxisMaxValue}"
-                                      Foreground="{StaticResource TextPrimary}"
-                                      FontSize="11"
-                                      FontWeight="SemiBold">
-                                <lvc:Axis.Separator>
-                                    <lvc:Separator Stroke="#F3F4F6" StrokeThickness="1"/>
-                                </lvc:Axis.Separator>
-                            </lvc:Axis>
-                        </lvc:CartesianChart.AxisX>
-                        
-                        <lvc:CartesianChart.AxisY>
-                            <lvc:Axis Title="Depth (TVD) - ft" 
-                                      LabelFormatter="{Binding YFormatter}"
-                                      MinValue="{Binding YAxisMinValue}"
-                                      MaxValue="{Binding YAxisMaxValue}"
-                                      Sections="{Binding AxisSections}"
-                                      Foreground="{StaticResource TextPrimary}"
-                                      FontSize="11"
-                                      FontWeight="SemiBold">
-                                <lvc:Axis.Separator>
-                                    <lvc:Separator Step="1000" Stroke="#F3F4F6" StrokeThickness="1"/>
-                                </lvc:Axis.Separator>
-                            </lvc:Axis>
-                        </lvc:CartesianChart.AxisY>
-                    </lvc:CartesianChart>
-                </Grid>
 
+
+                </lvc:CartesianChart>
             </Grid>
         </Border>
-
     </Grid>
 </UserControl>

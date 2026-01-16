@@ -42,8 +42,13 @@
             <GradientStop Color="#FFB74D" Offset="1"/>
         </LinearGradientBrush>
 
-        <Style x:Key="CardBorder" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Style x:Key="CardBorder" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Surface}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSoft}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="14"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
         </Style>
 
         <Style x:Key="CardHeader" TargetType="TextBlock">
@@ -1340,46 +1345,35 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="18">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>  <!-- Header & Summary Box -->
-                            <RowDefinition Height="Auto"/>  <!-- Spacer / future controls -->
+                            <RowDefinition Height="Auto"/>  <!-- Header & Button -->
+                            <RowDefinition Height="Auto"/>  <!-- Spacer -->
                             <RowDefinition Height="*"/>     <!-- DataGrid -->
-                            <RowDefinition Height="Auto"/>  <!-- Bottom Bar -->
                         </Grid.RowDefinitions>
 
-                        <!-- Header & Summary Box -->
+                        <!-- Header & Button -->
                         <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                    <!-- MAASP Box -->
-                                    <Border Background="#F0F9FF" BorderBrush="#0EA5E9" BorderThickness="1" CornerRadius="6" Padding="12,8" Margin="0,0,10,0">
-                                        <StackPanel>
-                                            <TextBlock Text="MAASP" FontSize="11" FontWeight="Bold" Foreground="#0369A1"/>
-                                            <TextBlock Text="{Binding MAASP, StringFormat='{}{0:N0} psi'}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource BrandBlue}"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <!-- Kick Tolerance Box -->
-                                    <Border Background="#F0FDFA" BorderBrush="#14B8A6" BorderThickness="1" CornerRadius="6" Padding="12,8">
-                                        <StackPanel>
-                                            <TextBlock Text="KICK TOLERANCE" FontSize="11" FontWeight="Bold" Foreground="#0F766E"/>
-                                            <TextBlock Text="{Binding KickTolerance, StringFormat='{}{0:N1} bbl'}" FontSize="18" FontWeight="Bold" Foreground="#0D9488"/>
-                                        </StackPanel>
-                                    </Border>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Keep tests aligned to a section."
+                                               Foreground="{StaticResource TextMuted}"
+                                               FontStyle="Italic"
+                                               FontSize="13"/>
                                 </StackPanel>
 
-                                <Button Grid.Column="2" 
-                                        Content="+ Añadir Prueba de Pozo" 
+                                <Button Grid.Column="1" 
+                                        Content="Add Well Test" 
                                         Style="{StaticResource BrandPrimaryButton}"
                                         Command="{Binding AddWellTestCommand}"
                                         VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 
+                        <!-- Well Test DataGrid -->
                         <DataGrid Grid.Row="2"
                                   x:Name="WellTestDataGrid"
                                   Style="{StaticResource ModernDataGrid}"
@@ -1388,34 +1382,85 @@
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="True"
-                                  SelectionMode="Single">
+                                  SelectionMode="Single"
+                                  AlternationCount="2">
+                            
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Background" Value="White"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="AlternationIndex" Value="1">
+                                            <Setter Property="Background" Value="#FFF9FAFB"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#FFE0F2FE"/> <!-- Light Blue Selection -->
+                                            <Setter Property="BorderBrush" Value="{StaticResource BrandBlue}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="MD (ft)" Binding="{Binding MD, StringFormat=N1}" Width="110"/>
-                                <DataGridTemplateColumn Header="TVD (ft)" Width="140">
+                                <!-- ID Column -->
+                                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40" IsReadOnly="True" Foreground="{StaticResource TextMuted}"/>
+
+                                <!-- Section Column (Dropdown) -->
+                                <DataGridTemplateColumn Header="Section" Width="180">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding TVD, StringFormat=N1}" VerticalAlignment="Center" Padding="8,4"/>
+                                            <TextBlock Text="{Binding Section, TargetNullValue='-- Select --'}" VerticalAlignment="Center" Padding="8,4"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding TVD, UpdateSourceTrigger=PropertyChanged, StringFormat=N1}"/>
+                                            <ComboBox ItemsSource="{Binding DataContext.WellboreSectionNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                      SelectedItem="{Binding Section, UpdateSourceTrigger=PropertyChanged}"
+                                                      DisplayMemberPath="."
+                                                      Padding="5"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Presión (psi)" Binding="{Binding TestPressurePsi, StringFormat=N0, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
-                                <DataGridTextColumn Header="EMW Final (ppg)" Binding="{Binding TestValue, StringFormat=F2}" Width="130" IsReadOnly="True" Foreground="{StaticResource BrandOrange}"/>
+                                <!-- Dropdown Test Type -->
+                                <DataGridTemplateColumn Header="Dropdown Test Type" Width="180">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding TypeString}" VerticalAlignment="Center" Padding="8,4"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding DataContext.WellTestTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                      SelectedItem="{Binding TypeString, UpdateSourceTrigger=PropertyChanged}"
+                                                      Padding="5"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
 
+                                <!-- Test Value (ppb) -->
+                                <DataGridTemplateColumn Header="Test Value (ppb)" Width="140">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding TestValue, StringFormat=F2}" VerticalAlignment="Center" Padding="8,4" Foreground="{StaticResource TextStrong}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding TestValue, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Padding="5"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Actions -->
                                 <DataGridTemplateColumn Header="Actions" Width="160">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Subir"
+                                                <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Up"
                                                         Click="MoveWellTestUp_Click" Tag="{Binding}"/>
-                                                <Button Content="↓" Style="{StaticResource IconMiniButton}" ToolTip="Bajar"
+                                                <Button Content="↓" Style="{StaticResource IconMiniButton}" ToolTip="Down"
                                                         Click="MoveWellTestDown_Click" Tag="{Binding}"/>
-                                                <Button Content="×" Style="{StaticResource IconMiniButton}" ToolTip="Eliminar"
+                                                <Button Content="×" Style="{StaticResource IconMiniButton}" ToolTip="Delete"
                                                         Click="DeleteWellTest_Click" Tag="{Binding}" Foreground="{StaticResource Danger}"/>
                                             </StackPanel>
                                         </DataTemplate>
@@ -1423,8 +1468,6 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-
-
                     </Grid>
                 </ScrollViewer>
             </TabItem>
@@ -1536,7 +1579,7 @@
                                         
                                         <Border Padding="12" Background="#ECFDF5" CornerRadius="8">
                                             <Grid>
-                                                <TextBlock Text="CIRCULATION VOLUME" FontWeight="Bold" Foreground="#059669"/>
+                                                <TextBlock Text="TOTAL WELL VOLUME" FontWeight="Bold" Foreground="#059669"/>
                                                 <TextBlock Text="{Binding TotalCirculationVolume, StringFormat='{}{0:F2} bbl'}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#059669"/>
                                             </Grid>
                                         </Border>
@@ -1577,15 +1620,22 @@
 
                              <!-- Annular Volume Breakdown Table -->
                              <GroupBox Grid.Row="3" Header="Annular Volume Segments" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
-                                <StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
                                  <DataGrid ItemsSource="{Binding Source={StaticResource AnnularDetailsView}}"
                                             Style="{StaticResource ModernDataGrid}"
                                             AutoGenerateColumns="False"
                                             IsReadOnly="True"
-                                            MaxHeight="400"
+                                            MaxHeight="500"
+                                            MinHeight="150"
+                                            RowHeight="35"
                                             Margin="10"
                                             AlternationCount="2"
-                                            GridLinesVisibility="Horizontal">
+                                            GridLinesVisibility="Horizontal"
+                                            VerticalScrollBarVisibility="Auto">
                                      <DataGrid.GroupStyle>
                                          <GroupStyle>
                                              <GroupStyle.HeaderTemplate>
@@ -1659,7 +1709,7 @@
                                 </DataGrid>
                                 
                                 <!-- Total Row -->
-                                <Border BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Margin="10,0,10,10" Padding="10,8">
+                                <Border Grid.Row="1" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Margin="10,0,10,10" Padding="10,8">
                                     <Grid>
                                         <TextBlock Text="TOTAL" FontWeight="Bold" FontSize="13" Foreground="#1F2937"/>
                                         <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F1} bbl'}" 
@@ -1669,7 +1719,7 @@
                                                    Foreground="#059669"/>
                                     </Grid>
                                 </Border>
-                                </StackPanel>
+                                </Grid>
                             </GroupBox>
                         </Grid>
                     </ScrollViewer>

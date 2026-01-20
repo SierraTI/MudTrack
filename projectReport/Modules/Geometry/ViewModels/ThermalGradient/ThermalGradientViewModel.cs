@@ -434,8 +434,17 @@ namespace ProjectReport.ViewModels.Geometry.ThermalGradient
         }
 
         // Rule A: Inverted Y-axis (0 at top, depth increases downward)
-        // Calculations and visualization are clipped to CurrentDepth (Report TVD)
-        public double YAxisMinValue => -Math.Max(1000, CurrentDepth);
+        // Calculations and visualization are clipped to CurrentDepth (Report TVD) or max point depth
+        public double YAxisMinValue
+        {
+            get
+            {
+                double maxPointDepth = ThermalGradientPoints.Any() ? ThermalGradientPoints.Max(p => p.TVD) : 0;
+                double limit = Math.Max(1000, Math.Max(CurrentDepth, Math.Max(MaxWellboreTVD, maxPointDepth)));
+                return -limit;
+            }
+        }
+
         public double YAxisMaxValue => 0;
 
         #endregion

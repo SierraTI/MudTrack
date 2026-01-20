@@ -523,6 +523,72 @@ namespace ProjectReport.Services
 
             return value;
         }
+        /// <summary>
+        /// Calculates the total hole capacity (volume) above a specific depth (e.g. for Air Gap).
+        /// Iterates through wellbore sections from Surface (0) to keyDepth.
+        /// </summary>
+        public double CalculateWellboreCapacityAboveDepth(IEnumerable<WellboreComponent> components, double keyDepth)
+        {
+            if (components == null || !components.Any() || keyDepth <= 0)
+                return 0;
+
+            double totalVolume = 0;
+            var sorted = components.OrderBy(c => c.TopMD ?? 0).ToList();
+
+            foreach (var section in sorted)
+            {
+                double sectionTop = section.TopMD ?? 0;
+                double sectionBottom = section.BottomMD ?? 0;
+
+                // Determine overlap with [0, keyDepth]
+                double overlapTop = Math.Max(0, sectionTop);
+                double overlapBottom = Math.Min(keyDepth, sectionBottom);
+
+                if (overlapBottom > overlapTop)
+                {
+                    double length = overlapBottom - overlapTop;
+                    // Use Internal Capacity formula: ID^2 / 1029.4 * Length
+                    // Assuming standard Imperial units for this helper as per usage context
+                    totalVolume += (Math.Pow(section.ID.GetValueOrDefault(), 2) / BblVolumeConstant) * length;
+                }
+            }
+
+            return totalVolume;
+        }
+
+        /// <summary>
+        /// Calculates the total hole capacity (volume) below a specific depth (e.g. Volume Below Bit).
+        /// Iterates through wellbore sections from keyDepth to Total Depth.
+        /// </summary>
+        public double CalculateWellboreCapacityBelowDepth(IEnumerable<WellboreComponent> components, double keyDepth)
+        {
+            if (components == null || !components.Any())
+                return 0;
+
+            double totalVolume = 0;
+            var sorted = components.OrderBy(c => c.TopMD ?? 0).ToList();
+            
+            // Find max depth to bound the calculation if needed, but the loop handles it naturally
+            
+            foreach (var section in sorted)
+            {
+                double sectionTop = section.TopMD ?? 0;
+                double sectionBottom = section.BottomMD ?? 0;
+
+                // Determine overlap with [keyDepth, Infinity]
+                double overlapTop = Math.Max(keyDepth, sectionTop);
+                double overlapBottom = sectionBottom; // We take the whole remaining section
+
+                if (overlapBottom > overlapTop)
+                {
+                    double length = overlapBottom - overlapTop;
+                    // Use Internal Capacity formula: ID^2 / 1029.4 * Length
+                    totalVolume += (Math.Pow(section.ID.GetValueOrDefault(), 2) / BblVolumeConstant) * length;
+                }
+            }
+
+            return totalVolume;
+        }
     }
 }
 

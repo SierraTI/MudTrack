@@ -120,6 +120,14 @@ namespace ProjectReport.Models.Geometry.DrillString
             get => BottomMD.HasValue && TopMD.HasValue ? BottomMD.Value - TopMD.Value : _length;
             set 
             { 
+                // CRITICAL: Block negative lengths at source
+                if (value.HasValue && value.Value < 0)
+                {
+                    // Do NOT allow negative lengths to be set
+                    // This prevents cascading calculation errors
+                    value = 0;
+                }
+                
                 if (SetProperty(ref _length, value))
                 {
                     if (value.HasValue && TopMD.HasValue)
@@ -138,14 +146,12 @@ namespace ProjectReport.Models.Geometry.DrillString
             ClearErrors(nameof(Length));
             if (Length == null)
             {
-                 // Suppress error for clean UI on start, typically ViewModel handles "Required" or we leave blank
-                 // But validation often wants to flag emptiness.
-                 // Strategy: Don't error on null if we want "clean start", ONLY error if 0 or negative clearly entered?
-                 // No, standard practice for "Required" fields:
-                 // We'll let null pass but UI might mark it if submitted.
-                 // Actually, user wants "blank", but eventually it must be valid.
-                 // Let's rely on standard IDataErrorInfo: if it's null, is it Valid? No.
                  AddError(nameof(Length), "Length is required");
+            }
+            else if (Length < 0)
+            {
+                // This should never happen now due to setter blocking, but keep as safety
+                AddError(nameof(Length), "Length cannot be negative");
             }
             else if (Length <= 0)
             {

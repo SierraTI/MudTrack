@@ -345,10 +345,19 @@ namespace ProjectReport.ViewModels.Geometry
                     component.Id = idCounter++;
                     
                     // Depth Chaining
+                    // CRITICAL FIX: Capture Length BEFORE setting TopMD.
+                    // If we set TopMD first, and it moves past the old BottomMD, the calculcated Length (Bottom-Top) 
+                    // becomes negative. If we then use that negative length to set the new BottomMD, it corrupts the data.
+                    double? currentLen = component.Length;
+                    
                     component.TopMD = currentTopMD;
-                    if (component.Length.HasValue)
+                    
+                    if (currentLen.HasValue)
                     {
-                        component.BottomMD = currentTopMD + component.Length.Value;
+                        // Ensure no negative length carries over
+                        double safeLen = currentLen.Value > 0 ? currentLen.Value : 0;
+                        
+                        component.BottomMD = currentTopMD + safeLen;
                         currentTopMD = component.BottomMD.Value;
                     }
                     else
@@ -722,6 +731,54 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(MaxSurveyEast));
         }
         
+        private double _bitDepth;
+        public double BitDepth
+        {
+            get => _bitDepth;
+            set
+            {
+                if (SetProperty(ref _bitDepth, value))
+                {
+                    RecalculateTotals();
+                }
+            }
+        }
+
+        private double _fluidLevel;
+        public double FluidLevel
+        {
+            get => _fluidLevel;
+            set
+            {
+                if (SetProperty(ref _fluidLevel, value))
+                {
+                    RecalculateTotals();
+                }
+            }
+        }
+
+        private double _volumeBelowBit;
+        public double VolumeBelowBit
+        {
+            get => _volumeBelowBit;
+            set => SetProperty(ref _volumeBelowBit, value);
+        }
+
+        private double _activeAnnularVolume;
+        public double ActiveAnnularVolume
+        {
+            get => _activeAnnularVolume;
+            set => SetProperty(ref _activeAnnularVolume, value);
+        }
+
+        private double _airGapVolume;
+        public double AirGapVolume
+        {
+            get => _airGapVolume;
+            set => SetProperty(ref _airGapVolume, value);
+        }
+
+        // --- Existing Properties ---
         // Properties for auto-scaling charts
         public double MaxSurveyTVD { get; private set; } = 1000;
         public double MaxSurveyVerticalSection { get; private set; } = 100;
@@ -2005,8 +2062,33 @@ namespace ProjectReport.ViewModels.Geometry
         public double TotalAnnularVolume { get; private set; }
         public double TotalCirculationVolume { get; private set; }
 
+        // Circulation & Trip Volume (Off-Bottom)
+        private double? _currentBitDepth;
+        public double CurrentBitDepth
+        {
+            get => _currentBitDepth ?? TotalDrillStringLength;
+            set
+            {
+                if (SetProperty(ref _currentBitDepth, value))
+                {
+                    RecalculateTotals();
+                }
+            }
+        }
+
+        public double CalculatedInternalStringVolume { get; private set; }
+        public double CalculatedAnnularActiveVolume { get; private set; }
+        public double CalculatedOpenHoleVolumeBelowBit { get; private set; }
+        public double CalculatedActivePitsVolume { get; private set; }
+        // Active Circulation Volume (Systems actively moving fluid: Surface + Internal + Active Annular - AirGap)
+        public double CalculatedActiveCirculationVolume => CalculatedActivePitsVolume + CalculatedInternalStringVolume + CalculatedAnnularActiveVolume - (AirGapVolume > 0 ? AirGapVolume : 0);
+        
+        // Total Mud In System (Active + Stagnant Hole)
+        public double CalculatedTotalMudInSystem => CalculatedActiveCirculationVolume + CalculatedOpenHoleVolumeBelowBit;
+
         public double TotalSystemVolume { get; private set; }
         public double TotalWellboreMD { get; private set; }
+        public double TotalWellboreTVD { get; private set; } // New Property for Real TVD
         public double ShoeDepth { get; private set; }
         public string ContinuityError { get; private set; } = string.Empty;
         
@@ -2454,26 +2536,40 @@ namespace ProjectReport.ViewModels.Geometry
                 return;
             }
 
-            // 1. Identify Top Component (Index 0) - The only one to adjust
+            // CRITICAL FIX: Clear TopMD/BottomMD on ALL components first
+            // This ensures they use the _length field which is protected from negatives
+            foreach (var comp in components)
+            {
+                comp.TopMD = null;
+                comp.BottomMD = null;
+            }
+
+            // 1. Identify Top Component (Index 0) - The ONLY one to adjust
             var topComponent = components[0];
 
-            // 2. Calculate Fixed Length (BHA + HWDP + etc.)
-            // Sum of ALL components EXCEPT the first one (Index 1 to End)
+            // 2. Calculate Fixed Length (BHA = all components EXCEPT the first one)
+            // Sum of ALL components from Index 1 to End
             double fixedComponentsLength = components.Skip(1).Sum(c => c.Length.GetValueOrDefault());
             
             // 3. Calculate Required Top Component Length
-            // Formula: Length_{Top} = MD_{Total} - Sum(Rest)
+            // Formula: Length_{Top} = MD_{Total} - Sum(BHA)
             double requiredLength = reportMD - fixedComponentsLength;
 
             // 4. Safety Lock (Validation)
             if (requiredLength < 0)
             {
                 MessageBox.Show(
-                    $"Error: BHA/Fixed length ({fixedComponentsLength:F2} ft) exceeds Well Depth ({reportMD:F2} ft).\n" + 
-                    "The top component cannot have negative length.",
-                    "BHA Exceeds Depth",
+                    $"ERROR: BHA length ({fixedComponentsLength:F2} ft) exceeds Well Depth ({reportMD:F2} ft).\n\n" + 
+                    $"The BHA components are too long to fit in the well.\n" +
+                    $"Drill Pipe length has been set to 0 ft.\n\n" +
+                    $"Please reduce BHA component lengths by at least {Math.Abs(requiredLength):F2} ft.",
+                    "BHA Exceeds Well Depth",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+                
+                // Force Drill Pipe to 0 to prevent negative math
+                topComponent.Length = 0;
+                RecalculateTotals();
                 return;
             }
 
@@ -2489,7 +2585,14 @@ namespace ProjectReport.ViewModels.Geometry
             // 5. Update and Feedback
             try 
             {
+                // Set the new length for the top component (Drill Pipe)
+                // TopMD and BottomMD are already null from the loop above
                 topComponent.Length = requiredLength;
+                
+                // Snap Bit Depth to Bottom (Reset Manual Override)
+                _currentBitDepth = null; 
+                OnPropertyChanged(nameof(CurrentBitDepth));
+
                 topComponent.IsHighlighted = true;
 
                 // Remove highlight after 2 seconds
@@ -2506,7 +2609,7 @@ namespace ProjectReport.ViewModels.Geometry
 
                 // Show notification
                 ToastNotificationService.Instance.ShowSuccess(
-                    $"✓ Adjusted to Bottom: Top Component ({topComponent.ComponentTypeString}) updated from {oldLength:F2} ft to {requiredLength:F2} ft.");
+                    $"✓ Adjusted to Bottom: {topComponent.ComponentTypeString} updated from {oldLength:F2} ft to {requiredLength:F2} ft.");
             }
             catch (Exception ex)
             {
@@ -2546,16 +2649,119 @@ namespace ProjectReport.ViewModels.Geometry
             TotalWellboreVolume = _geometryService.CalculateTotalWellboreVolume(WellboreComponents, "Imperial");
             TotalDrillStringVolume = _geometryService.CalculateTotalDrillStringVolume(DrillStringComponents, false, "Imperial"); // Internal Volume
             
-            // Re-calculate detailed segments for accuracy
-            UpdateAnnularVolumeDetails();
+            // -------------------------------------------------------------------------
+            // CIRCULATION & TRIP VOLUME CALCULATION (OFF-BOTTOM LOGIC)
+            // -------------------------------------------------------------------------
+            double calcBitDepth = (CurrentBitDepth > 0) ? CurrentBitDepth : TotalDrillStringLength;
             
-            // Improved: Use the detailed segments for more accurate total annular volume (handles varying DS/WB diameters)
-            TotalAnnularVolume = _hydraulicsService.CalculateTotalAnnularVolume(AnnularVolumeDetails.ToList());
+            // 1. Zone B: Open Hole Below Bit
+            // Volume of the hole from BitDepth to TD (Empty of pipe)
+            CalculatedOpenHoleVolumeBelowBit = _geometryService.CalculateWellboreCapacityBelowDepth(WellboreComponents, calcBitDepth);
+
+            // 2. Build Active String (Simulate Tripping)
+            // We take components from the BOTTOM UP (Bit, DC, HWDP...) until we reach the BitDepth.
+            // The top component (Pipe) gets trimmed.
+            var activeString = new List<(DrillStringComponent Comp, double Top, double Bottom)>();
+            double currentStringTop = calcBitDepth; // Start at Bit Depth and go up
             
-            // The Golden Number (now only downhole volumes, no surface)
-            TotalCirculationVolume = TotalAnnularVolume + TotalDrillStringVolume;
-            TotalSystemVolume = TotalCirculationVolume;
+            // Assuming DrillStringComponents is ordered [Top -> Bottom] (Pipe...Bit)
+            // We iterate backwards to start with Bit
+            for (int i = DrillStringComponents.Count - 1; i >= 0; i--)
+            {
+                var original = DrillStringComponents[i];
+                double len = original.Length.GetValueOrDefault();
+                
+                if (currentStringTop <= 0) break; // String is full
+                
+                double effectiveLength = Math.Min(len, currentStringTop);
+                double bottom = currentStringTop;
+                double top = currentStringTop - effectiveLength;
+                
+                if (effectiveLength > 0)
+                {
+                    activeString.Add((original, top, bottom));
+                }
+                
+                currentStringTop = top;
+            }
+
+            // 3. Calculated Internal String Volume
+            CalculatedInternalStringVolume = activeString.Sum(x => 
+            {
+                double len = x.Bottom - x.Top;
+                return (Math.Pow(x.Comp.ID.GetValueOrDefault(), 2) / 1029.4) * len; 
+            });
+
+            // 4. Calculated Active Annular Volume (Zone A)
+            // Intersect Active String components with Wellbore Sections
+            CalculatedAnnularActiveVolume = 0;
+            var sortedWellbore = WellboreComponents.OrderBy(w => w.TopMD ?? 0).ToList();
             
+            foreach (var section in sortedWellbore)
+            {
+                double sectionTop = section.TopMD ?? 0;
+                double sectionBottom = section.BottomMD ?? 0;
+                double sectionID = section.ID.GetValueOrDefault();
+                
+                if (sectionBottom <= sectionTop || sectionID <= 0) continue;
+                
+                // Find overlapping string components
+                foreach (var (comp, sTop, sBottom) in activeString)
+                {
+                    double overlapTop = Math.Max(sectionTop, sTop);
+                    double overlapBottom = Math.Min(sectionBottom, sBottom);
+                    
+                    if (overlapBottom > overlapTop)
+                    {
+                        double len = overlapBottom - overlapTop;
+                        double od = comp.OD.GetValueOrDefault();
+                        
+                        // Annular Volume = (ID_hole^2 - OD_pipe^2) / 1029.4 * L
+                        // Ensure OD < ID
+                        if (od < sectionID)
+                        {
+                            double vol = (Math.PI / 4.0) * (Math.Pow(sectionID, 2) - Math.Pow(od, 2)) * len / 1029.4;
+                            // Reset to simpler formula without PI if using 1029.4 constant directly (1029.4 includes PI handling for bbl conversion?)
+                            // Standard oilfield: Vol(bbl) = (ID^2 - OD^2)/1029.4 * L(ft)
+                            vol = (Math.Pow(sectionID, 2) - Math.Pow(od, 2)) / 1029.4 * len;
+                            CalculatedAnnularActiveVolume += vol;
+                        }
+                        else
+                        {
+                            // Pipe bigger than hole? Zero annular.
+                        }
+                    }
+                }
+                
+                // Add volume for empty annular space ABOVE the string (if BitDepth < TD but string is short?) across the section?
+                // No, Zone B handles "Open Hole Below Bit".
+                // But what about "Open Hole Above String"? (e.g. dropped string). 
+                // We assume string starts at Surface (0). activeString should cover 0 to BitDepth.
+            }
+            
+            // 5. Active Pits
+            CalculatedActivePitsVolume = ActivePits.Sum(p => p.CurrentVolume);
+
+            // -------------------------------------------------------------------------
+
+            // Air Gap
+            AirGapVolume = _geometryService.CalculateWellboreCapacityAboveDepth(WellboreComponents, FluidLevel);
+            
+            TotalCirculationVolume = CalculatedAnnularActiveVolume + CalculatedOpenHoleVolumeBelowBit + CalculatedInternalStringVolume - AirGapVolume;
+            
+            // Legacy Binding Support (TotalSystemVolume)
+            TotalSystemVolume = TotalCirculationVolume + CalculatedActivePitsVolume;
+            
+            // Notify Properties
+            OnPropertyChanged(nameof(TotalSystemVolume));
+            OnPropertyChanged(nameof(TotalCirculationVolume));
+            OnPropertyChanged(nameof(CalculatedInternalStringVolume));
+            OnPropertyChanged(nameof(CalculatedAnnularActiveVolume));
+            OnPropertyChanged(nameof(CalculatedOpenHoleVolumeBelowBit));
+            OnPropertyChanged(nameof(CalculatedActivePitsVolume));
+            OnPropertyChanged(nameof(CalculatedActiveCirculationVolume));
+            OnPropertyChanged(nameof(CalculatedTotalMudInSystem));
+
             TotalWellboreMD = WellboreComponents.Count > 0 ? WellboreComponents.Max(w => w.BottomMD ?? 0) : 0;
             
             // Calculate Shoe Depth: BottomMD of the deepest Casing or Liner section
@@ -2567,12 +2773,21 @@ namespace ProjectReport.ViewModels.Geometry
             
             // Update Thermal Gradient context with survey depth information
             var maxSurveyTvd = SurveyPoints.Count > 0 ? SurveyPoints.Max(p => p.TVD) : 0;
-            ThermalGradientViewModel.MaxWellboreTVD = (maxSurveyTvd > 0 ? maxSurveyTvd : TotalWellboreMD);
+            // If no survey, assume vertical (TVD = MD)
+            double calculatedTVD = (maxSurveyTvd > 0) ? maxSurveyTvd : TotalWellboreMD;
+            
+            TotalWellboreTVD = calculatedTVD;
+            ThermalGradientViewModel.MaxWellboreTVD = calculatedTVD;
             ThermalGradientViewModel.HasSurveyData = SurveyPoints.Count > 0;
+
             if (ForceDrillStringToBottom)
             {
+                // NOTE: If user intentionally set CurrentBitDepth, checking ForceToBottom might reset things?
+                // But ForceToBottom adjusts LENGTH. CurrentBitDepth tracks POSITION.
+                // We should probably respect ForceDrillStringToBottom flag logic.
                 CalculateDrillStringToBottom();
             }
+
             // Update continuity error
             var continuityErrors = ValidateWellboreContinuity();
             ContinuityError = continuityErrors.FirstOrDefault() ?? string.Empty;
@@ -2584,6 +2799,7 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(TotalAnnularVolume));
             OnPropertyChanged(nameof(TotalCirculationVolume));
             OnPropertyChanged(nameof(TotalWellboreMD));
+            OnPropertyChanged(nameof(TotalWellboreTVD)); // Notify
             OnPropertyChanged(nameof(ShoeDepth));
             OnPropertyChanged(nameof(AnnularVolumePercent));
             OnPropertyChanged(nameof(StringVolumePercent));
@@ -2613,7 +2829,6 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(SurveyErrorCount));
             OnPropertyChanged(nameof(WellTestErrorCount));
 
-            OnPropertyChanged(nameof(TotalSystemVolume));
             OnPropertyChanged(nameof(ActivePits));
             OnPropertyChanged(nameof(ServiceLines));
             OnPropertyChanged(nameof(AnnularVolumePercent));
@@ -2668,8 +2883,8 @@ namespace ProjectReport.ViewModels.Geometry
                 AnnularVolumeDetails.Add(detail);
             }
             
-            // Annular Volume Breakdown is already updated in TotalAnnularVolume setter
-            // or by the hydraulics service call.
+            // Calculate TotalAnnularVolume from the sum of all detail volumes
+            TotalAnnularVolume = AnnularVolumeDetails.Sum(d => d.Volume);
         }
         
         

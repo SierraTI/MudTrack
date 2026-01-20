@@ -35,92 +35,161 @@ namespace ProjectReport.Views.Geometry
             var wellbore = vm.WellboreComponents.OrderBy(w => w.TopMD).ToList();
             var drillString = vm.DrillStringComponents.ToList();
 
-            if (!wellbore.Any()) return;
+            // CRITICAL FIX: Allow rendering if EITHER list has data, don't require wellbore
+            if (!wellbore.Any() && !drillString.Any()) return;
 
-            // Calculate Scales
-            double maxMD = Math.Max(
-                wellbore.Max(w => w.BottomMD ?? 0),
-                drillString.Any() ? drillString.Sum(ds => ds.Length ?? 0) : 0
-            );
-            if (maxMD <= 0) maxMD = 1000;
+            // Calculate Scales - Robust against empty lists
+            double wellboreBottom = wellbore.Any() ? wellbore.Max(w => w.BottomMD ?? 0) : 0;
+            double stringLen = drillString.Any() ? drillString.Sum(ds => ds.Length ?? 0) : 0;
+            
+            double maxMD = Math.Max(wellboreBottom, stringLen);
+            
+            if (maxMD <= 0) maxMD = 1000; // Default fallback
             
             double availableHeight = Math.Max(600, ActualHeight - 40);
             double verticalScale = availableHeight / maxMD;
 
-            // --- LAYER 1: Wellbore (Mud/Annulus Background) ---
-            foreach (var section in wellbore)
+            // --- LAYER 0: Formation Background (Optional, adds context) ---
+            var formationBg = new Rectangle
             {
-                double top = (section.TopMD ?? 0) * verticalScale;
-                double bottom = (section.BottomMD ?? 0) * verticalScale;
-                double h = Math.Max(MinSegmentHeight, bottom - top);
-                
-                // Use ID for visual width of the "Hole"
-                double id = section.ID ?? (section.OD ?? 12.0) - 1.0; 
-                double w = Math.Max(2, id * ODScale);
+                Width = canvasWidth,
+                Height = maxMD * verticalScale + 50,
+                Fill = new SolidColorBrush(Color.FromRgb(250, 250, 250)) // Very light gray/paper
+            };
+            Canvas.SetLeft(formationBg, 0);
+            Canvas.SetTop(formationBg, 0);
+            SchematicCanvas.Children.Add(formationBg);
 
-                // Fluid/Hole Rectangle
+            // --- LAYER 1: Wellbore (Mud/Annulus Background) ---
+            if (wellbore.Any())
+            {
+                foreach (var section in wellbore)
+                {
+                    double top = (section.TopMD ?? 0) * verticalScale;
+                    double bottom = (section.BottomMD ?? 0) * verticalScale;
+                    double h = Math.Max(MinSegmentHeight, bottom - top);
+                    
+                    // Use ID for visual width of the "Hole"
+                    double id = section.ID ?? (section.OD ?? 12.0) - 1.0; 
+                    double w = Math.Max(2, id * ODScale);
+
+                    // Fluid/Hole Rectangle
+                    var rect = new Rectangle
+                    {
+                        Width = w,
+                        Height = h,
+                        Fill = (Brush?)new BrushConverter().ConvertFromString("#E0F2FE") ?? Brushes.LightCyan, // Mud Color
+                        StrokeThickness = 0
+                    };
+
+                    Canvas.SetLeft(rect, centerX - (w / 2));
+                    Canvas.SetTop(rect, top + 10);
+                    SchematicCanvas.Children.Add(rect);
+
+                    // Wall Lines (Casing/OpenHole boundary)
+                    var wallBrush = section.SectionType == ComponentType.OpenHole 
+                        ? Brushes.SaddleBrown 
+                        : Brushes.Black;
+                    
+                    double wallThickness = section.SectionType == ComponentType.OpenHole ? 2 : 1;
+
+                    // Left Wall
+                    var leftLine = new Line
+                    {
+                        X1 = centerX - (w / 2), Y1 = top + 10,
+                        X2 = centerX - (w / 2), Y2 = top + h + 10,
+                        Stroke = wallBrush,
+                        StrokeThickness = wallThickness
+                    };
+                    
+                    // Right Wall
+                    var rightLine = new Line
+                    {
+                        X1 = centerX + (w / 2), Y1 = top + 10,
+                        X2 = centerX + (w / 2), Y2 = top + h + 10,
+                        Stroke = wallBrush,
+                        StrokeThickness = wallThickness
+                    };
+                    
+                    SchematicCanvas.Children.Add(leftLine);
+                    SchematicCanvas.Children.Add(rightLine);
+
+                    // Start Depth Label (only for 0)
+                    if (Math.Abs(section.TopMD ?? 0) < 0.1)
+                    {
+                         AddDepthLabel(0, 10, centerX - (w/2) - 10, false);
+                    }
+
+                    // Shoe Depth Label
+                    if (section.SectionType != ComponentType.OpenHole)
+                    {
+                        AddDepthLabel(section.BottomMD ?? 0, top + h + 10, centerX + (w / 2) + 5, true);
+                    }
+                }
+            }
+            else
+            {
+                // Fallback if no wellbore: Draw generic "Hole" based on max string OD
+                double fallbackOD = drillString.Any() ? (drillString.Max(c => c.OD ?? 5) * 1.5) : 12.0;
+                double w = fallbackOD * ODScale;
                 var rect = new Rectangle
                 {
                     Width = w,
-                    Height = h,
-                    Fill = (Brush?)new BrushConverter().ConvertFromString("#E0F2FE") ?? Brushes.LightCyan, // Mud Color
-                    StrokeThickness = 0
+                    Height = maxMD * verticalScale,
+                    Fill = Brushes.Transparent,
+                    Stroke = Brushes.LightGray,
+                    StrokeDashArray = new DoubleCollection { 4, 4 }
                 };
-
                 Canvas.SetLeft(rect, centerX - (w / 2));
-                Canvas.SetTop(rect, top + 10);
+                Canvas.SetTop(rect, 10);
                 SchematicCanvas.Children.Add(rect);
-
-                // Wall Lines (Casing/OpenHole boundary)
-                var wallBrush = section.SectionType == ComponentType.OpenHole 
-                    ? Brushes.SaddleBrown 
-                    : Brushes.Black;
-                
-                double wallThickness = section.SectionType == ComponentType.OpenHole ? 2 : 1;
-
-                // Left Wall
-                var leftLine = new Line
-                {
-                    X1 = centerX - (w / 2), Y1 = top + 10,
-                    X2 = centerX - (w / 2), Y2 = top + h + 10,
-                    Stroke = wallBrush,
-                    StrokeThickness = wallThickness
-                };
-                
-                // Right Wall
-                var rightLine = new Line
-                {
-                    X1 = centerX + (w / 2), Y1 = top + 10,
-                    X2 = centerX + (w / 2), Y2 = top + h + 10,
-                    Stroke = wallBrush,
-                    StrokeThickness = wallThickness
-                };
-                
-                SchematicCanvas.Children.Add(leftLine);
-                SchematicCanvas.Children.Add(rightLine);
-
-                // Start Depth Label (only for 0)
-                if (Math.Abs(section.TopMD ?? 0) < 0.1)
-                {
-                     AddDepthLabel(0, 10, centerX - (w/2) - 10, false);
-                }
-
-                // Shoe Depth Label
-                if (section.SectionType != ComponentType.OpenHole)
-                {
-                    AddDepthLabel(section.BottomMD ?? 0, top + h + 10, centerX + (w / 2) + 5, true);
-                }
             }
 
             // --- LAYER 2: Drill String (Foreground) ---
             double currentY = 10; // Start at Surface
             
-            // Iterate Top-Down (Surface at Index 0)
-            foreach (var comp in drillString)
+            // Logic for Off-Bottom / Tripping Visualization
+            // If vm.CurrentBitDepth < TotalStringLength, trim the string to fit.
+            // We must simulate that the BHA is at BitDepth, and the Top Pipe is shorter.
+            
+            double bitDepth = vm.CurrentBitDepth > 0 ? vm.CurrentBitDepth : vm.TotalDrillStringLength;
+            
+            // Build Visual String (Bottom-Up Logic like RecalculateTotals)
+            var visualString = new System.Collections.Generic.List<(DrillStringComponent Comp, double Length)>();
+            double remainingDepth = bitDepth;
+
+            // Iterate backwards (Bit first)
+            for (int i = drillString.Count - 1; i >= 0; i--)
             {
-                double h = (comp.Length ?? 0) * verticalScale;
+                var comp = drillString[i];
+                double len = comp.Length ?? 0;
+                
+                if (remainingDepth <= 0) break;
+                
+                double effectiveLength = Math.Min(len, remainingDepth);
+                if (effectiveLength > 0)
+                {
+                    visualString.Insert(0, (comp, effectiveLength)); // Insert at top to maintain Top-Down order for drawing
+                }
+                
+                remainingDepth -= effectiveLength;
+            }
+
+            // Draw Visual String
+            foreach (var (comp, length) in visualString)
+            {
+                double h = length * verticalScale;
                 double compOD = comp.OD ?? 5.0;
                 double w = compOD * ODScale;
+
+                // Container for Rect + Text
+                var container = new Grid
+                {
+                    Width = w,
+                    Height = h
+                };
+                Canvas.SetLeft(container, centerX - (w / 2));
+                Canvas.SetTop(container, currentY);
 
                 // Special Draw for Bit
                 if (comp.ComponentType == ComponentType.Bit)
@@ -137,7 +206,7 @@ namespace ProjectReport.Views.Geometry
                         Fill = Brushes.Crimson,
                         Stroke = Brushes.Black,
                         StrokeThickness = 1,
-                        ToolTip = $"{comp.Name}\nLength: {comp.Length} ft\nOD: {comp.OD}\""
+                        ToolTip = $"{comp.Name}\nLength: {length:F2} ft\nOD: {comp.OD}\""
                     };
                     
                     Canvas.SetLeft(bitShape, centerX - (w / 2));
@@ -154,12 +223,30 @@ namespace ProjectReport.Views.Geometry
                         Fill = GetColorForComponent(comp.ComponentType),
                         Stroke = Brushes.Black,
                         StrokeThickness = 0.5,
-                        ToolTip = $"{comp.Name}\nLength: {comp.Length} ft\nOD: {comp.OD}\""
+                        ToolTip = $"{comp.Name}\nLength: {length:F2} ft\nOD: {comp.OD}\""
                     };
 
-                    Canvas.SetLeft(rect, centerX - (w / 2));
-                    Canvas.SetTop(rect, currentY);
-                    SchematicCanvas.Children.Add(rect);
+                    container.Children.Add(rect);
+
+                    // Add Label if height is sufficient
+                    if (h > 14) 
+                    {
+                        var label = new TextBlock
+                        {
+                            Text = comp.Name,
+                            FontSize = Math.Max(8, Math.Min(11, w - 2)), // Dynamic font size
+                            FontWeight = FontWeights.Bold,
+                            Foreground = Brushes.White,
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            VerticalAlignment = VerticalAlignment.Center,
+                            TextAlignment = TextAlignment.Center,
+                            TextWrapping = TextWrapping.Wrap,
+                            IsHitTestVisible = false
+                        };
+                        container.Children.Add(label);
+                    }
+
+                    SchematicCanvas.Children.Add(container);
                 }
 
                 currentY += h;

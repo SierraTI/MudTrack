@@ -175,8 +175,19 @@ namespace ProjectReport.Views
 
             if (_viewModel.SelectedTabIndex == 5)
             {
-                // Summary tab visual schematic was removed. 
-                // Any other summary-specific visualization logic would go here.
+                // Summary tab - update the MasterSchematic visual
+                try
+                {
+                    if (this.MasterSchematic != null)
+                    {
+                        this.MasterSchematic.DataContext = _viewModel;
+                        this.MasterSchematic.DrawSchematic();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error updating Summary visualization: {ex.Message}");
+                }
             }
         }
 

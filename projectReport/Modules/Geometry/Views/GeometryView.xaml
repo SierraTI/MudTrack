@@ -1169,11 +1169,25 @@
                                 <!-- Vertical Section Chart (Profile View) -->
                                 <Border Grid.Column="0" 
                                         Style="{StaticResource CardBorder}" 
-                                        Padding="0" 
+                                        Padding="10" 
                                         ClipToBounds="True" 
                                         Height="350">
                                     <Grid>
-                                        <lvc:CartesianChart Series="{Binding SurveySeriesCollection}" 
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Grid.Row="0"
+                                                   Text="Profile View (Vertical Section vs TVD)" 
+                                                   FontSize="12" 
+                                                   FontWeight="SemiBold" 
+                                                   Foreground="{StaticResource TextMuted}"
+                                                   Margin="0,0,0,5"
+                                                   HorizontalAlignment="Left"/>
+                                                   
+                                        <lvc:CartesianChart Grid.Row="1"
+                                                            Series="{Binding SurveySeriesCollection}" 
                                                             LegendLocation="None" 
                                                             Zoom="None"
                                                             Hoverable="True">
@@ -1215,24 +1229,31 @@
                                                 </lvc:Axis>
                                             </lvc:CartesianChart.AxisY>
                                         </lvc:CartesianChart>
-                                        <TextBlock Text="Profile View (Vertical Section vs TVD)" 
-                                                   FontSize="11" 
-                                                   FontWeight="SemiBold" 
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   Margin="10,10,0,0"
-                                                   VerticalAlignment="Top"
-                                                   HorizontalAlignment="Left"/>
                                     </Grid>
                                 </Border>
                                 
                                 <!-- Plan View Chart (North vs East) -->
                                 <Border Grid.Column="2" 
                                         Style="{StaticResource CardBorder}" 
-                                        Padding="0" 
+                                        Padding="10" 
                                         ClipToBounds="True" 
                                         Height="350">
                                     <Grid>
-                                        <lvc:CartesianChart Series="{Binding PlanViewSeriesCollection}" 
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        
+                                        <TextBlock Grid.Row="0"
+                                                   Text="Plan View (North vs East)" 
+                                                   FontSize="12" 
+                                                   FontWeight="SemiBold" 
+                                                   Foreground="{StaticResource TextMuted}"
+                                                   Margin="0,0,0,5"
+                                                   HorizontalAlignment="Left"/>
+                                                   
+                                        <lvc:CartesianChart Grid.Row="1"
+                                                            Series="{Binding PlanViewSeriesCollection}" 
                                                             LegendLocation="None" 
                                                             Zoom="None"
                                                             Hoverable="True">
@@ -1262,13 +1283,6 @@
                                                 </lvc:Axis>
                                             </lvc:CartesianChart.AxisY>
                                         </lvc:CartesianChart>
-                                        <TextBlock Text="Plan View (North vs East)" 
-                                                   FontSize="11" 
-                                                   FontWeight="SemiBold" 
-                                                   Foreground="{StaticResource TextMuted}"
-                                                   Margin="10,10,0,0"
-                                                   VerticalAlignment="Top"
-                                                   HorizontalAlignment="Left"/>
                                     </Grid>
                                 </Border>
                             </Grid>
@@ -1493,31 +1507,24 @@
 
                             <Border Grid.Row="0" Padding="15,15,15,10" Background="White" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
                                 <StackPanel>
-                                    <TextBlock Text="ESQUEMA VISUAL" FontWeight="Bold" Foreground="#4B5563" FontSize="11" Margin="0,0,0,4"/>
+                                    <TextBlock Text="VISUAL SCHEMATIC" FontWeight="Bold" Foreground="#4B5563" FontSize="11" Margin="0,0,0,4"/>
                                     <TextBlock Text="Wellbore &amp; Drill String" Foreground="{StaticResource TextMuted}" FontSize="12"/>
                                 </StackPanel>
                             </Border>
 
                             <!-- Dynamic Schematic Canvas -->
                             <Viewbox Grid.Row="1" Stretch="Uniform" VerticalAlignment="Top" Margin="20">
-                                <geometry:WellboreDrillStringSchematicView x:Name="MasterSchematic" MinWidth="260"/>
+                                <geometry:WellboreDrillStringSchematicView x:Name="MasterSchematic" MinWidth="260" DataContext="{Binding}"/>
                             </Viewbox>
 
                             <Border Grid.Row="2" Padding="20" Background="White" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0">
                                 <StackPanel>
-                                    <Grid Margin="0,0,0,10">
-                                        <TextBlock Text="Current MD" Foreground="{StaticResource TextMuted}"/>
-                                        <TextBlock Text="{Binding TotalWellboreMD, StringFormat='{}{0:F0} ft'}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource BrandBlue}"/>
-                                    </Grid>
-                                    <Grid>
-                                        <TextBlock Text="Shoe Depth" Foreground="{StaticResource TextMuted}"/>
-                                        <TextBlock Text="{Binding ShoeDepth, StringFormat='{}{0:F0} ft'}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#4B5563"/>
-                                    </Grid>
                                     
                                     <Separator Margin="0,15"/>
                                     
-                                    <Button Content="[Editar Geometria]" Command="{Binding EditGeometryCommand}" Style="{StaticResource BrandPrimaryButton}" Margin="0,0,0,8"/>
-                                    <Button Content="[Editar Sarta]" Command="{Binding EditStringCommand}" Style="{StaticResource BrandPrimaryButton}"/>
+                                    
+                                    <Button Content="[Edit Geometry]" Command="{Binding EditGeometryCommand}" Style="{StaticResource BrandPrimaryButton}" Margin="0,0,0,8"/>
+                                    <Button Content="[Edit Drill String]" Command="{Binding EditStringCommand}" Style="{StaticResource BrandPrimaryButton}"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -1534,37 +1541,118 @@
                                  <RowDefinition Height="Auto"/> <!-- Action Bar -->
                             </Grid.RowDefinitions>
 
-                            <!-- Hero: Wellbore & Hydraulics Integration -->
-                            <Border Grid.Row="0" Margin="0,0,0,20" CornerRadius="12" Background="{StaticResource BrandBlue}" Padding="30,25">
-                                <Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="WELLBORE &amp; HYDRAULICS INTEGRATION" Foreground="#BFDBFE" FontWeight="Bold" FontSize="14"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                            <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F2}'}" FontSize="48" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom"/>
-                                            <TextBlock Text="bbl" FontSize="20" Foreground="#BFDBFE" Margin="10,0,0,8" VerticalAlignment="Bottom"/>
-                                        </StackPanel>
-                                        <TextBlock Text="Total Annular Volume" Foreground="#BFDBFE" FontSize="12" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                    
-                                    <Button HorizontalAlignment="Right" VerticalAlignment="Top" 
-                                            Content="Export to PDF" 
-                                            Command="{Binding ExportToPdfCommand}"
-                                            Style="{StaticResource BrandPrimaryButton}" 
-                                            Background="White" Foreground="{StaticResource BrandBlue}" 
-                                            Padding="20,10" FontWeight="Bold"/>
-                                </Grid>
-                            </Border>
 
                             <!-- Volume Blocks Row -->
                             <Grid Grid.Row="1" Margin="0,0,0,20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/> <!-- Circulation Card -->
+                                    <RowDefinition Height="Auto"/> <!-- Breakdown Cards -->
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="20"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
+                                <!-- Circulation & Trip Volume Card -->
+                                <GroupBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Header="Circulation &amp; Trip Volume" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
+                                    <Grid Margin="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/> <!-- Inputs -->
+                                            <RowDefinition Height="Auto"/> <!-- Table Header -->
+                                            <RowDefinition Height="Auto"/> <!-- Rows -->
+                                            <RowDefinition Height="Auto"/> <!-- Total -->
+                                        </Grid.RowDefinitions>
+                                        
+                                        <!-- Table Structure (Headers) -->
+                                        <Grid Grid.Row="1" Background="#F3F4F6" Margin="0,0,0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1.5*"/>
+                                                <ColumnDefinition Width="2.5*"/>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="1.5*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Volume Section" FontWeight="Bold" Padding="8" Foreground="#4B5563"/>
+                                            <TextBlock Grid.Column="1" Text="Engineering Calculation" FontWeight="Bold" Padding="8" Foreground="#4B5563"/>
+                                            <TextBlock Grid.Column="2" Text="State" FontWeight="Bold" Padding="8" Foreground="#4B5563"/>
+                                            <TextBlock Grid.Column="3" Text="Volume (bbl)" FontWeight="Bold" Padding="8" HorizontalAlignment="Right" Foreground="#4B5563"/>
+                                        </Grid>
+
+                                        <!-- Rows -->
+                                        <StackPanel Grid.Row="2">
+                                             <!-- Internal String -->
+                                             <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="2.5*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Internal String" Padding="8,4" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Capacity to Bit Depth" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                                                <Border Grid.Column="2" Background="#DBEAFE" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="8,2">
+                                                    <TextBlock Text="Circulating" Foreground="#1E40AF" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="3" Text="{Binding CalculatedInternalStringVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                             </Grid>
+
+                                             <Separator Margin="0,2" Background="#F3F4F6"/>
+
+                                             <!-- Annular -->
+                                             <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="2.5*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Annular (Active)" Padding="8,4" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Annulus to Bit Depth" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                                                <Border Grid.Column="2" Background="#DBEAFE" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="8,2">
+                                                    <TextBlock Text="Circulating" Foreground="#1E40AF" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="3" Text="{Binding CalculatedAnnularActiveVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                             </Grid>
+
+                                             <Separator Margin="0,2" Background="#F3F4F6"/>
+
+                                             <!-- Open Hole -->
+                                             <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="2.5*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Open Hole (Below Bit)" Padding="8,4" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="Hole Capacity (Bit to TD)" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                                                <Border Grid.Column="2" Background="#F3F4F6" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="8,2">
+                                                    <TextBlock Text="Static" Foreground="#374151" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="3" Text="{Binding CalculatedOpenHoleVolumeBelowBit, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource BrandOrange}"/>
+                                             </Grid>
+                                        </StackPanel>
+                                        
+                                        <!-- Total -->
+                                        <Border Grid.Row="3" Background="#ECFDF5" Margin="0,15,0,0" CornerRadius="6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="TOTAL MUD IN SYSTEM" FontWeight="Bold" Padding="12" Foreground="#065F46" VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12">
+                                                    <TextBlock Text="{Binding CalculatedTotalMudInSystem, StringFormat=F2}" FontWeight="Bold" FontSize="18" Foreground="#065F46"/>
+                                                    <TextBlock Text=" bbl" VerticalAlignment="Bottom" Margin="4,0,0,3" Foreground="#065F46"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+
+                                    </Grid>
+                                </GroupBox>
+
                                 <!-- In-Wellbore Volumes Block -->
-                                <GroupBox Grid.Column="0" Header="Downhole Volumes" Style="{StaticResource StandardGroupBox}">
+                                <GroupBox Grid.Row="1" Grid.Column="0" Header="Downhole Volumes" Style="{StaticResource StandardGroupBox}">
                                     <StackPanel Margin="10">
                                         <Grid Margin="0,4">
                                             <TextBlock Text="Annular Volume" Foreground="#4B5563"/>
@@ -1587,7 +1675,7 @@
                                 </GroupBox>
 
                                  <!-- System Volume Percentages -->
-                                 <GroupBox Grid.Column="2" Header="Distribution" Style="{StaticResource StandardGroupBox}">
+                                 <GroupBox Grid.Row="1" Grid.Column="2" Header="Distribution" Style="{StaticResource StandardGroupBox}">
                                      <StackPanel Margin="15" VerticalAlignment="Center">
                                          <Grid Margin="0,5">
                                              <TextBlock Text="Annular" Foreground="#4B5563"/>
@@ -1631,11 +1719,12 @@
                                             IsReadOnly="True"
                                             MaxHeight="500"
                                             MinHeight="150"
-                                            RowHeight="35"
-                                            Margin="10"
+                                            RowHeight="28"
+                                            Margin="5"
                                             AlternationCount="2"
                                             GridLinesVisibility="Horizontal"
-                                            VerticalScrollBarVisibility="Auto">
+                                            VerticalScrollBarVisibility="Auto"
+                                            HorizontalScrollBarVisibility="Auto">
                                      <DataGrid.GroupStyle>
                                          <GroupStyle>
                                              <GroupStyle.HeaderTemplate>
@@ -1652,55 +1741,55 @@
                                          </GroupStyle>
                                      </DataGrid.GroupStyle>
                                      <DataGrid.Columns>
-                                         <DataGridTextColumn Header="Segment" Binding="{Binding Name}" Width="120"/>
-                                         <DataGridTextColumn Header="From (ft)" Binding="{Binding TopMD, StringFormat=F0}" Width="85">
+                                         <DataGridTextColumn Header="Segment" Binding="{Binding Name}" Width="1.2*" MinWidth="100"/>
+                                         <DataGridTextColumn Header="From" Binding="{Binding TopMD, StringFormat=F0}" Width="0.7*" MinWidth="70">
                                              <DataGridTextColumn.ElementStyle>
                                                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                      <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                     <Setter Property="Padding" Value="8,4"/>
                                                  </Style>
                                              </DataGridTextColumn.ElementStyle>
                                          </DataGridTextColumn>
-                                         <DataGridTextColumn Header="To (ft)" Binding="{Binding BottomMD, StringFormat=F0}" Width="85">
+                                         <DataGridTextColumn Header="To" Binding="{Binding BottomMD, StringFormat=F0}" Width="0.7*" MinWidth="70">
                                              <DataGridTextColumn.ElementStyle>
                                                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                      <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                     <Setter Property="Padding" Value="8,4"/>
                                                  </Style>
                                              </DataGridTextColumn.ElementStyle>
                                          </DataGridTextColumn>
-                                         <DataGridTextColumn Header="Wellbore ID (in)" Binding="{Binding WellboreID, StringFormat=F3}" Width="90">
+                                         <DataGridTextColumn Header="ID (in)" Binding="{Binding WellboreID, StringFormat=F3}" Width="0.8*" MinWidth="80">
                                              <DataGridTextColumn.ElementStyle>
                                                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                      <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                     <Setter Property="Padding" Value="8,4"/>
                                                  </Style>
                                              </DataGridTextColumn.ElementStyle>
                                          </DataGridTextColumn>
-                                         <DataGridTextColumn Header="String OD (in)" Binding="{Binding DrillStringOD, StringFormat=F3}" Width="90">
+                                         <DataGridTextColumn Header="OD (in)" Binding="{Binding DrillStringOD, StringFormat=F3}" Width="0.8*" MinWidth="80">
                                              <DataGridTextColumn.ElementStyle>
                                                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                      <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                     <Setter Property="Padding" Value="8,4"/>
                                                  </Style>
                                              </DataGridTextColumn.ElementStyle>
                                          </DataGridTextColumn>
-                                         <DataGridTextColumn Header="Capacidad (bbl/ft)" Binding="{Binding Capacity, StringFormat=F5}" Width="100">
+                                         <DataGridTextColumn Header="Cap. (bbl/ft)" Binding="{Binding Capacity, StringFormat=F5}" Width="1*" MinWidth="100">
                                              <DataGridTextColumn.ElementStyle>
                                                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                      <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                     <Setter Property="Padding" Value="8,4"/>
                                                  </Style>
                                              </DataGridTextColumn.ElementStyle>
                                          </DataGridTextColumn>
-                                         <DataGridTextColumn Header="Elements (String / Well)" Binding="{Binding ElementDescription}" Width="*"/>
-                                         <DataGridTextColumn Header="Annular Vol. (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="110">
+                                         <DataGridTextColumn Header="Elements" Binding="{Binding ElementDescription}" Width="2*" MinWidth="150"/>
+                                         <DataGridTextColumn Header="Vol. (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="0.9*" MinWidth="90">
                                              <DataGridTextColumn.ElementStyle>
                                                  <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                                      <Setter Property="FontWeight" Value="SemiBold"/>
                                                      <Setter Property="HorizontalAlignment" Value="Right"/>
                                                      <Setter Property="Foreground" Value="#059669"/>
-                                                     <Setter Property="Padding" Value="0,0,10,0"/>
+                                                     <Setter Property="Padding" Value="8,4"/>
                                                  </Style>
                                              </DataGridTextColumn.ElementStyle>
                                          </DataGridTextColumn>

@@ -6,7 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d">
     <Border Background="LightYellow" Padding="12">
-        <DockPanel>
+        <DockPanel LastChildFill="True">
             <!-- Cabecera: contador a la izquierda, ADD a la derecha -->
             <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
@@ -24,17 +24,38 @@
                 </StackPanel>
             </Grid>
 
+            <!-- Footer docked bottom -->
+            <DockPanel DockPanel.Dock="Bottom" LastChildFill="False" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+                <Border BorderThickness="1" BorderBrush="#DDDDDD" CornerRadius="6" Padding="10" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Daily Total (Additional)" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding DailyTotalCost, StringFormat=N2}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                        <TextBlock Text="Daily Total (Products+Whole+Add)" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding CombinedDailyTotal, StringFormat=N2}" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right" Margin="8,0,0,0">
+                    <TextBlock Text="{Binding Error}" Foreground="Red" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Button Content="RELOAD" Command="{Binding ReloadCommand}" Width="100" Margin="6,0"/>
+                    <Button Content="SAVE" Command="{Binding SaveCommand}" Width="100" Margin="6,0"/>
+                </StackPanel>
+            </DockPanel>
+
+            <!-- DataGrid ocupa lo restante -->
             <DataGrid ItemsSource="{Binding Charges}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
-                      SelectionMode="Single"
                       IsReadOnly="False"
                       RowHeaderWidth="0"
-                      Height="360">
+                      SelectionMode="Single"
+                      MinRowHeight="34"
+                      Margin="0"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Stretch">
                 <DataGrid.Columns>
-                    <!-- Charge: ComboBox desde DefaultChargeNames -->
-                    <DataGridTemplateColumn Header="Charge" Width="3*" >
+                    <DataGridTemplateColumn Header="Charge" Width="3*">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Name}" />
@@ -50,7 +71,6 @@
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Unit: lista desplegable por fila -->
                     <DataGridTemplateColumn Header="Unit" Width="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -67,7 +87,6 @@
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Currency: dropdown por fila usando TemplateColumn -->
                     <DataGridTemplateColumn Header="Currency" Width="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -84,28 +103,23 @@
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Quantity -->
                     <DataGridTextColumn Header="Qty"
                                         Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
                                         Width="100"/>
 
-                    <!-- Unit Price -->
                     <DataGridTextColumn Header="Unit $"
                                         Binding="{Binding UnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
                                         Width="120"/>
 
-                    <!-- Total (calculado en el modelo) -->
                     <DataGridTextColumn Header="Total"
                                         Binding="{Binding Total, Mode=OneWay, StringFormat=N2}"
                                         Width="120"
                                         IsReadOnly="True"/>
 
-                    <!-- Observations -->
                     <DataGridTextColumn Header="Observations"
                                         Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         Width="2*"/>
 
-                    <!-- Actions: DELETE -->
                     <DataGridTemplateColumn Header="Actions" Width="100" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -117,13 +131,6 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
-
-            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                <TextBlock Text="{Binding Error}" Foreground="Red" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <Button Content="RELOAD" Command="{Binding ReloadCommand}" Width="100" Margin="6,0"/>
-                <Button Content="SAVE" Command="{Binding SaveCommand}" Width="100" Margin="6,0"/>
-                <Button Content="ADD" Command="{Binding AddCommand}" Width="100" Margin="6,0"/>
-            </StackPanel>
         </DockPanel>
     </Border>
 </UserControl>

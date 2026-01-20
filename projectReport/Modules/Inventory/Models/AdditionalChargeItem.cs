@@ -34,6 +34,13 @@ namespace ProjectReport.Models.Inventory
             set { if (Math.Abs(_quantity - value) > 0.0001) { _quantity = value; OnPropertyChanged(); OnPropertyChanged(nameof(Total)); } }
         }
 
+        private DateTime _date = DateTime.Now;
+        public DateTime Date
+        {
+            get => _date;
+            set { if (_date != value) { _date = value; OnPropertyChanged(); } }
+        }
+
         public double Total => Math.Round(UnitPrice * Quantity, 2);
 
         private string _observations = "";

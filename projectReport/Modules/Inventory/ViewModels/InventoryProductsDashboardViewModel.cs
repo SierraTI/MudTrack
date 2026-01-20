@@ -197,6 +197,13 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 if (param is ProductSummaryRow row)
                 {
+                    // Si alguien suscribe al evento, delegamos y salimos
+                    if (RequestUsedAsFluido != null)
+                    {
+                        RequestUsedAsFluido.Invoke(row);
+                        return;
+                    }
+
                     Debug.WriteLine("InventoryProductsDashboardViewModel: UsedAsFluidoCommand ejecutado. Abriendo ReportConsumedDialog. ProductCode: " + row.ProductCode);
 
                     try
@@ -237,7 +244,15 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 if (param is ProductSummaryRow row)
                 {
-                    RequestUsedAsOther?.Invoke(row);
+                    // Si alguien suscribe al evento, delegamos y salimos
+                    if (RequestUsedAsOther != null)
+                    {
+                        RequestUsedAsOther.Invoke(row);
+                        return;
+                    }
+
+                    // Comportamiento por defecto si no hay suscriptores
+                    RequestUsedAsOther?.Invoke(row); // (seguro aunque ya comprobamos)
                 }
             });
 

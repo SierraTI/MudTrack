@@ -48,6 +48,9 @@ namespace ProjectReport.Models.Rig
         public ObservableCollection<RigPump> Pumps { get; set; } = new ObservableCollection<RigPump>();
         public ObservableCollection<RigSolidsControl> SolidsControl { get; set; } = new ObservableCollection<RigSolidsControl>();
         public ObservableCollection<RigPit> Pits { get; set; } = new ObservableCollection<RigPit>();
+
+        // Nueva colección: Service Line (mismos campos que SurfaceEquipment)
+        public ObservableCollection<RigSurfaceEquipment> ServiceLine { get; set; } = new ObservableCollection<RigSurfaceEquipment>();
     }
 
     public class RigSurfaceEquipment : BaseModel
@@ -194,6 +197,9 @@ namespace ProjectReport.Models.Rig
             set => SetProperty(ref _model, value);
         }
 
+        /// <summary>
+        /// Capacidad nominal en GPM (valor heredado / calculado desde catálogo).
+        /// </summary>
         public double GpmCapacity
         {
             get => _gpmCapacity;
@@ -211,6 +217,57 @@ namespace ProjectReport.Models.Rig
         {
             get => _screenType;
             set => SetProperty(ref _screenType, value);
+        }
+
+        // Nueva propiedades solicitadas para la tabla de solids control
+        private string _style = string.Empty;
+        public string Style
+        {
+            get => _style;
+            set => SetProperty(ref _style, value);
+        }
+
+        private int _desilterNumberOfCones;
+        public int DesilterNumberOfCones
+        {
+            get => _desilterNumberOfCones;
+            set => SetProperty(ref _desilterNumberOfCones, value);
+        }
+
+        private double _desilterConeSize;
+        public double DesilterConeSize
+        {
+            get => _desilterConeSize;
+            set => SetProperty(ref _desilterConeSize, value);
+        }
+
+        private int _desanderNumberOfCones;
+        public int DesanderNumberOfCones
+        {
+            get => _desanderNumberOfCones;
+            set => SetProperty(ref _desanderNumberOfCones, value);
+        }
+
+        private double _desanderConeSize;
+        public double DesanderConeSize
+        {
+            get => _desanderConeSize;
+            set => SetProperty(ref _desanderConeSize, value);
+        }
+
+        private int _nominalRpm;
+        public int NominalRpm
+        {
+            get => _nominalRpm;
+            set => SetProperty(ref _nominalRpm, value);
+        }
+
+        // Campo adicional explícito para "Cap flow (gpm)" — se mantiene junto a GpmCapacity por compatibilidad
+        private double _capFlowGpm;
+        public double CapFlowGpm
+        {
+            get => _capFlowGpm;
+            set => SetProperty(ref _capFlowGpm, value);
         }
     }
 

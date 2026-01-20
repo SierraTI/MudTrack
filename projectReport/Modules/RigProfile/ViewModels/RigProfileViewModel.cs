@@ -1,80 +1,134 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
+using ClosedXML.Excel;
 using ProjectReport.Models;
 using ProjectReport.Models.Rig;
-using RigProfileClass = ProjectReport.Models.Rig.RigProfile;
 using ProjectReport.Services;
 using ProjectReport.ViewModels;
-using ClosedXML.Excel;
-using System.Globalization;
+
+// Alias para evitar colisiones entre namespace y tipo
+using RigProfileClass = ProjectReport.Models.Rig.RigProfile;
 
 namespace ProjectReport.Modules.RigProfile.ViewModels
 {
     public class RigProfileViewModel : BaseViewModel
     {
         private RigProfileClass _currentRigProfile;
-        
-        // Catalog Data Source - Loaded from Excel
         private readonly WellContextService _contextService;
         private readonly HydraulicsCalculationService _hydraulicsService;
         private Well? _currentWell;
         private readonly List<CatalogItem> _catalog = new();
 
+        // =========================
+        // LISTA FIJA PARA MODEL
+        // =========================
+        private static readonly string[] FixedModelOptions =
+        {
+            "FLC 500 Scalper",
+            "VSM 300 Scalper",
+            "GNZS703 Series Scalper",
+            "Hyperpool",
+            "FLC 500 Series",
+            "FLC 2000 Series",
+            "King Cobra",
+            "VSM 300 Series",
+            "Mongoose PT",
+            "MD-3",
+            "GNZS703 Series",
+            "GNZS594 Series",
+            "FLC 503/504",
+            "Mud King Combo",
+            "Mongoose Combo",
+            "GNZJ703 Series",
+            "FLC Series (10\" cones)",
+            "10\" Hydrocyclone",
+            "DC-10",
+            "GN Hydrocyclone Desander",
+            "FLC Series (4\" cones)",
+            "4\" Hydrocyclone",
+            "DC-4",
+            "GN Hydrocyclone Desilter",
+            "DE-1000",
+            "DE-7200",
+            "HS-3400",
+            "VSM Decanter",
+            "CD-500",
+            "CD-600",
+            "GNLW363",
+            "GNLW452"
+        };
+
         public RigProfileViewModel()
         {
-            // Initial setup
             _contextService = WellContextService.Instance;
             _hydraulicsService = new HydraulicsCalculationService();
             _contextService.WellChanged += OnWellChanged;
-            
-            // Initialize with a default profile
+
             _currentRigProfile = new RigProfileClass();
 
-            // Load current if exists
             if (_contextService.CurrentWell != null)
-            {
                 LoadRigProfile(_contextService.CurrentWell);
-            }
 
-            AvailableModels = new ObservableCollection<string>();
+            // ?? CAMBIO: AvailableModels debe poder setearse y arrancar con la lista fija
+            AvailableModels = new ObservableCollection<string>(FixedModelOptions);
+
             AvailableTypes = new ObservableCollection<string>();
             AvailableManufacturers = new ObservableCollection<string>();
             AvailablePitShapes = new ObservableCollection<string> { "Rectangular", "Cylindrical", "Oval", "Other" };
 
-            // Test parameters for preview
+            // Lista de estilos para la columna "Style" (tal como pediste)
+            AvailableStyles = new ObservableCollection<string>
+            {
+                "Scalper",
+                "Shaker",
+                "Mud cleaner",
+                "Deilter",
+                "Desander",
+                "Centrifuge"
+            };
+
             _testDensity = 10.0;
             _testGpm = 500.0;
 
-            // Load catalog from Excel
             LoadCatalogFromExcel();
-
             InitializeCatalogCollections();
 
-            // Initialize commands
+            // Sobrescribimos la lista de fabricantes con la lista fija solicitada
+            AvailableManufacturers = new ObservableCollection<string>
+            {
+                "GN Solids Control",
+                "KEMTRON Technologies",
+                "Sistemas integrados de control de sólidos.",
+                "Elgin Separation Solutions",
+                "H-Screening Separation",
+                "FLC (Fluid Systems Inc.)",
+                "PetroSolids (México)",
+                "MAS OPCIONES"
+            };
+
+            SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
+
+            EnsureSurfaceDefaults();
+            EnsureServiceLineDefaults();
+
             SaveCommand = new RelayCommand(async _ => await SaveAsync());
             SaveAndReturnCommand = new RelayCommand(async _ => await SaveAndReturnAsync());
             ResetToDefaultCommand = new RelayCommand(_ => ResetToDefault());
-
-            // Subscribe to global flow rate
-            _contextService.FlowRateUpdated += (s, gpm) => { if (Math.Abs(_testGpm - gpm) > 0.01) TestGpm = gpm; };
         }
 
-        private void OnWellChanged(object? sender, Well well)
-        {
-            if (well != null)
-            {
-                LoadRigProfile(well);
-            }
-        }
+        private void OnWellChanged(object? sender, Well well) => LoadRigProfile(well);
 
         private void LoadRigProfile(Well well)
         {
             _currentWell = well;
             CurrentRigProfile = well.RigProfile ?? new RigProfileClass();
+            EnsureSurfaceDefaults();
+            EnsureServiceLineDefaults();
         }
 
         public RigProfileClass CurrentRigProfile
@@ -85,6 +139,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 if (SetProperty(ref _currentRigProfile, value))
                 {
                     OnPropertyChanged(nameof(SurfaceEquipment));
+                    OnPropertyChanged(nameof(ServiceLine));
                     OnPropertyChanged(nameof(Pumps));
                     OnPropertyChanged(nameof(SolidsControl));
                     OnPropertyChanged(nameof(Pits));
@@ -93,26 +148,40 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             }
         }
 
-        // Collections wrappers for binding
+        // Collection wrappers
         public ObservableCollection<RigSurfaceEquipment> SurfaceEquipment => CurrentRigProfile?.SurfaceEquipment ?? new ObservableCollection<RigSurfaceEquipment>();
+        public ObservableCollection<RigSurfaceEquipment> ServiceLine => CurrentRigProfile?.ServiceLine ?? new ObservableCollection<RigSurfaceEquipment>();
         public ObservableCollection<RigPump> Pumps => CurrentRigProfile?.Pumps ?? new ObservableCollection<RigPump>();
         public ObservableCollection<RigSolidsControl> SolidsControl => CurrentRigProfile?.SolidsControl ?? new ObservableCollection<RigSolidsControl>();
         public ObservableCollection<RigPit> Pits => CurrentRigProfile?.Pits ?? new ObservableCollection<RigPit>();
 
-        // Catalog Collections
+        // Catalog collections
         public ObservableCollection<string> AvailableTypes { get; private set; }
         public ObservableCollection<string> AvailableManufacturers { get; private set; }
-        public ObservableCollection<string> AvailableModels { get; }
+
+        // ?? CAMBIO: permitir set porque la inicializamos con lista fija
+        public ObservableCollection<string> AvailableModels { get; private set; }
+
         public ObservableCollection<string> AvailablePitShapes { get; }
+
+        // Lista de estilos para la columna "Style"
+        public ObservableCollection<string> AvailableStyles { get; private set; }
+
+        private string _selectedSurfaceType = string.Empty;
+        public string SelectedSurfaceType
+        {
+            get => _selectedSurfaceType;
+            set => SetProperty(ref _selectedSurfaceType, value);
+        }
 
         public void FilterManufacturers(string type)
         {
             var manufacturers = _catalog.Where(c => c.Type == type)
-                                      .Select(c => c.Manufacturer)
-                                      .Distinct()
-                                      .OrderBy(x => x)
-                                      .ToList();
-            
+                                       .Select(c => c.Manufacturer)
+                                       .Distinct()
+                                       .OrderBy(x => x)
+                                       .ToList();
+
             AvailableManufacturers.Clear();
             foreach (var m in manufacturers) AvailableManufacturers.Add(m);
         }
@@ -128,12 +197,12 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public double TestGpm
         {
             get => _testGpm;
-            set 
-            { 
-                if (SetProperty(ref _testGpm, value)) 
+            set
+            {
+                if (SetProperty(ref _testGpm, value))
                 {
-                    OnPropertyChanged(nameof(TotalSurfaceLoss)); 
-                    _contextService.UpdateFlowRate(value); // Sync to global
+                    OnPropertyChanged(nameof(TotalSurfaceLoss));
+                    _contextService.UpdateFlowRate(value);
                 }
             }
         }
@@ -147,32 +216,20 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             }
         }
 
+        // Catalog loading
         private void LoadCatalogFromExcel()
         {
             try
             {
                 var excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Lista.xlsx");
-                if (!File.Exists(excelPath))
-                {
-                    // Fallback to hardcoded catalog if Excel not found
-                    LoadDefaultCatalog();
-                    return;
-                }
+                if (!File.Exists(excelPath)) { LoadDefaultCatalog(); return; }
 
                 using var wb = new XLWorkbook(excelPath);
                 var ws = wb.Worksheets.FirstOrDefault();
-                if (ws == null)
-                {
-                    LoadDefaultCatalog();
-                    return;
-                }
+                if (ws == null) { LoadDefaultCatalog(); return; }
 
                 var firstRow = ws.FirstRowUsed();
-                if (firstRow == null)
-                {
-                    LoadDefaultCatalog();
-                    return;
-                }
+                if (firstRow == null) { LoadDefaultCatalog(); return; }
 
                 var headerRow = firstRow;
                 var headerMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -214,7 +271,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                     if (colType > 0) item.Type = row.Cell(colType).GetString().Trim();
                     if (colManufacturer > 0) item.Manufacturer = row.Cell(colManufacturer).GetString().Trim();
                     if (colModel > 0) item.Model = row.Cell(colModel).GetString().Trim();
-                    
+
                     if (colGpm > 0)
                     {
                         if (row.Cell(colGpm).TryGetValue<double>(out var gpm))
@@ -231,9 +288,8 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                         _catalog.Add(item);
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading catalog from Excel: {ex.Message}");
                 LoadDefaultCatalog();
             }
         }
@@ -257,21 +313,44 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             AvailableTypes = new ObservableCollection<string>(_catalog.Select(x => x.Type).Distinct().OrderBy(x => x));
             AvailableManufacturers = new ObservableCollection<string>(_catalog.Select(x => x.Manufacturer).Distinct().OrderBy(x => x));
+
+            // ? por si alguien quiere "re-inicializar", lo blindamos
+            if (AvailableModels == null || AvailableModels.Count == 0)
+                AvailableModels = new ObservableCollection<string>(FixedModelOptions);
+        }
+
+        // Defaults
+        private void EnsureSurfaceDefaults()
+        {
+            if (SurfaceEquipment == null) return;
+            if (SurfaceEquipment.Count > 0) return;
+
+            SurfaceEquipment.Add(new RigSurfaceEquipment { No = 1, Component = "Stand Pipe", InternalDiameter = 0.0, Length = 0.0 });
+            SurfaceEquipment.Add(new RigSurfaceEquipment { No = 2, Component = "Drilling Hose", InternalDiameter = 0.0, Length = 0.0 });
+            SurfaceEquipment.Add(new RigSurfaceEquipment { No = 3, Component = "Swivel / Top Drive", InternalDiameter = 0.0, Length = 0.0 });
+            SurfaceEquipment.Add(new RigSurfaceEquipment { No = 4, Component = "Kelly", InternalDiameter = 0.0, Length = 0.0 });
+        }
+
+        private void EnsureServiceLineDefaults()
+        {
+            if (ServiceLine == null) return;
+            if (ServiceLine.Count > 0) return;
+
+            ServiceLine.Add(new RigSurfaceEquipment { No = 1, Component = "Choke Line", InternalDiameter = 0.0, Length = 0.0 });
+            ServiceLine.Add(new RigSurfaceEquipment { No = 2, Component = "Kill Line", InternalDiameter = 0.0, Length = 0.0 });
+            ServiceLine.Add(new RigSurfaceEquipment { No = 3, Component = "Booster Line", InternalDiameter = 0.0, Length = 0.0 });
         }
 
         // Commands
         public ICommand AddSurfaceEquipmentCommand => new RelayCommand(_ => AddSurfaceItem());
         public ICommand RemoveSurfaceEquipmentCommand => new RelayCommand(p => RemoveSurfaceItem(p as RigSurfaceEquipment));
-        
+        public ICommand RemoveServiceLineCommand => new RelayCommand(p => RemoveServiceLineItem(p as RigSurfaceEquipment));
         public ICommand AddPumpCommand => new RelayCommand(_ => AddPump());
         public ICommand RemovePumpCommand => new RelayCommand(p => RemovePump(p as RigPump));
-
         public ICommand AddSolidsControlCommand => new RelayCommand(_ => AddSolidsControl());
         public ICommand RemoveSolidsControlCommand => new RelayCommand(p => RemoveSolidsControl(p as RigSolidsControl));
-
         public ICommand AddPitCommand => new RelayCommand(_ => AddPit());
         public ICommand RemovePitCommand => new RelayCommand(p => RemovePit(p as RigPit));
-
         public ICommand SaveCommand { get; }
         public ICommand SaveAndReturnCommand { get; }
         public ICommand ResetToDefaultCommand { get; }
@@ -280,7 +359,8 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         private void AddSurfaceItem()
         {
             int nextNo = (SurfaceEquipment?.Count ?? 0) + 1;
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = nextNo });
+            var name = string.IsNullOrWhiteSpace(SelectedSurfaceType) ? $"Component {nextNo}" : SelectedSurfaceType;
+            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = nextNo, Component = name });
         }
 
         private void RemoveSurfaceItem(RigSurfaceEquipment? item)
@@ -289,6 +369,15 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             {
                 SurfaceEquipment.Remove(item);
                 Renumber(SurfaceEquipment);
+            }
+        }
+
+        private void RemoveServiceLineItem(RigSurfaceEquipment? item)
+        {
+            if (item != null && ServiceLine != null)
+            {
+                ServiceLine.Remove(item);
+                Renumber(ServiceLine);
             }
         }
 
@@ -349,43 +438,12 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             }
         }
 
-        public void UpdateSolidsControlSpecs(RigSolidsControl item)
-        {
-            var match = _catalog.FirstOrDefault(c => 
-                c.Type == item.Type && 
-                c.Manufacturer == item.Manufacturer && 
-                c.Model == item.Model);
-
-            if (match != null)
-            {
-                item.GpmCapacity = match.Gpm;
-            }
-        }
-
-        public IEnumerable<string> GetModels(string type, string manufacturer)
-        {
-            return _catalog.Where(c => c.Type == type && c.Manufacturer == manufacturer)
-                           .Select(c => c.Model)
-                           .Distinct()
-                           .OrderBy(x => x);
-        }
-
-        public void UpdateAvailableModels(string type, string manufacturer)
-        {
-            AvailableModels.Clear();
-            foreach (var model in GetModels(type, manufacturer))
-            {
-                AvailableModels.Add(model);
-            }
-        }
-
         private async System.Threading.Tasks.Task SaveAsync()
         {
             try
             {
                 if (_currentWell == null) return;
 
-                // Validate pumps have efficiency
                 var pumpsWithoutEfficiency = Pumps.Where(p => p.Efficiency <= 0).ToList();
                 if (pumpsWithoutEfficiency.Any())
                 {
@@ -394,11 +452,10 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
                 _currentWell.RigProfile = CurrentRigProfile;
 
-                // Sync back to Well properties
                 _currentWell.RigName = CurrentRigProfile.RigName;
                 _currentWell.Contractor = CurrentRigProfile.Contractor;
                 _currentWell.RigType = CurrentRigProfile.RigType;
-                
+
                 var projectFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
                 var project = _contextService.CurrentProject;
                 if (project != null)
@@ -420,50 +477,106 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         private async System.Threading.Tasks.Task SaveAndReturnAsync()
         {
             await SaveAsync();
-            
-            // Navigate back to Well Dashboard
-            if (_currentWell != null)
-            {
-                NavigationService.Instance.NavigateToWellDashboard(_currentWell.Id);
-            }
+            if (_currentWell != null) NavigationService.Instance.NavigateToWellDashboard(_currentWell.Id);
         }
 
         private void ResetToDefault()
         {
-            // Clear all collections
             SurfaceEquipment?.Clear();
+            ServiceLine?.Clear();
             Pumps?.Clear();
             SolidsControl?.Clear();
             Pits?.Clear();
 
-            // Populate Table A: Surface & Service Equipment
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 1, Component = "Stand Pipe", InternalDiameter = 4.0, Length = 40 });
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 2, Component = "Drilling Hose", InternalDiameter = 3.5, Length = 60 });
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 3, Component = "Swivel / Top Drive", InternalDiameter = 3.0, Length = 20 });
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 4, Component = "Kelly", InternalDiameter = 3.0, Length = 40 });
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 5, Component = "Choke Line", InternalDiameter = 3.0, Length = 150 });
-            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 6, Component = "Kill Line", InternalDiameter = 3.0, Length = 150 });
+            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 1, Component = "Stand Pipe", InternalDiameter = 0.0, Length = 0.0 });
+            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 2, Component = "Drilling Hose", InternalDiameter = 0.0, Length = 0.0 });
+            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 3, Component = "Swivel / Top Drive", InternalDiameter = 0.0, Length = 0.0 });
+            SurfaceEquipment?.Add(new RigSurfaceEquipment { No = 4, Component = "Kelly", InternalDiameter = 0.0, Length = 0.0 });
 
-            // Default Pump
+            ServiceLine?.Add(new RigSurfaceEquipment { No = 1, Component = "Choke Line", InternalDiameter = 0.0, Length = 0.0 });
+            ServiceLine?.Add(new RigSurfaceEquipment { No = 2, Component = "Kill Line", InternalDiameter = 0.0, Length = 0.0 });
+            ServiceLine?.Add(new RigSurfaceEquipment { No = 3, Component = "Booster Line", InternalDiameter = 0.0, Length = 0.0 });
+
             Pumps?.Add(new RigPump { No = 1, PumpName = "Pump 1", LinerSize = 6.5, StrokeLength = 12, Efficiency = 95 });
 
-            // Reset general properties
+            // Ejemplo por defecto para SolidsControl (incluye las columnas solicitadas)
+            SolidsControl?.Add(new RigSolidsControl
+            {
+                No = 1,
+                Type = "Shaker",
+                Manufacturer = "Derrick",
+                Model = "Flo-Line Cleaner 503",
+                GpmCapacity = 500,
+                CapFlowGpm = 500,
+                NumberOfScreens = 3,
+                ScreenType = "API",
+                Style = "Shaker",
+                DesilterNumberOfCones = 0,
+                DesilterConeSize = 0.0,
+                DesanderNumberOfCones = 0,
+                DesanderConeSize = 0.0
+            });
+
             CurrentRigProfile.RigName = string.Empty;
             CurrentRigProfile.Contractor = string.Empty;
             CurrentRigProfile.RigType = string.Empty;
             CurrentRigProfile.RkbElevation = 0;
             CurrentRigProfile.CasingHeadElevation = 0;
 
+            SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
+
+            // ? Asegura que la lista fija de Models siga disponible después del reset
+            AvailableModels.Clear();
+            foreach (var m in FixedModelOptions)
+                AvailableModels.Add(m);
+
             ToastNotificationService.Instance.ShowInfo("Rig Profile reset to defaults");
         }
-    }
 
-    // Internal Helper
-    public class CatalogItem
-    {
-        public string Type { get; set; } = "";
-        public string Manufacturer { get; set; } = "";
-        public string Model { get; set; } = "";
-        public double Gpm { get; set; }
+        // New methods
+        public IEnumerable<string> GetModels(string type, string manufacturer)
+        {
+            return _catalog
+                .Where(c => string.Equals(c.Type, type, StringComparison.OrdinalIgnoreCase)
+                         && string.Equals(c.Manufacturer, manufacturer, StringComparison.OrdinalIgnoreCase))
+                .Select(c => c.Model)
+                .Distinct()
+                .OrderBy(x => x);
+        }
+
+        // ? CAMBIO CRÍTICO: ya NO filtra por Excel / manufacturer. Siempre lista fija.
+        public void UpdateAvailableModels(string type, string manufacturer)
+        {
+            if (AvailableModels == null) return;
+            AvailableModels.Clear();
+            foreach (var model in FixedModelOptions)
+                AvailableModels.Add(model);
+        }
+
+        public void UpdateSolidsControlSpecs(RigSolidsControl item)
+        {
+            if (item == null) return;
+
+            var match = _catalog.FirstOrDefault(c =>
+                string.Equals(c.Type, item.Type, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Manufacturer, item.Manufacturer, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Model, item.Model, StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+            {
+                item.GpmCapacity = match.Gpm;
+                // también asignar al campo explícito de "Cap flow (gpm)"
+                item.CapFlowGpm = match.Gpm;
+            }
+        }
+
+        // Internal Helper
+        public class CatalogItem
+        {
+            public string Type { get; set; } = "";
+            public string Manufacturer { get; set; } = "";
+            public string Model { get; set; } = "";
+            public double Gpm { get; set; }
+        }
     }
 }

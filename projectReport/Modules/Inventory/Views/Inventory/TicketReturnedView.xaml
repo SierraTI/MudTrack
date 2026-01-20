@@ -100,7 +100,8 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice}" Width="120" MinWidth="90" IsReadOnly="True"/>
+                        <!-- Unit Price removed for Returned tickets -->
+
                         <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="110" MinWidth="80"/>
                         <DataGridTextColumn Header="Origin" Binding="{Binding Context}" Width="2*" MinWidth="140" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Observations" Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="2*" MinWidth="180"/>

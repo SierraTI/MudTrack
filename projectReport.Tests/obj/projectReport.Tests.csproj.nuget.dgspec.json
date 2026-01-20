@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj": {}
+    "C:\\DEV\\projectReport.Tests\\projectReport.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj": {
+    "C:\\DEV\\projectReport.Tests\\projectReport.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj",
+        "projectUniqueName": "C:\\DEV\\projectReport.Tests\\projectReport.Tests.csproj",
         "projectName": "projectReport.Tests",
-        "projectPath": "C:\\Dev\\MudTrack\\projectReport.Tests\\projectReport.Tests.csproj",
-        "packagesPath": "C:\\Users\\GSA_PC_049\\.nuget\\packages\\",
-        "outputPath": "C:\\Dev\\MudTrack\\projectReport.Tests\\obj\\",
+        "projectPath": "C:\\DEV\\projectReport.Tests\\projectReport.Tests.csproj",
+        "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+        "outputPath": "C:\\DEV\\projectReport.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\GSA_PC_049\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -33,8 +33,8 @@
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj": {
-                "projectPath": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj"
+              "C:\\DEV\\ProjectReport\\ProjectReport.csproj": {
+                "projectPath": "C:\\DEV\\ProjectReport\\ProjectReport.csproj"
               }
             }
           }
@@ -92,20 +92,20 @@
         }
       }
     },
-    "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj": {
+    "C:\\DEV\\ProjectReport\\ProjectReport.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj",
+        "projectUniqueName": "C:\\DEV\\ProjectReport\\ProjectReport.csproj",
         "projectName": "ProjectReport",
-        "projectPath": "C:\\Dev\\MudTrack\\ProjectReport\\ProjectReport.csproj",
-        "packagesPath": "C:\\Users\\GSA_PC_049\\.nuget\\packages\\",
-        "outputPath": "C:\\Dev\\MudTrack\\ProjectReport\\obj\\",
+        "projectPath": "C:\\DEV\\ProjectReport\\ProjectReport.csproj",
+        "packagesPath": "C:\\Users\\Usuario\\.nuget\\packages\\",
+        "outputPath": "C:\\DEV\\ProjectReport\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\GSA_PC_049\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Usuario\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

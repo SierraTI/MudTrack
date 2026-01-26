@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Windows.Input;
+using System.Collections.Specialized;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
 using ProjectReport.Services;
@@ -30,6 +31,20 @@ namespace ProjectReport.ViewModels.Inventory
             set { if (_error != value) { _error = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Error))); } }
         }
 
+        private double _dailyTotalCost;
+        public double DailyTotalCost
+        {
+            get => _dailyTotalCost;
+            private set
+            {
+                if (Math.Abs(_dailyTotalCost - value) > 0.0001)
+                {
+                    _dailyTotalCost = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DailyTotalCost)));
+                }
+            }
+        }
+
         public WholeFluidsViewModel()
         {
             _inventoryService = ServiceLocator.InventoryService;
@@ -40,8 +55,70 @@ namespace ProjectReport.ViewModels.Inventory
             SaveCommand = new RelayCommand(_ => Save());
             RemoveCommand = new RelayCommand(param => Remove(param as WholeFluidItem));
 
+            // subscribe collection changes to recalc totals and item handlers
+            WholeFluids.CollectionChanged += WholeFluids_CollectionChanged;
+
             LoadProducts();
             LoadFromFile();
+
+            // attach handlers for any preloaded items and calculate initial total
+            foreach (var it in WholeFluids) AttachItemHandler(it);
+            RecalcDailyTotalCost();
+        }
+
+        private void WholeFluids_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (WholeFluidItem oldItem in e.OldItems)
+                    DetachItemHandler(oldItem);
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (WholeFluidItem newItem in e.NewItems)
+                    AttachItemHandler(newItem);
+            }
+
+            RecalcDailyTotalCost();
+        }
+
+        private void AttachItemHandler(WholeFluidItem item)
+        {
+            if (item != null)
+                item.PropertyChanged += WholeFluidItem_PropertyChanged;
+        }
+
+        private void DetachItemHandler(WholeFluidItem item)
+        {
+            if (item != null)
+                item.PropertyChanged -= WholeFluidItem_PropertyChanged;
+        }
+
+        private void WholeFluidItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // cualquier cambio relevante (Quantity o UnitPrice o MovementType) recalcula
+            if (e.PropertyName == nameof(WholeFluidItem.Quantity) ||
+                e.PropertyName == nameof(WholeFluidItem.UnitPrice) ||
+                e.PropertyName == nameof(WholeFluidItem.MovementType))
+            {
+                RecalcDailyTotalCost();
+            }
+        }
+
+        private void RecalcDailyTotalCost()
+        {
+            // Cost = sum(quantity * unitPrice) para todas las líneas
+            // (si quieres excluir "Ingreso" o "Salida" puedes ajustar aquí)
+            try
+            {
+                var total = WholeFluids.Sum(i => (i.Quantity) * (i.UnitPrice));
+                DailyTotalCost = Math.Round(total, 2);
+            }
+            catch
+            {
+                DailyTotalCost = 0;
+            }
         }
 
         private void LoadProducts()
@@ -114,12 +191,14 @@ namespace ProjectReport.ViewModels.Inventory
             });
 
             Error = $"Línea agregada en borrador. Total líneas: {WholeFluids.Count}";
+            RecalcDailyTotalCost();
         }
 
         public void Remove(WholeFluidItem? item)
         {
             if (item == null) return;
             WholeFluids.Remove(item);
+            RecalcDailyTotalCost();
         }
 
         public void Save()
@@ -147,6 +226,7 @@ namespace ProjectReport.ViewModels.Inventory
                 if (list == null) return;
                 WholeFluids.Clear();
                 foreach (var i in list) WholeFluids.Add(i);
+                RecalcDailyTotalCost();
             }
             catch (Exception ex)
             {

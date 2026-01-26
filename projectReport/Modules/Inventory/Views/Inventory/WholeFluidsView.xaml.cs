@@ -28,17 +28,18 @@ namespace ProjectReport.Views.Inventory
         {
             InitializeComponent();
 
-            if (DataContext == null)
+            // Si el DataContext heredado no es un WholeFluidsViewModel, crear uno propio.
+            // Así la vista siempre tendrá acceso a WholeFluids y DailyTotalCost.
+            if (!DesignerProperties.GetIsInDesignMode(this))
             {
-                DataContext = new WholeFluidsViewModel();
-                Debug.WriteLine("[WholeFluidsView] DataContext inicializado con WholeFluidsViewModel");
+                if (!(this.DataContext is WholeFluidsViewModel))
+                {
+                    this.DataContext = new WholeFluidsViewModel();
+                }
             }
 
             this.DataContextChanged += WholeFluidsView_DataContextChanged;
-            if (this.DataContext != null)
-            {
-                InitializeLinesViewFromDataContext();
-            }
+            InitializeLinesViewFromDataContext();
         }
 
         private void WholeFluidsView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

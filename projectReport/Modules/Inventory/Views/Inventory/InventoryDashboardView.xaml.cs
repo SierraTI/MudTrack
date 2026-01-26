@@ -5,6 +5,7 @@ using System.Diagnostics;
 using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Views.Inventory;
 using ProjectReport.Services;
+using ProjectReport.Services.Inventory; // <-- añadido
 
 namespace ProjectReport.Views.Inventory
 {
@@ -21,6 +22,21 @@ namespace ProjectReport.Views.Inventory
             var typeName = this.DataContext?.GetType().FullName ?? "<null>";
             var hash = this.DataContext?.GetHashCode() ?? 0;
             Debug.WriteLine($"InventoryDashboardView loaded. DataContext type: {typeName} Hash: {hash}");
+
+            // Bind embedded history view to a VM that uses the shared InventoryService
+            try
+            {
+                if (InventoryHistoryPanel != null)
+                {
+                    // Reusar la instancia global del servicio (ServiceLocator)
+                    var historyVm = new ProjectReport.ViewModels.Inventory.InventoryHistoryViewModel(ServiceLocator.InventoryService);
+                    InventoryHistoryPanel.DataContext = historyVm;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error al inicializar InventoryHistoryPanel: " + ex);
+            }
 
 #if DEBUG
             // Sólo mostrar el MessageBox durante depuración local si realmente lo necesitas.
@@ -98,6 +114,22 @@ namespace ProjectReport.Views.Inventory
         private void ProductsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
+        }
+
+        private void OpenInventoryHistory_Click(object sender, RoutedEventArgs e)
+        {
+            // Usar la instancia de servicio centralizada
+            var svc = ServiceLocator.InventoryService;
+            var vm = new InventoryHistoryViewModel(svc);
+            var view = new ProjectReport.Views.Inventory.InventoryHistoryView { DataContext = vm };
+            var win = new System.Windows.Window
+            {
+                Title = "Inventory History",
+                Content = view,
+                Width = 1000,
+                Height = 600
+            };
+            win.Show();
         }
     }
 }

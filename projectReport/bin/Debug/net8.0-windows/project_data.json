@@ -2,7 +2,7 @@
   "$id": "1",
   "Name": "Y-23A",
   "WellName": "Well-04",
-  "LastModified": "2026-01-20T16:13:18.1281338-05:00",
+  "LastModified": "2026-01-22T08:18:32.6750335-05:00",
   "ActiveWellId": 1,
   "Wells": {
     "$id": "2",
@@ -13,8 +13,8 @@
         "WellName": "New Well 1",
         "Operator": "",
         "OperatorLogoPath": "",
-        "LoadFluid": "OBM",
-        "SpudDate": "2026-01-20T16:13:18.1266734-05:00",
+        "LoadFluid": "",
+        "SpudDate": "2026-01-22T08:18:32.6712018-05:00",
         "Trajectory": "",
         "WellType": "",
         "RigName": "",
@@ -40,8 +40,8 @@
           "$values": []
         },
         "Status": "Draft",
-        "CreatedDate": "2026-01-20T16:13:18.1266378-05:00",
-        "LastModified": "2026-01-20T16:13:52.8039859-05:00",
+        "CreatedDate": "2026-01-22T08:18:32.6711223-05:00",
+        "LastModified": "2026-01-22T08:18:32.6714607-05:00",
         "LastModifiedBy": "",
         "WellboreComponents": {
           "$id": "5",

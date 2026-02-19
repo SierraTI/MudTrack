@@ -41,7 +41,6 @@ namespace ProjectReport.Models
         private string _basin= string.Empty;
         private string _state = string.Empty;
         private string _field = string.Empty;
-        private string _municipality = string.Empty;
         
 
         // Operational Information
@@ -236,15 +235,6 @@ namespace ProjectReport.Models
             }
         }
 
-        public string Municipality
-        {
-            get => _municipality;
-            set
-            {
-                if (SetProperty(ref _municipality, value))
-                    UpdateLastModified();
-            }
-        }
         public string Field
         {
             get => _field;
@@ -487,10 +477,30 @@ namespace ProjectReport.Models
             if (string.IsNullOrWhiteSpace(Country)) missing.Add("Country");
             if (string.IsNullOrWhiteSpace(Basin)) missing.Add("Basin");
             if (string.IsNullOrWhiteSpace(State)) missing.Add("State");
-            if (string.IsNullOrWhiteSpace(Municipality)) missing.Add("Municipality");
-            if (string.IsNullOrWhiteSpace(Field)) missing.Add("Field");
+            if (string.IsNullOrWhiteSpace(Field)) missing.Add("Block");
+
+            // Warning for TVD > MD
+            if (TotalMD.HasValue && TotalTVD.HasValue && TotalTVD > TotalMD)
+            {
+                 // Logic for warning can be handled here or in a separate warnings list.
+                 // For now, let's keep this focused on required fields as per method name.
+                 // But since the user wants a warning in the UI, we might need a separate property.
+            }
 
             return missing;
+        }
+
+        public string ValidationWarnings
+        {
+            get
+            {
+                var warnings = new List<string>();
+                if (TotalMD.HasValue && TotalTVD.HasValue && TotalTVD > TotalMD)
+                {
+                    warnings.Add("TVD cannot be greater than MD");
+                }
+                return string.Join(", ", warnings);
+            }
         }
 
         #endregion
@@ -529,7 +539,6 @@ namespace ProjectReport.Models
                 State = State,
                 Field = Field,
                 Basin = Basin,
-                Municipality = Municipality,
 
                 // Reset operational information
                 TotalMD = null,

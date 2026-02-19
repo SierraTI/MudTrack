@@ -30,8 +30,7 @@ namespace ProjectReport.ViewModels
             InitializeDropdownOptions();
 
             // Initialize commands
-            SaveCommand = new RelayCommand(async _ => await SaveAsync());
-            SaveAndContinueCommand = new RelayCommand(async _ => await SaveAndContinueAsync(), _ => CanSaveAndContinue());
+            SaveAndOpenDashboardCommand = new RelayCommand(async _ => await SaveAndOpenDashboardAsync());
             CancelCommand = new RelayCommand(_ => Cancel());
             UploadLogoCommand = new RelayCommand(_ => UploadLogo());
             RemoveLogoCommand = new RelayCommand(_ => RemoveLogo(), _ => !string.IsNullOrEmpty(CurrentWell.OperatorLogoPath));
@@ -134,6 +133,50 @@ namespace ProjectReport.ViewModels
             "Tolima", "Valle del Cauca", "Vaupés", "Vichada"
         };
 
+        /// <summary>
+        /// Standardized Present Activity options - grouped by category
+        /// </summary>
+        public ObservableCollection<string> PresentActivityOptions { get; } = new ObservableCollection<string>
+        {
+            // Drilling
+            "Drilling",
+            "Reaming",
+            "Underreaming",
+            "Directional Drilling",
+            // Tripping
+            "Tripping In",
+            "Tripping Out",
+            "Laying Down Pipe",
+            "Picking up BHA",
+            // Casing & Cement
+            "Running Casing",
+            "Cementing",
+            "WOC (Waiting on Cement)",
+            "Nipple Up BOP",
+            // Evaluation
+            "Wireline Logging",
+            "MWD/LWD Survey",
+            "Circulating for Samples",
+            // Maintenance/Other
+            "Rig Repairs",
+            "Function Test BOP",
+            "Safety Meeting",
+            "WOW (Waiting on Weather)"
+        };
+
+        /// <summary>
+        /// Standardized Well Section options
+        /// </summary>
+        public ObservableCollection<string> WellSectionOptions { get; } = new ObservableCollection<string>
+        {
+            "Conductor",
+            "Surface",
+            "Intermediate 1",
+            "Intermediate 2",
+            "Production",
+            "Liner",
+            "Open Hole"
+        };
 
         private void InitializeDropdownOptions()
         {
@@ -175,8 +218,7 @@ namespace ProjectReport.ViewModels
 
         #region Commands
 
-        public ICommand SaveCommand { get; }
-        public ICommand SaveAndContinueCommand { get; }
+        public ICommand SaveAndOpenDashboardCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand UploadLogoCommand { get; }
         public ICommand RemoveLogoCommand { get; }
@@ -185,7 +227,7 @@ namespace ProjectReport.ViewModels
 
         #region Command Implementations
 
-        private async Task SaveAsync()
+        private async Task SaveAndOpenDashboardAsync()
         {
             try
             {
@@ -194,9 +236,6 @@ namespace ProjectReport.ViewModels
                 // Ensure the well is in the project
                 if (!_project.Wells.Contains(CurrentWell))
                 {
-                    // If it's a new well (ID might be 0 or not in list), add it
-                    // But typically LoadWell handles existing, and CreateNewWell handles new
-                    // Let's assume if it's not in the list, we add it.
                     if (CurrentWell.Id == 0)
                     {
                         CurrentWell.Id = _project.Wells.Any() ? _project.Wells.Max(w => w.Id) + 1 : 1;
@@ -214,6 +253,10 @@ namespace ProjectReport.ViewModels
                 LastSavedText = $"✓ Saved at {_lastSaved:h:mm:ss tt}";
                 
                 ToastNotificationService.Instance.ShowSuccess("Well data saved successfully");
+                
+                // Update Context and navigate to Dashboard
+                WellContextService.Instance.CurrentWell = CurrentWell;
+                NavigationService.Instance.NavigateToWellDashboard(CurrentWell.Id);
             }
             catch (Exception ex)
             {
@@ -223,25 +266,6 @@ namespace ProjectReport.ViewModels
             {
                 IsSaving = false;
             }
-        }
-
-        private async Task SaveAndContinueAsync()
-        {
-            await SaveAsync();
-            
-            if (CurrentWell.IsRequiredFieldsComplete)
-            {
-                // Update Context
-                WellContextService.Instance.CurrentWell = CurrentWell;
-                
-                // Navigate to Report Wizard (First Daily Report Flow)
-                NavigationService.Instance.NavigateToReportWizard(CurrentWell.Id);
-            }
-        }
-
-        private bool CanSaveAndContinue()
-        {
-            return CurrentWell.IsRequiredFieldsComplete;
         }
 
         private void Cancel()

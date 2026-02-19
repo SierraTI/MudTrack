@@ -3,12 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:ProjectReport.Converters"
              mc:Ignorable="d"
              d:DesignHeight="650" d:DesignWidth="1100"
              Background="#F7F8FA">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <converters:NumberFormattingConverter x:Key="NumberFormatConverter" />
 
         <!-- Tokens -->
         <SolidColorBrush x:Key="AppBg" Color="#F7F8FA"/>
@@ -216,8 +218,10 @@
                             <!-- Row 1 -->
                             <Grid Grid.Row="0" Margin="0,2,0,14">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="2*"/>
-                                    <ColumnDefinition Width="3*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Interval -->
@@ -232,15 +236,31 @@
                                              Margin="0,6,0,0"/>
                                 </StackPanel>
 
-                                <!-- Date/Time -->
-                                <StackPanel Grid.Column="1">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Report Date/Time" Style="{StaticResource FieldLabel}"/>
+                                <!-- Report # -->
+                                <StackPanel Grid.Column="1" Margin="0,0,14,0">
+                                    <TextBlock Text="Report #" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Report.ReportNumber,
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,6,0,0"/>
+                                </StackPanel>
+
+                                <!-- Interval Size -->
+                                <StackPanel Grid.Column="2" Margin="0,0,14,0">
+                                    <TextBlock Text="Interval Size (in)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox Text="{Binding Report.IntervalSizeIn,
+                                                    UpdateSourceTrigger=LostFocus,
+                                                    Converter={StaticResource NumberFormatConverter}}"
+                                             Margin="0,6,0,0"/>
+                                </StackPanel>
+
+                                <!-- Date -->
+                                <StackPanel Grid.Column="3">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">
+                                        <TextBlock Text="Report Date" Style="{StaticResource FieldLabel}"/>
                                         <TextBlock Style="{StaticResource RequiredStar}"/>
                                     </StackPanel>
                                     <DatePicker SelectedDate="{Binding Report.ReportDateTime,
-                                                               ValidatesOnDataErrors=True}"
-                                                Margin="0,6,0,0"/>
+                                                           ValidatesOnDataErrors=True}"/>
                                 </StackPanel>
                             </Grid>
 
@@ -257,7 +277,8 @@
                                         <TextBlock Style="{StaticResource RequiredStar}"/>
                                     </StackPanel>
                                     <TextBox Text="{Binding Report.MD,
-                                                    UpdateSourceTrigger=PropertyChanged,
+                                                    UpdateSourceTrigger=LostFocus,
+                                                    Converter={StaticResource NumberFormatConverter},
                                                     ValidatesOnDataErrors=True}"
                                              Margin="0,6,0,0"/>
                                 </StackPanel>
@@ -268,7 +289,8 @@
                                         <TextBlock Style="{StaticResource RequiredStar}"/>
                                     </StackPanel>
                                     <TextBox Text="{Binding Report.TVD,
-                                                    UpdateSourceTrigger=PropertyChanged,
+                                                    UpdateSourceTrigger=LostFocus,
+                                                    Converter={StaticResource NumberFormatConverter},
                                                     ValidatesOnDataErrors=True}"
                                              Margin="0,6,0,0"/>
                                 </StackPanel>
@@ -308,13 +330,18 @@
                                     <TextBlock Style="{StaticResource RequiredStar}"/>
                                 </StackPanel>
 
-                                <ComboBox Text="{Binding Report.WellSection,
+                                <ComboBox ItemsSource="{Binding WellSectionOptions}"
+                                          SelectedItem="{Binding Report.WellSection,
                                                          Mode=TwoWay,
                                                          ValidatesOnDataErrors=True}"
-                                          IsEditable="True"
+                                          IsEditable="False"
                                           Margin="0,6,0,0">
-                                    <ComboBoxItem>Original</ComboBoxItem>
-                                    <ComboBoxItem>Sidtrack</ComboBoxItem>
+                                    <ComboBox.ItemContainerStyle>
+                                        <Style TargetType="ComboBoxItem">
+                                            <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                            <Setter Property="Background" Value="White"/>
+                                        </Style>
+                                    </ComboBox.ItemContainerStyle>
                                 </ComboBox>
 
                                 <!-- Inherited hint -->
@@ -341,8 +368,12 @@
 
                             <!-- Max BHT -->
                             <StackPanel Grid.Column="1">
-                                <TextBlock Text="Max BHT (°F)" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Text="{Binding Report.MaxBHT}" Margin="0,6,0,0"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="Max BHT ( MWD O PWD)" Style="{StaticResource FieldLabel}"/>
+                                </StackPanel>
+                                <TextBox Text="{Binding Report.MaxBHT,
+                                               UpdateSourceTrigger=LostFocus,
+                                               Converter={StaticResource NumberFormatConverter}}"/>
                             </StackPanel>
                         </Grid>
 
@@ -353,15 +384,27 @@
                                 <TextBlock Style="{StaticResource RequiredStar}"/>
                             </StackPanel>
                             <TextBox Text="{Binding Report.PresentActivity,
-                                                    UpdateSourceTrigger=PropertyChanged,
-                                                    ValidatesOnDataErrors=True}"
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            ValidatesOnDataErrors=True}"
                                      Margin="0,6,0,0"/>
                         </StackPanel>
 
                         <!-- Row 6 -->
                         <StackPanel Grid.Row="4" Margin="0,0,0,14">
                             <TextBlock Text="Primary Fluid Set" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding Report.PrimaryFluidSet}" Margin="0,6,0,0"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding Report.PrimaryFluidSet}" Margin="0,6,0,0"/>
+                                <Button Grid.Column="1"
+                                        Content="⚙ Manage"
+                                        Style="{StaticResource LinkButton}"
+                                        Margin="10,6,0,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsLoadFluidUndefined, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
                         </StackPanel>
 
 

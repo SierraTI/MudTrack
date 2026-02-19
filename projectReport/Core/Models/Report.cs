@@ -6,6 +6,14 @@ namespace ProjectReport.Models
 {
     public class Report : BaseModel, System.ComponentModel.IDataErrorInfo
     {
+        // Sequential report number (displayed as Report #)
+        private int _reportNumber;
+        public int ReportNumber
+        {
+            get => _reportNumber;
+            set => SetProperty(ref _reportNumber, value);
+        }
+
         private string _intervalNumber = string.Empty;
         public string IntervalNumber
         {
@@ -74,6 +82,20 @@ namespace ProjectReport.Models
         {
             get => _maxBht;
             set => SetProperty(ref _maxBht, value);
+        }
+
+        private string _maxBhtSource = "MWD"; // MWD or PWD
+        public string MaxBHTSource
+        {
+            get => _maxBhtSource;
+            set => SetProperty(ref _maxBhtSource, value);
+        }
+
+        private double? _intervalSizeIn;
+        public double? IntervalSizeIn
+        {
+            get => _intervalSizeIn;
+            set => SetProperty(ref _intervalSizeIn, value);
         }
 
         private string _presentActivity = string.Empty;
@@ -193,12 +215,15 @@ namespace ProjectReport.Models
             var clone = new Report
             {
                 IntervalNumber = this.IntervalNumber + " (Copy)",
+                ReportNumber = this.ReportNumber,
                 ReportDateTime = DateTime.Now,
                 MD = this.MD,
                 TVD = this.TVD,
                 Activity = this.Activity,
                 WellSection = this.WellSection,
                 MaxBHT = this.MaxBHT,
+                MaxBHTSource = this.MaxBHTSource,
+                IntervalSizeIn = this.IntervalSizeIn,
                 PresentActivity = this.PresentActivity,
                 PrimaryFluidSet = this.PrimaryFluidSet,
                 OtherActiveFluids = this.OtherActiveFluids,

@@ -15,7 +15,11 @@
         </Grid.RowDefinitions>
 
         <TabControl Grid.Row="0" Margin="0,0,0,8">
-            <TabItem Header="Products">
+            <TabItem Header="Chemical List">
+                <local:ChemicalListView />
+            </TabItem>
+
+            <TabItem Header="Stock">
                 <Grid Margin="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -30,105 +34,6 @@
                         <Button Content="Ticket Received" Width="160" Margin="0,0,10,0" Command="{Binding OpenTicketReceivedCommand}"/>
                         <Button Content="Ticket Returned" Width="160" Margin="0,0,10,0" Command="{Binding OpenTicketReturnedCommand}"/>
                     </StackPanel>
-
-                    <!-- Product table -->
-                    <DataGrid Grid.Row="2"
-                              x:Name="ProductsGrid"
-                              ItemsSource="{Binding FilteredRows}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              Margin="0,0,0,10"
-                              SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
-                              AlternationCount="1000000"
-                              Background="White" SelectionChanged="ProductsGrid_SelectionChanged">
-
-                        <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="#" Width="44" MinWidth="36" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock HorizontalAlignment="Center"
-                                                   Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource IndexToNumberConverter}}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTextColumn Header="Code" Binding="{Binding ProductCode}" Width="160" />
-                            <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="2*"/>
-                            <DataGridTextColumn Header="Initial" Binding="{Binding InitialQty}" Width="*"/>
-                            <DataGridTextColumn Header="Received" Binding="{Binding Received}" Width="*"/>
-
-                            <DataGridTemplateColumn Header="Used" Width="120" MinWidth="100">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <ToggleButton x:Name="UsedToggle"
-                                                          Content="{Binding Used}"
-                                                          Padding="6,2"
-                                                          HorizontalContentAlignment="Center"
-                                                          VerticalContentAlignment="Center"
-                                                          IsChecked="False"/>
-                                            <Popup PlacementTarget="{Binding ElementName=UsedToggle}"
-                                                   Placement="Bottom"
-                                                   StaysOpen="False"
-                                                   IsOpen="{Binding IsChecked, ElementName=UsedToggle, Mode=TwoWay}">
-                                                <Border Background="White" BorderBrush="#CCC" BorderThickness="1" CornerRadius="2" Padding="4">
-                                                    <StackPanel MinWidth="140">
-                                                        <Button Content="Fluido"
-                                                                Padding="8,4"
-                                                                Margin="0,0,0,4"
-                                                                Command="{Binding DataContext.UsedAsFluidoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                CommandParameter="{Binding}"/>
-                                                        <Button Content="Otras actividades"
-                                                                Padding="8,4"
-                                                                Command="{Binding DataContext.UsedAsOtherCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                CommandParameter="{Binding}"/>
-                                                    </StackPanel>
-                                                </Border>
-                                            </Popup>
-                                        </Grid>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTextColumn Header="Return" Binding="{Binding Returned}" Width="*"/>
-                            <DataGridTextColumn Header="Final" Binding="{Binding FinalQty}" Width="*"/>
-                            <DataGridTextColumn Header="Daily Cost" Binding="{Binding DailyCost}" Width="*"/>
-
-                            <DataGridTemplateColumn Header="Actions" Width="170" CanUserSort="False">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" >
-                                            <Button Content="Edit Received" Width="78" Height="24" Margin="0,0,6,0"
-                                                    Command="{Binding DataContext.EditReceivedByRequisitionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding Requisition}"/>
-                                            <Button Content="Edit Returned" Width="78" Height="24"
-                                                    Command="{Binding DataContext.EditReturnedByTicketIdCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <DataGridTemplateColumn Header="" Width="64" CanUserSort="False">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="X" Width="44" Height="24" Background="#DC2626" Foreground="White" BorderThickness="0" FontWeight="SemiBold"
-                                                Command="{Binding DataContext.DeleteRowCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" ToolTip="Eliminar solo este registro"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-
-                    <!-- Total footer (inside Products tab) -->
-                    <Border Grid.Row="3" Padding="12" BorderThickness="1" BorderBrush="#DDDDDD" CornerRadius="6">
-                        <DockPanel>
-                            <TextBlock Text="Daily Total Cost" FontWeight="Bold" DockPanel.Dock="Left"/>
-                            <TextBlock Text="{Binding TotalProductsCost}" FontWeight="Bold" DockPanel.Dock="Right"/>
-                        </DockPanel>
-                    </Border>
 
                     <!-- Ticket History moved inside Products tab -->
                     <GroupBox Header="Ticket History" Margin="8" Grid.Row="4" Grid.ColumnSpan="2">
@@ -150,6 +55,10 @@
                     </GroupBox>
 
                 </Grid>
+            </TabItem>
+
+            <TabItem Header="Usage">
+                <local:UsageView />
             </TabItem>
 
             <TabItem Header="Whole Fluids">

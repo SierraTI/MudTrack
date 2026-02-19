@@ -329,7 +329,7 @@
                             <!-- Fluid Type -->
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Load Fluid"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                        <Run Text="Fluid Type"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
                                 <ComboBox ItemsSource="{Binding LoadFluid}"
                                               SelectedItem="{Binding CurrentWell.LoadFluid, UpdateSourceTrigger=PropertyChanged}"
@@ -389,8 +389,10 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
+                            <!-- Row 1 -->
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
                                         <Run Text="Trajectory"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
@@ -409,6 +411,7 @@
                                               Style="{StaticResource InputComboBoxStyle}"/>
                             </StackPanel>
 
+                            <!-- Row 2 -->
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
                                         <Run Text="Rig Name"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
@@ -419,19 +422,20 @@
 
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Contractor"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
-                                </TextBlock>
-                                <TextBox Text="{Binding CurrentWell.Contractor, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource InputTextBoxStyle}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Row="2" Grid.Column="0">
-                                <TextBlock Style="{StaticResource LabelStyle}">
                                         <Run Text="Rig Type"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
                                 <ComboBox ItemsSource="{Binding RigTypes}"
                                               SelectedItem="{Binding CurrentWell.RigType, UpdateSourceTrigger=PropertyChanged}"
                                               Style="{StaticResource InputComboBoxStyle}"/>
+                            </StackPanel>
+
+                            <!-- Row 3 -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,0">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+                                        <Run Text="Contractor"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+                                <TextBox Text="{Binding CurrentWell.Contractor, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource InputTextBoxStyle}"/>
                             </StackPanel>
                         </Grid>
                     </Expander>
@@ -520,17 +524,9 @@
                                               IsEditable="False"/>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="0">
-                                <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Municipality"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
-                                </TextBlock>
-                                <TextBox Text="{Binding CurrentWell.Municipality, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource InputTextBoxStyle}"/>
-                            </StackPanel>
-
                             <StackPanel Grid.Row="2" Grid.Column="2">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Field(block)"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                        <Run Text="Block"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
                                 <TextBox Text="{Binding CurrentWell.Field, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource InputTextBoxStyle}"/>
@@ -561,11 +557,7 @@
                             Style="{StaticResource SecondaryButtonStyle}"
                             Margin="0,0,10,0"/>
                     <Button Content="Save"
-                            Command="{Binding SaveCommand}"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            Margin="0,0,10,0"/>
-                    <Button Content="Save &amp; Continue"
-                            Command="{Binding SaveAndContinueCommand}"
+                            Command="{Binding SaveAndOpenDashboardCommand}"
                             Style="{StaticResource PrimaryButtonStyle}"/>
                 </WrapPanel>
             </DockPanel>

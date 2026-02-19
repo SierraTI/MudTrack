@@ -27,6 +27,13 @@ namespace ProjectReport.Models.Inventory
             set { if (_productName != value) { _productName = value; OnPropertyChanged(); } }
         }
 
+        private string _unit = "";
+        public string Unit
+        {
+            get => _unit;
+            set { if (_unit != value) { _unit = value; OnPropertyChanged(); } }
+        }
+
         private double _unitPrice;
         public double UnitPrice
         {
@@ -48,7 +55,6 @@ namespace ProjectReport.Models.Inventory
             set { if (_observations != value) { _observations = value; OnPropertyChanged(); } }
         }
 
-        // Nueva: Requisition / # Remision por línea
         private string _requisition = "";
         public string Requisition
         {
@@ -56,7 +62,6 @@ namespace ProjectReport.Models.Inventory
             set { if (_requisition != value) { _requisition = value; OnPropertyChanged(); } }
         }
 
-        // Nueva: Tipo de movimiento (Ingreso / Salida)
         private string _movementType = "Ingreso";
         public string MovementType
         {
@@ -64,12 +69,73 @@ namespace ProjectReport.Models.Inventory
             set { if (_movementType != value) { _movementType = value; OnPropertyChanged(); } }
         }
 
-        // Nueva: Fecha por línea
         private DateTime _date = DateTime.Now;
         public DateTime Date
         {
             get => _date;
             set { if (_date != value) { _date = value; OnPropertyChanged(); } }
+        }
+
+        // NEW: Origin/Supplier information
+        private string _origin = "";
+        public string Origin
+        {
+            get => _origin;
+            set { if (_origin != value) { _origin = value; OnPropertyChanged(); } }
+        }
+
+        // NEW: Supplier name (for incoming shipments from vendors)
+        private string _supplierName = "";
+        public string SupplierName
+        {
+            get => _supplierName;
+            set { if (_supplierName != value) { _supplierName = value; OnPropertyChanged(); } }
+        }
+
+        // NEW: Destination (for returns/transfers)
+        private string _destination = "";
+        public string Destination
+        {
+            get => _destination;
+            set { if (_destination != value) { _destination = value; OnPropertyChanged(); } }
+        }
+
+        // NEW: Condition of product (Sealed, Open, Damaged)
+        private string _condition = "Sealed";
+        public string Condition
+        {
+            get => _condition;
+            set { if (_condition != value) { _condition = value; OnPropertyChanged(); } }
+        }
+
+        // NEW: Current stock for validation (read-only, populated from inventory)
+        private double _currentStock = 0;
+        public double CurrentStock
+        {
+            get => _currentStock;
+            set { if (Math.Abs(_currentStock - value) > 0.0001) { _currentStock = value; OnPropertyChanged(); } }
+        }
+
+        // NEW: Validation error message
+        private string _validationError = "";
+        public string ValidationError
+        {
+            get => _validationError;
+            set { if (_validationError != value) { _validationError = value; OnPropertyChanged(); } }
+        }
+
+        /// <summary>
+        /// Validates that quantity being returned doesn't exceed current stock
+        /// </summary>
+        public bool ValidateReturnQuantity()
+        {
+            if (Quantity > CurrentStock)
+            {
+                ValidationError = $"Cannot return {Quantity}. Only {CurrentStock} {Unit} available in stock.";
+                return false;
+            }
+            ValidationError = "";
+            return true;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

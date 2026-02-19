@@ -24,47 +24,85 @@
                    FontWeight="SemiBold"
                    Margin="0,0,0,14"/>
 
-        <!-- Top section: Permission | Origin Permission | ADD -->
+        <!-- Top section: Requisition | Origin | Supplier | Shipment Method | ADD -->
         <Border Grid.Row="1"
                 BorderBrush="#E5E7EB"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="12">
-            <Grid x:Name="TopSectionGrid">
-                <!-- Column/rowDefs se configuran desde code-behind para ser responsive -->
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Vertical">
+                <!-- Row 1: Requisition, Origin, Supplier -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Permission -->
-                <StackPanel x:Name="RequisitionPanel" Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0">
-                    <TextBlock Text="# Remision" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBox Height="30"
-                             HorizontalAlignment="Stretch"
-                             Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
+                    <!-- Requisition -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0">
+                        <TextBlock Text="# Remision" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
 
-                <!-- Origin Permission -->
-                <StackPanel x:Name="OriginPanel" Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0">
-                    <TextBlock Text="Origin Remision" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBox Height="30"
-                             HorizontalAlignment="Stretch"
-                             Text="{Binding Origin, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
+                    <!-- Origin (Dropdown) -->
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0">
+                        <TextBlock Text="Origin / Storage Base" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 ItemsSource="{Binding StorageBases}"
+                                 DisplayMemberPath="Name"
+                                 SelectedValuePath="Code"
+                                 SelectedValue="{Binding Origin, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEditable="False"/>
+                    </StackPanel>
 
-                <!-- ADD button -->
-                <StackPanel x:Name="AddButtonPanel" Grid.Column="2"
-                            Orientation="Vertical"
-                            VerticalAlignment="Bottom">
-                    <Button Content="ADD"
-                            Width="72"
-                            Height="30"
-                            Command="{Binding AddLineCommand}"
-                            ToolTip="Add a new line"/>
-                </StackPanel>
-            </Grid>
+                    <!-- Supplier Name (Conditional) -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical">
+                        <TextBlock Text="Supplier Name" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 2: Shipment Method, Reference, ADD Button -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Shipment Method -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0">
+                        <TextBlock Text="Shipment Method" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 ItemsSource="{Binding ShipmentMethods}"
+                                 SelectedValue="{Binding ShipmentMethod, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <!-- Shipment Reference -->
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0">
+                        <TextBlock Text="Shipment Reference" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding ShipmentReference, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+
+                    <!-- ADD button -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Bottom">
+                        <Button Content="ADD"
+                                Width="72"
+                                Height="30"
+                                Command="{Binding AddLineCommand}"
+                                ToolTip="Add a new line"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
         </Border>
 
         <!-- Lines table -->
@@ -128,16 +166,22 @@
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Unit Price"
-                                        Binding="{Binding UnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="120" MinWidth="100"/>
+                    <!-- Unit (Display only - auto-filled from product) -->
+                    <DataGridTextColumn Header="Unit"
+                                        Binding="{Binding Unit, Mode=OneWay}"
+                                        Width="80" MinWidth="70"
+                                        IsReadOnly="True"/>
 
                     <DataGridTextColumn Header="Quantity"
                                         Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         Width="110" MinWidth="80"/>
 
+                    <DataGridTextColumn Header="Unit Price (USD)"
+                                        Binding="{Binding UnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
+                                        Width="120" MinWidth="100"/>
+
                     <DataGridTextColumn Header="Observations"
-                                        Binding="{Binding Context, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         Width="2*" MinWidth="160"/>
 
                     <!-- Remove -->

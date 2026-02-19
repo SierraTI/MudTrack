@@ -17,6 +17,9 @@
         <SolidColorBrush x:Key="BorderSoft" Color="#E5E7EB"/>
         <SolidColorBrush x:Key="Accent" Color="#F59E0B"/>
         <SolidColorBrush x:Key="Link" Color="#2563EB"/>
+        <SolidColorBrush x:Key="StatusDraft" Color="#FB923C"/>
+        <SolidColorBrush x:Key="StatusInProgress" Color="#60A5FA"/>
+        <SolidColorBrush x:Key="StatusCompleted" Color="#34D399"/>
 
         <!-- Tipografía -->
         <Style x:Key="H1" TargetType="TextBlock">
@@ -187,16 +190,34 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="{Binding CurrentWell.WellName}" Style="{StaticResource H1}" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                            <!-- Status Indicator -->
+                            <Ellipse Width="12" Height="12" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource StatusDraft}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentWell.Status}" Value="InProgress">
+                                                <Setter Property="Fill" Value="{StaticResource StatusInProgress}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding CurrentWell.Status}" Value="Completed">
+                                                <Setter Property="Fill" Value="{StaticResource StatusCompleted}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding CurrentWell.WellName}" Style="{StaticResource H1}" />
+                        </StackPanel>
 
-                        <WrapPanel Margin="0,8,0,0">
+                        <WrapPanel Margin="0,0,0,8">
                             <TextBlock Text="Field:" Style="{StaticResource Label}" />
                             <TextBlock Text="{Binding CurrentWell.Field}"
                                        Margin="0,0,18,0"
                                        Foreground="{StaticResource TextPrimary}" />
 
-                            <TextBlock Text="Block:" Style="{StaticResource Label}" />
-                            <TextBlock Text="{Binding CurrentWell.Block}"
+                            <TextBlock Text="Basin:" Style="{StaticResource Label}" />
+                            <TextBlock Text="{Binding CurrentWell.Basin}"
                                        Margin="0,0,18,0"
                                        Foreground="{StaticResource TextPrimary}" />
 

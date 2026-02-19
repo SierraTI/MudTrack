@@ -17,12 +17,16 @@ namespace ProjectReport.ViewModels.Inventory
         private readonly string _dataFile;
         private readonly InventoryService _inventoryService;
 
+        // Event to notify when a fluid is transferred/loaded
+        public event Action<WholeFluidItem>? FluidTransferred;
+
         public ObservableCollection<WholeFluidItem> WholeFluids { get; } = new ObservableCollection<WholeFluidItem>();
         public ObservableCollection<Product> Products { get; } = new ObservableCollection<Product>();
 
         public ICommand AddCommand { get; }
         public ICommand SaveCommand { get; }
         public ICommand RemoveCommand { get; }
+        public ICommand TransferFluidCommand { get; }
 
         private string _error = "";
         public string Error
@@ -54,6 +58,7 @@ namespace ProjectReport.ViewModels.Inventory
             AddCommand = new RelayCommand(_ => Add());
             SaveCommand = new RelayCommand(_ => Save());
             RemoveCommand = new RelayCommand(param => Remove(param as WholeFluidItem));
+            TransferFluidCommand = new RelayCommand(param => TransferFluid(param as WholeFluidItem));
 
             // subscribe collection changes to recalc totals and item handlers
             WholeFluids.CollectionChanged += WholeFluids_CollectionChanged;
@@ -108,8 +113,8 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void RecalcDailyTotalCost()
         {
-            // Cost = sum(quantity * unitPrice) para todas las líneas
-            // (si quieres excluir "Ingreso" o "Salida" puedes ajustar aquí)
+            // Cost = sum(quantity * unitPrice) para todas las lï¿½neas
+            // (si quieres excluir "Ingreso" o "Salida" puedes ajustar aquï¿½)
             try
             {
                 var total = WholeFluids.Sum(i => (i.Quantity) * (i.UnitPrice));
@@ -190,7 +195,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Observations = string.Empty
             });
 
-            Error = $"Línea agregada en borrador. Total líneas: {WholeFluids.Count}";
+            Error = $"Lï¿½nea agregada en borrador. Total lï¿½neas: {WholeFluids.Count}";
             RecalcDailyTotalCost();
         }
 
@@ -231,6 +236,31 @@ namespace ProjectReport.ViewModels.Inventory
             catch (Exception ex)
             {
                 Error = "Error cargando datos: " + ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Transfers/loads a fluid to the Primary Fluid Set in the Daily Report
+        /// </summary>
+        private void TransferFluid(WholeFluidItem? fluidItem)
+        {
+            if (fluidItem == null)
+            {
+                Error = "Please select a fluid to transfer";
+                return;
+            }
+
+            try
+            {
+                // Trigger the FluidTransferred event to notify listeners (e.g., Daily Report)
+                FluidTransferred?.Invoke(fluidItem);
+                
+                // Optionally show success message
+                Error = $"Fluid '{fluidItem.ProductName}' transferred to Primary Fluid Set";
+            }
+            catch (Exception ex)
+            {
+                Error = $"Error transferring fluid: {ex.Message}";
             }
         }
 

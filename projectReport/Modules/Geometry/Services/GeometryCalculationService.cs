@@ -85,11 +85,11 @@ namespace ProjectReport.Services
                 if (component.OD.HasValue && component.OD.Value > 0)
                 {
                     double holeDiameter = component.OD.Value;
-                    double washoutFactor = 1.0 + (component.Washout.GetValueOrDefault(0) / 100.0);
+                    double washoutPercent = component.Washout.GetValueOrDefault(0);
                     
-                    // FIXED FORMULA: (Diameter^2 / 1029.4) * Length
-                    // 1029.4 already includes PI/4 conversion from inches^2 to ft^2 to bbl
-                    double vol = (Math.Pow(holeDiameter, 2) / BblVolumeConstant) * component.Length * washoutFactor;
+                    // Correct FORMULA: V = [OD × √(1 + W/100)]² × L / 1029.4
+                    double effectiveDiameter = holeDiameter * Math.Sqrt(1.0 + (washoutPercent / 100.0));
+                    double vol = (Math.Pow(effectiveDiameter, 2) / BblVolumeConstant) * component.Length;
                     
                     component.Volume = vol;
                     return vol;
@@ -547,9 +547,25 @@ namespace ProjectReport.Services
                 if (overlapBottom > overlapTop)
                 {
                     double length = overlapBottom - overlapTop;
-                    // Use Internal Capacity formula: ID^2 / 1029.4 * Length
-                    // Assuming standard Imperial units for this helper as per usage context
-                    totalVolume += (Math.Pow(section.ID.GetValueOrDefault(), 2) / BblVolumeConstant) * length;
+                    
+                    // Determine simplified diameter for capacity (ID for Casing, OD for OpenHole)
+                    double diameter = section.ID.GetValueOrDefault();
+                    if (section.Component == ComponentType.OpenHole)
+                    {
+                        diameter = section.OD.GetValueOrDefault();
+                    }
+                    
+                    // Use Capacity formula: D^2 / 1029.4 * Length
+                    double vol = (Math.Pow(diameter, 2) / BblVolumeConstant) * length;
+                    
+                     if (section.Component == ComponentType.OpenHole)
+                    {
+                         double washoutFactor = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
+                         // Apply linear washout factor: newVol = oldVol * (1+w)
+                         vol *= washoutFactor;
+                    }
+                    
+                    totalVolume += vol;
                 }
             }
 
@@ -582,8 +598,26 @@ namespace ProjectReport.Services
                 if (overlapBottom > overlapTop)
                 {
                     double length = overlapBottom - overlapTop;
-                    // Use Internal Capacity formula: ID^2 / 1029.4 * Length
-                    totalVolume += (Math.Pow(section.ID.GetValueOrDefault(), 2) / BblVolumeConstant) * length;
+                    
+                    // Determine simplified diameter for capacity (ID for Casing, OD for OpenHole)
+                    double diameter = section.ID.GetValueOrDefault();
+                    if (section.Component == ComponentType.OpenHole)
+                    {
+                        diameter = section.OD.GetValueOrDefault();
+                    }
+
+                    // Use Capacity formula: D^2 / 1029.4 * Length
+                    double vol = (Math.Pow(diameter, 2) / BblVolumeConstant) * length;
+                    
+                    // Apply washout for Open Hole using correct formula
+                    if (section.Component == ComponentType.OpenHole)
+                    {
+                        double washoutPercent = section.Washout.GetValueOrDefault(0);
+                        double effectiveDiameter = diameter * Math.Sqrt(1.0 + (washoutPercent / 100.0));
+                        vol = (Math.Pow(effectiveDiameter, 2) / BblVolumeConstant) * length;
+                    }
+                    
+                    totalVolume += vol;
                 }
             }
 

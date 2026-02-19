@@ -57,7 +57,7 @@ namespace ProjectReport.Services
                     .Select(w => new { 
                         Component = w, 
                         EffectiveID = w.Component == ComponentType.OpenHole 
-                            ? w.OD.GetValueOrDefault() * (1 + (w.Washout.GetValueOrDefault() / 100.0))
+                            ? w.OD.GetValueOrDefault() * Math.Sqrt(1 + (w.Washout.GetValueOrDefault(0) / 100.0))
                             : w.ID.GetValueOrDefault()
                     })
                     .Where(x => x.EffectiveID > 0)

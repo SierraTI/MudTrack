@@ -246,13 +246,17 @@ namespace ProjectReport.Models.Geometry.Wellbore
                     if (holeParamsDiameter <= 0)
                         return 0;
                     
-                    // Formula: π/4 * ID² * Length * (1 + Washout%) / 1029.4
+                    // Formula: ((od mat.sqrt(1 + (washout/100))al cuadrado) / 1029.4)*length
+
                     // In our model for OpenHole: OD = Hole Diameter (the "ID" of the hole)
                     
                     double washoutFactor = 1.0 + (Washout.GetValueOrDefault() / 100.0);
                     
                     // Volume in bbl
-                    return (Math.PI / 4.0) * Math.Pow(holeParamsDiameter, 2) * Length * washoutFactor / 1029.4;
+                    // Formula: (OD^2 / 1029.4) * Length * (1 + Washout%)
+                    // This ensures Volume increases linearly with Washout % (e.g. 10% Washout = 10% more Volume)
+                    double baseVolume = (Math.Pow(holeParamsDiameter, 2) / 1029.4) * Length;
+                    return baseVolume * washoutFactor;
                 }
                 
                 // Case 2: Casing / Liner / Other Components

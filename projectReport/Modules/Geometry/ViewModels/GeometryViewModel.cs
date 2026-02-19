@@ -1162,11 +1162,11 @@ namespace ProjectReport.ViewModels.Geometry
             var newComponent = new DrillStringComponent
             {
                 Id = GetNextDrillStringId(),
-                Name = string.Empty,
+                Name = "Drill Pipe",
                 ComponentType = ComponentType.DrillPipe,
-                Length = null,
-                OD = null,
-                ID = null
+                Length = 1000.0,
+                OD = 5.0,
+                ID = 4.276
             };
 
             // Rule S4: Add before Bit if exists, or at bottom
@@ -2066,7 +2066,7 @@ namespace ProjectReport.ViewModels.Geometry
         private double? _currentBitDepth;
         public double CurrentBitDepth
         {
-            get => _currentBitDepth ?? TotalDrillStringLength;
+            get => (_currentBitDepth.HasValue && _currentBitDepth.Value > 0) ? _currentBitDepth.Value : TotalDrillStringLength;
             set
             {
                 if (SetProperty(ref _currentBitDepth, value))
@@ -2658,86 +2658,66 @@ namespace ProjectReport.ViewModels.Geometry
             // Volume of the hole from BitDepth to TD (Empty of pipe)
             CalculatedOpenHoleVolumeBelowBit = _geometryService.CalculateWellboreCapacityBelowDepth(WellboreComponents, calcBitDepth);
 
-            // 2. Build Active String (Simulate Tripping)
-            // We take components from the BOTTOM UP (Bit, DC, HWDP...) until we reach the BitDepth.
-            // The top component (Pipe) gets trimmed.
-            var activeString = new List<(DrillStringComponent Comp, double Top, double Bottom)>();
-            double currentStringTop = calcBitDepth; // Start at Bit Depth and go up
+            // 2. Build Active String Components (Sliced Bottom-Up)
+            // We want to keep the BHA (bottom) and trim the Pipe (top) to match BitDepth
+            var slicedComponents = new List<DrillStringComponent>();
+            double remainingDepth = calcBitDepth; 
             
-            // Assuming DrillStringComponents is ordered [Top -> Bottom] (Pipe...Bit)
-            // We iterate backwards to start with Bit
+            // Iterate Bottom-Up (Index Count-1 to 0) to keep bottom components
             for (int i = DrillStringComponents.Count - 1; i >= 0; i--)
             {
                 var original = DrillStringComponents[i];
                 double len = original.Length.GetValueOrDefault();
+                if (remainingDepth <= 0) break;
                 
-                if (currentStringTop <= 0) break; // String is full
+                double take = Math.Min(len, remainingDepth);
                 
-                double effectiveLength = Math.Min(len, currentStringTop);
-                double bottom = currentStringTop;
-                double top = currentStringTop - effectiveLength;
-                
-                if (effectiveLength > 0)
-                {
-                    activeString.Add((original, top, bottom));
-                }
-                
-                currentStringTop = top;
+                // Create copy with new length for calculation.
+                // IMPORTANT: Copies do not have TopMD/BottomMD set automatically.
+                var copy = new DrillStringComponent 
+                { 
+                     Name = original.Name,
+                     OD = original.OD,
+                     ID = original.ID,
+                     Length = take,
+                     ComponentType = original.ComponentType
+                };
+                slicedComponents.Add(copy);
+                remainingDepth -= take;
+            }
+            
+            // Do NOT reverse here. The loop above (Count-1 to 0) builds the list Top-Down (Pipe -> Bit).
+            // We want Top-Down order for MD assignment starting from Surface (0).
+            // slicedComponents.Reverse(); 
+
+            
+            // Assign MDs to sliced components (Required for HydraulicsService)
+            double runningDepth = 0;
+            foreach (var c in slicedComponents)
+            {
+                c.TopMD = runningDepth;
+                // Length is already set, so BottomMD calculates automatically in setter? 
+                // No, only if TopMD is set FIRST, then Length. 
+                // Here Length is set in init. TopMD set now.
+                // We must ensure BottomMD is set.
+                c.BottomMD = runningDepth + c.Length.GetValueOrDefault();
+                runningDepth = c.BottomMD.Value;
             }
 
             // 3. Calculated Internal String Volume
-            CalculatedInternalStringVolume = activeString.Sum(x => 
-            {
-                double len = x.Bottom - x.Top;
-                return (Math.Pow(x.Comp.ID.GetValueOrDefault(), 2) / 1029.4) * len; 
-            });
+            // Use the sliced components (with corrected lengths)
+            CalculatedInternalStringVolume = slicedComponents.Sum(c => c.InternalVolume);
 
             // 4. Calculated Active Annular Volume (Zone A)
-            // Intersect Active String components with Wellbore Sections
-            CalculatedAnnularActiveVolume = 0;
-            var sortedWellbore = WellboreComponents.OrderBy(w => w.TopMD ?? 0).ToList();
-            
-            foreach (var section in sortedWellbore)
-            {
-                double sectionTop = section.TopMD ?? 0;
-                double sectionBottom = section.BottomMD ?? 0;
-                double sectionID = section.ID.GetValueOrDefault();
-                
-                if (sectionBottom <= sectionTop || sectionID <= 0) continue;
-                
-                // Find overlapping string components
-                foreach (var (comp, sTop, sBottom) in activeString)
-                {
-                    double overlapTop = Math.Max(sectionTop, sTop);
-                    double overlapBottom = Math.Min(sectionBottom, sBottom);
-                    
-                    if (overlapBottom > overlapTop)
-                    {
-                        double len = overlapBottom - overlapTop;
-                        double od = comp.OD.GetValueOrDefault();
-                        
-                        // Annular Volume = (ID_hole^2 - OD_pipe^2) / 1029.4 * L
-                        // Ensure OD < ID
-                        if (od < sectionID)
-                        {
-                            double vol = (Math.PI / 4.0) * (Math.Pow(sectionID, 2) - Math.Pow(od, 2)) * len / 1029.4;
-                            // Reset to simpler formula without PI if using 1029.4 constant directly (1029.4 includes PI handling for bbl conversion?)
-                            // Standard oilfield: Vol(bbl) = (ID^2 - OD^2)/1029.4 * L(ft)
-                            vol = (Math.Pow(sectionID, 2) - Math.Pow(od, 2)) / 1029.4 * len;
-                            CalculatedAnnularActiveVolume += vol;
-                        }
-                        else
-                        {
-                            // Pipe bigger than hole? Zero annular.
-                        }
-                    }
-                }
-                
-                // Add volume for empty annular space ABOVE the string (if BitDepth < TD but string is short?) across the section?
-                // No, Zone B handles "Open Hole Below Bit".
-                // But what about "Open Hole Above String"? (e.g. dropped string). 
-                // We assume string starts at Surface (0). activeString should cover 0 to BitDepth.
-            }
+            // Use HydraulicsService to ensure consistency with the Segment Table.
+            // Filter: OD > 0 (String Exists) => Active Annulus.
+            var activeSegments = _hydraulicsService.CalculateAnnularSegments(
+                WellboreComponents, 
+                slicedComponents
+            );
+            CalculatedAnnularActiveVolume = activeSegments
+                .Where(x => x.DrillStringOD > 0)
+                .Sum(x => x.Volume);
             
             // 5. Active Pits
             CalculatedActivePitsVolume = ActivePits.Sum(p => p.CurrentVolume);

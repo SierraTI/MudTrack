@@ -22,29 +22,56 @@
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Vertical">
+                <!-- Row 1: Requisition, Destination, Condition -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Remision -->
-                <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0" HorizontalAlignment="Stretch">
-                    <TextBlock Text="# Remision" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBox Height="30" MinWidth="120" HorizontalAlignment="Stretch" Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
+                    <!-- Requisition -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0" HorizontalAlignment="Stretch">
+                        <TextBlock Text="# Remision" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30" HorizontalAlignment="Stretch" Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
 
-                <!-- Origin editable arriba -->
-                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0" HorizontalAlignment="Stretch">
-                    <TextBlock Text="Origin" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                    <TextBox Height="30" MinWidth="120" HorizontalAlignment="Stretch" Text="{Binding Origin, UpdateSourceTrigger=PropertyChanged}"/>
-                </StackPanel>
+                    <!-- Destination (Dropdown) -->
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0" HorizontalAlignment="Stretch">
+                        <TextBlock Text="Destination" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 ItemsSource="{Binding StorageBases}"
+                                 DisplayMemberPath="Name"
+                                 SelectedValuePath="Code"
+                                 SelectedValue="{Binding Destination, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEditable="True"/>
+                    </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right">
-                    <Button Content="ADD" Width="72" Height="30" Command="{Binding AddLineCommand}" ToolTip="Add a new line"/>
-                </StackPanel>
-            </Grid>
+                    <!-- Condition (Sealed/Open/Damaged) -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Stretch">
+                        <TextBlock Text="Product Condition" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <ComboBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 ItemsSource="{Binding ProductConditions}"
+                                 SelectedValue="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 2: ADD Button -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="ADD" Width="72" Height="30" Command="{Binding AddLineCommand}" ToolTip="Add a new return line"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
         </Border>
 
         <Border Grid.Row="3"
@@ -100,11 +127,52 @@
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
-                        <!-- Unit Price removed for Returned tickets -->
+                        <!-- Unit (Display only) -->
+                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit, Mode=OneWay}" Width="80" MinWidth="70" IsReadOnly="True"/>
 
-                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="110" MinWidth="80"/>
-                        <DataGridTextColumn Header="Origin" Binding="{Binding Context}" Width="2*" MinWidth="140" IsReadOnly="True"/>
+                        <!-- Current Stock (Read-only availability check) -->
+                        <DataGridTemplateColumn Header="Stock Available" Width="110" MinWidth="90" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding CurrentStock}" FontWeight="Bold"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Quantity to Return (with validation) -->
+                        <DataGridTextColumn Header="Qty Return" Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" MinWidth="80"/>
+
+                        <!-- Condition (Sealed/Open/Damaged) -->
+                        <DataGridTemplateColumn Header="Condition" Width="100" MinWidth="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Condition}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox Height="28"
+                                             ItemsSource="{Binding DataContext.ProductConditions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             SelectedValue="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Observations -->
                         <DataGridTextColumn Header="Observations" Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="2*" MinWidth="180"/>
+
+                        <!-- Validation Error Indicator -->
+                        <DataGridTemplateColumn Header="Status" Width="120" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="#FEE2E2" Padding="4,2" CornerRadius="2" Margin="2">
+                                        <TextBlock Foreground="#991B1B" FontSize="11" 
+                                                  Text="{Binding ValidationError}"
+                                                  TextWrapping="Wrap"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
                         <!-- Remove -->
                         <DataGridTemplateColumn Header="" Width="90" CanUserSort="False" MinWidth="70">

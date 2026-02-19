@@ -369,8 +369,7 @@ namespace ProjectReport.ViewModels
                     !well.Operator.ToLower().Contains(searchLower) &&
                     !well.Location.ToLower().Contains(searchLower) &&
                     !well.Field.ToLower().Contains(searchLower) &&
-                    !well.Basin.ToLower().Contains(searchLower) &&
-                    !well.Municipality.ToLower().Contains(searchLower)) 
+                    !well.Basin.ToLower().Contains(searchLower))
                 {
                     return false;
                 }

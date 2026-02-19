@@ -29,56 +29,17 @@ namespace ProjectReport.Views.Inventory
         // Handlers para eventos definidos en XAML
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            UpdateResponsiveLayout(ActualWidth);
+            // Responsive layout disabled - new layout doesn't require it
         }
 
         private void UserControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            UpdateResponsiveLayout(e.NewSize.Width);
+            // Responsive layout disabled - new layout doesn't require it
         }
 
         private void UpdateResponsiveLayout(double width)
         {
-            if (TopSectionGrid == null) return;
-
-            if (width < NarrowThreshold)
-            {
-                // Apilar verticalmente
-                TopSectionGrid.ColumnDefinitions.Clear();
-                TopSectionGrid.RowDefinitions.Clear();
-
-                TopSectionGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                TopSectionGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                TopSectionGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-                Grid.SetRow(RequisitionPanel, 0);
-                Grid.SetColumn(RequisitionPanel, 0);
-
-                Grid.SetRow(OriginPanel, 1);
-                Grid.SetColumn(OriginPanel, 0);
-
-                Grid.SetRow(AddButtonPanel, 2);
-                Grid.SetColumn(AddButtonPanel, 0);
-            }
-            else
-            {
-                // Disposición en 3 columnas
-                TopSectionGrid.RowDefinitions.Clear();
-                TopSectionGrid.ColumnDefinitions.Clear();
-
-                TopSectionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
-                TopSectionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
-                TopSectionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-                Grid.SetColumn(RequisitionPanel, 0);
-                Grid.SetRow(RequisitionPanel, 0);
-
-                Grid.SetColumn(OriginPanel, 1);
-                Grid.SetRow(OriginPanel, 0);
-
-                Grid.SetColumn(AddButtonPanel, 2);
-                Grid.SetRow(AddButtonPanel, 0);
-            }
+            // Responsive layout disabled - new layout uses StackPanel for vertical stacking
         }
 
         // Se llama cuando una celda entra en modo edición.

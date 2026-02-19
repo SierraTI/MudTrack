@@ -20,18 +20,33 @@ namespace ProjectReport.ViewModels
             // Draft report used by the XAML: Report.IntervalNumber, Report.MD, etc.
             Report = new ReportDraft
             {
-                ReportDateTime = DateTime.Now
+                ReportDateTime = DateTime.Now,
+                ReportNumber = (_well.Reports?.Count ?? 0) + 1
             };
+
+            // Initialize Load Fluid from Well Data (The Bridge - Task 3)
+            if (!string.IsNullOrWhiteSpace(_well.LoadFluid))
+            {
+                Report.PrimaryFluidSet = _well.LoadFluid;
+            }
+
+            /// <summary>
+            /// Standardized Well Section options
+            /// </summary>
+            var validWellSections = new[] { "Conductor", "Surface", "Intermediate 1", "Intermediate 2", "Production", "Liner", "Open Hole", "Sidetrack", "Original" };
 
             // Inherit from last report if exists
             if (_well.LastReport != null)
             {
                 var last = _well.LastReport;
 
+                // Inherit Interval Number - continue from last report
+                Report.IntervalNumber = last.IntervalNumber ?? string.Empty;
                 Report.PresentActivity = last.PresentActivity ?? string.Empty;
                 Report.PrimaryFluidSet = last.PrimaryFluidSet ?? string.Empty;
                 Report.OtherActiveFluids = last.OtherActiveFluids ?? string.Empty;
-                Report.WellSection = last.WellSection ?? string.Empty;
+                // Only inherit WellSection if it's in our standardized list
+                Report.WellSection = (!string.IsNullOrWhiteSpace(last.WellSection) && Array.Exists(validWellSections, s => s == last.WellSection)) ? last.WellSection : string.Empty;
                 Report.MaxBHT = last.MaxBHT;
                 Report.OperationalIssues = last.OperationalIssues;
                 
@@ -61,6 +76,7 @@ namespace ProjectReport.ViewModels
             }
 
             ClearInheritedFieldCommand = new RelayCommand(_ => ClearInheritedFields());
+            SetCurrentTimeCommand = new RelayCommand(_ => SetCurrentTime());
         }
 
         public Well ParentWell => _well;
@@ -70,8 +86,61 @@ namespace ProjectReport.ViewModels
 
         public bool InheritedFields { get; private set; }
 
-        // Matches your XAML: Command="{Binding ClearInheritedFieldCommand}"
+        /// <summary>
+        /// Indicates if Load Fluid is not defined in the parent well
+        /// </summary>
+        public bool IsLoadFluidUndefined => string.IsNullOrWhiteSpace(_well.LoadFluid);
+
+        // Matches your XAML: Command bindings
         public ICommand ClearInheritedFieldCommand { get; }
+        public ICommand SetCurrentTimeCommand { get; }
+
+        /// <summary>
+        /// Standardized Present Activity options - grouped by category
+        /// </summary>
+        public ObservableCollection<string> PresentActivityOptions { get; } = new ObservableCollection<string>
+        {
+            // Drilling
+            "Drilling",
+            "Reaming",
+            "Underreaming",
+            "Directional Drilling",
+            // Tripping
+            "Tripping In",
+            "Tripping Out",
+            "Laying Down Pipe",
+            "Picking up BHA",
+            // Casing & Cement
+            "Running Casing",
+            "Cementing",
+            "WOC (Waiting on Cement)",
+            "Nipple Up BOP",
+            // Evaluation
+            "Wireline Logging",
+            "MWD/LWD Survey",
+            "Circulating for Samples",
+            // Maintenance/Other
+            "Rig Repairs",
+            "Function Test BOP",
+            "Safety Meeting",
+            "WOW (Waiting on Weather)"
+        };
+
+        /// <summary>
+        /// Standardized Well Section options
+        /// </summary>
+        public ObservableCollection<string> WellSectionOptions { get; } = new ObservableCollection<string>
+        {
+            "Conductor",
+            "Surface",
+            "Intermediate 1",
+            "Intermediate 2",
+            "Production",
+            "Liner",
+            "Open Hole",
+            "Sidetrack",
+            "Original"
+        };
 
         private void ClearInheritedFields()
         {
@@ -84,6 +153,11 @@ namespace ProjectReport.ViewModels
             OnPropertyChanged(nameof(InheritedFields));
         }
 
+        private void SetCurrentTime()
+        {
+            Report.ReportDateTime = DateTime.Now;
+        }
+
         /// <summary>
         /// Converts the draft into your domain Report model (ProjectReport.Models.Report).
         /// Call this when you "Save/Next".
@@ -92,12 +166,15 @@ namespace ProjectReport.ViewModels
         {
             return new Report
             {
+                ReportNumber = Report.ReportNumber,
                 IntervalNumber = Report.IntervalNumber,
                 ReportDateTime = Report.ReportDateTime,
                 MD = Report.MD,
                 TVD = Report.TVD,
                 WellSection = Report.WellSection,
                 MaxBHT = Report.MaxBHT,
+                MaxBHTSource = Report.MaxBHTSource,
+                IntervalSizeIn = Report.IntervalSizeIn,
                 PresentActivity = Report.PresentActivity,
                 PrimaryFluidSet = Report.PrimaryFluidSet,
                 OtherActiveFluids = Report.OtherActiveFluids,
@@ -116,6 +193,7 @@ namespace ProjectReport.ViewModels
     /// </summary>
     public class ReportDraft : BaseViewModel, IDataErrorInfo
     {
+        private int _reportNumber;
         private string _intervalNumber = string.Empty;
         private DateTime _reportDateTime = DateTime.Now;
         private double? _md;
@@ -129,8 +207,22 @@ namespace ProjectReport.ViewModels
         private string _rigName = string.Empty;
         private string _contractor = string.Empty;
         private string _rigType = string.Empty;
+        private double? _intervalSizeIn;
+
+        private string _maxBhtSource = "MWD"; // MWD or PWD
+        public string MaxBHTSource
+        {
+            get => _maxBhtSource;
+            set { _maxBhtSource = value; OnPropertyChanged(); }
+        }
 
         public ObservableCollection<ReportPumpOperation> Pumps { get; } = new ObservableCollection<ReportPumpOperation>();
+
+        public int ReportNumber
+        {
+            get => _reportNumber;
+            set { _reportNumber = value; OnPropertyChanged(); }
+        }
 
         public string IntervalNumber
         {
@@ -239,6 +331,12 @@ namespace ProjectReport.ViewModels
             set { _rigType = value; OnPropertyChanged(); }
         }
 
+        public double? IntervalSizeIn
+        {
+            get => _intervalSizeIn;
+            set { _intervalSizeIn = value; OnPropertyChanged(); }
+        }
+
         // IDataErrorInfo
         public string Error => string.Empty;
 
@@ -257,6 +355,11 @@ namespace ProjectReport.ViewModels
                     case nameof(TVD):
                         if (TVD == null || TVD <= 0) return "Report TVD must be a positive number.";
                         if (MD.HasValue && TVD.HasValue && TVD > MD) return "TVD cannot exceed MD.";
+                        return string.Empty;
+
+                    case nameof(IntervalSizeIn):
+                        if (IntervalSizeIn.HasValue && IntervalSizeIn <= 0)
+                            return "Interval Size must be positive.";
                         return string.Empty;
 
                     case nameof(WellSection):

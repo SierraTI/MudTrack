@@ -82,7 +82,6 @@ namespace ProjectReport.ViewModels
 
         public bool IsStep1Active => CurrentStep == 1;
         public bool IsStep2Active => CurrentStep == 2;
-        public bool IsStep3Active => CurrentStep == 3;
 
         public bool InheritedFields { get; private set; }
         public bool IsEditMode => _isEditMode;
@@ -114,12 +113,14 @@ namespace ProjectReport.ViewModels
             else
             {
                 // NEW MODE
+                var nextNumber = (_well.Reports?.Count ?? 0) + 1;
                 var newReport = new Report
                 {
+                    ReportNumber = nextNumber,
                     ReportDateTime = DateTime.Now,
                     CreatedDate = DateTime.Now,
                     IsDraft = true,
-                    IntervalNumber = (_well.Reports?.Count ?? 0) + 1 + "" 
+                    IntervalNumber = nextNumber.ToString()
                 };
 
                 // Jalar (Inheritance) Logic
@@ -247,12 +248,12 @@ namespace ProjectReport.ViewModels
 
         private void GoNext(object? obj)
         {
-            if (CurrentStep < 3)
+            if (CurrentStep == 1)
             {
                 // Use IDataErrorInfo validation check for Step 1
-                if (CurrentStep == 1 && !ValidateStep1()) return;
-                
-                CurrentStep++;
+                if (!ValidateStep1()) return;
+
+                CurrentStep = 2;
             }
             else
             {
@@ -266,8 +267,10 @@ namespace ProjectReport.ViewModels
             {
                 // Optional: Live validation disable
                 // return string.IsNullOrEmpty(Report["IntervalNumber"]) && ...
+                return true;
             }
-            return CurrentStep < 3; 
+
+            return false;
         }
 
         private void GoBack(object? obj)

@@ -1569,13 +1569,11 @@
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="1.5*"/>
                                                 <ColumnDefinition Width="2.5*"/>
-                                                <ColumnDefinition Width="1*"/>
                                                 <ColumnDefinition Width="1.5*"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0" Text="Volume Section" FontWeight="Bold" Padding="8" Foreground="#4B5563"/>
                                             <TextBlock Grid.Column="1" Text="Engineering Calculation" FontWeight="Bold" Padding="8" Foreground="#4B5563"/>
-                                            <TextBlock Grid.Column="2" Text="State" FontWeight="Bold" Padding="8" Foreground="#4B5563"/>
-                                            <TextBlock Grid.Column="3" Text="Volume (bbl)" FontWeight="Bold" Padding="8" HorizontalAlignment="Right" Foreground="#4B5563"/>
+                                            <TextBlock Grid.Column="2" Text="Volume (bbl)" FontWeight="Bold" Padding="8" HorizontalAlignment="Right" Foreground="#4B5563"/>
                                         </Grid>
 
                                         <!-- Rows -->
@@ -1585,15 +1583,11 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="2.5*"/>
-                                                    <ColumnDefinition Width="1*"/>
                                                     <ColumnDefinition Width="1.5*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Internal String" Padding="8,4" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Capacity to Bit Depth" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                                <Border Grid.Column="2" Background="#DBEAFE" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="8,2">
-                                                    <TextBlock Text="Circulating" Foreground="#1E40AF" FontSize="11" FontWeight="SemiBold"/>
-                                                </Border>
-                                                <TextBlock Grid.Column="3" Text="{Binding CalculatedInternalStringVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedInternalStringVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
                                              </Grid>
 
                                              <Separator Margin="0,2" Background="#F3F4F6"/>
@@ -1603,15 +1597,11 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="2.5*"/>
-                                                    <ColumnDefinition Width="1*"/>
                                                     <ColumnDefinition Width="1.5*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Annular (Active)" Padding="8,4" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Annulus to Bit Depth" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                                <Border Grid.Column="2" Background="#DBEAFE" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="8,2">
-                                                    <TextBlock Text="Circulating" Foreground="#1E40AF" FontSize="11" FontWeight="SemiBold"/>
-                                                </Border>
-                                                <TextBlock Grid.Column="3" Text="{Binding CalculatedAnnularActiveVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedAnnularActiveVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
                                              </Grid>
 
                                              <Separator Margin="0,2" Background="#F3F4F6"/>
@@ -1621,15 +1611,11 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="2.5*"/>
-                                                    <ColumnDefinition Width="1*"/>
                                                     <ColumnDefinition Width="1.5*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Open Hole (Below Bit)" Padding="8,4" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Hole Capacity (Bit to TD)" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                                <Border Grid.Column="2" Background="#F3F4F6" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left" Padding="8,2">
-                                                    <TextBlock Text="Static" Foreground="#374151" FontSize="11" FontWeight="SemiBold"/>
-                                                </Border>
-                                                <TextBlock Grid.Column="3" Text="{Binding CalculatedOpenHoleVolumeBelowBit, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource BrandOrange}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedOpenHoleVolumeBelowBit, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource BrandOrange}"/>
                                              </Grid>
                                         </StackPanel>
                                         
@@ -1640,7 +1626,7 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="TOTAL MUD IN SYSTEM" FontWeight="Bold" Padding="12" Foreground="#065F46" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="0" Text="TOTAL WELL VOLUME" FontWeight="Bold" Padding="12" Foreground="#065F46" VerticalAlignment="Center"/>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12">
                                                     <TextBlock Text="{Binding CalculatedTotalMudInSystem, StringFormat=F2}" FontWeight="Bold" FontSize="18" Foreground="#065F46"/>
                                                     <TextBlock Text=" bbl" VerticalAlignment="Bottom" Margin="4,0,0,3" Foreground="#065F46"/>
@@ -1651,28 +1637,7 @@
                                     </Grid>
                                 </GroupBox>
 
-                                <!-- In-Wellbore Volumes Block -->
-                                <GroupBox Grid.Row="1" Grid.Column="0" Header="Downhole Volumes" Style="{StaticResource StandardGroupBox}">
-                                    <StackPanel Margin="10">
-                                        <Grid Margin="0,4">
-                                            <TextBlock Text="Annular Volume" Foreground="#4B5563"/>
-                                            <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F2} bbl'}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                                        </Grid>
-                                        <Grid Margin="0,4">
-                                            <TextBlock Text="Drill String (Internal)" Foreground="#4B5563"/>
-                                            <TextBlock Text="{Binding TotalDrillStringVolume, StringFormat='{}{0:F2} bbl'}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                                        </Grid>
-                                        
-                                        <Separator Margin="0,15"/>
-                                        
-                                        <Border Padding="12" Background="#ECFDF5" CornerRadius="8">
-                                            <Grid>
-                                                <TextBlock Text="TOTAL WELL VOLUME" FontWeight="Bold" Foreground="#059669"/>
-                                                <TextBlock Text="{Binding TotalCirculationVolume, StringFormat='{}{0:F2} bbl'}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#059669"/>
-                                            </Grid>
-                                        </Border>
-                                    </StackPanel>
-                                </GroupBox>
+
 
                                  <!-- System Volume Percentages -->
                                  <GroupBox Grid.Row="1" Grid.Column="2" Header="Distribution" Style="{StaticResource StandardGroupBox}">
@@ -1707,7 +1672,7 @@
                              </Grid>
 
                              <!-- Annular Volume Breakdown Table -->
-                             <GroupBox Grid.Row="3" Header="Annular Volume Segments" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
+                             <GroupBox Grid.Row="3" Header="Annular Volume Details" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
@@ -1801,7 +1766,7 @@
                                 <Border Grid.Row="1" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Margin="10,0,10,10" Padding="10,8">
                                     <Grid>
                                         <TextBlock Text="TOTAL" FontWeight="Bold" FontSize="13" Foreground="#1F2937"/>
-                                        <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F1} bbl'}" 
+                                        <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F2} bbl'}" 
                                                    HorizontalAlignment="Right" 
                                                    FontWeight="Bold" 
                                                    FontSize="13"

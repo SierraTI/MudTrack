@@ -142,7 +142,6 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <!-- Step 1 -->
@@ -171,7 +170,7 @@
 
             <!-- Step 2 -->
             <StackPanel Grid.Column="1" Orientation="Vertical" Margin="10,0">
-                <TextBlock Text="2. Equipment" HorizontalAlignment="Center">
+                <TextBlock Text="2. Personnel" HorizontalAlignment="Center">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="FontWeight" Value="Normal"/>
@@ -192,38 +191,13 @@
                            Margin="0,8,0,0"
                            RadiusX="2" RadiusY="2"/>
             </StackPanel>
-
-            <!-- Step 3 -->
-            <StackPanel Grid.Column="2" Orientation="Vertical">
-                <TextBlock Text="3. Personnel" HorizontalAlignment="Center">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="FontWeight" Value="Normal"/>
-                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsStep3Active}" Value="True">
-                                    <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Foreground" Value="{StaticResource BrandOrange}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-
-                <Rectangle Height="3"
-                           Fill="{StaticResource BrandOrange}"
-                           Visibility="{Binding IsStep3Active, Converter={StaticResource BoolToVis}}"
-                           Margin="0,8,0,0"
-                           RadiusX="2" RadiusY="2"/>
-            </StackPanel>
         </Grid>
 
         <!-- Content Area -->
         <Border Grid.Row="2" Padding="20" Background="{StaticResource Surface}">
             <Grid>
                 <wizard:ReportDetailsPage Visibility="{Binding IsStep1Active, Converter={StaticResource BoolToVis}}" />
-                <wizard:ReportEquipmentPage Visibility="{Binding IsStep2Active, Converter={StaticResource BoolToVis}}" />
-                <wizard:PersonnelPage Visibility="{Binding IsStep3Active, Converter={StaticResource BoolToVis}}" />
+                <wizard:PersonnelPage Visibility="{Binding IsStep2Active, Converter={StaticResource BoolToVis}}" />
             </Grid>
         </Border>
 
@@ -269,7 +243,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                                 <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep3Active}" Value="True">
+                                    <DataTrigger Binding="{Binding IsStep2Active}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -283,7 +257,7 @@
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsStep3Active}" Value="True">
+                                    <DataTrigger Binding="{Binding IsStep2Active}" Value="True">
                                         <Setter Property="Visibility" Value="Visible"/>
                                     </DataTrigger>
                                 </Style.Triggers>

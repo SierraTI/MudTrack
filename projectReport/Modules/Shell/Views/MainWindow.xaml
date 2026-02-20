@@ -109,10 +109,16 @@
                             Style="{StaticResource TopMenuButtonStyle}"
                             Click="GeometryButton_Click"/>
 
-                    <Button x:Name="InventoryButton"
+
+                        <Button x:Name="InventoryButton"
                             Content="Inventory"
                             Style="{StaticResource TopMenuButtonStyle}"
                             Click="InventoryButton_Click"/>
+
+                        <Button x:Name="VolumeBalanceButton"
+                            Content="Volume Balance"
+                            Style="{StaticResource TopMenuButtonStyle}"
+                            Click="VolumeBalanceButton_Click"/>
 
                 </WrapPanel>
 

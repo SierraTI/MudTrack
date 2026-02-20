@@ -21,6 +21,25 @@ namespace ProjectReport.Views
     {
         private readonly DatabaseService _databaseService;
 
+        private ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView? _volumeBalanceView;
+        private ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel? _volumeBalanceViewModel;
+
+        private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_volumeBalanceView == null)
+            {
+                _volumeBalanceViewModel = new ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel();
+                _volumeBalanceView = new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView
+                {
+                    DataContext = _volumeBalanceViewModel
+                };
+            }
+            ContentTitle.Text = "Volume Balance";
+            ContentArea.Content = _volumeBalanceView;
+            GeometrySubmenu.Visibility = Visibility.Collapsed;
+            GeometrySubmenu.Height = 0;
+        }
+
         private GeometryView? _geometryView;
         private HomeView? _homeView;
         private WellDataView? _wellDataView;

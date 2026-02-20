@@ -1,0 +1,101 @@
+<UserControl x:Class="ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:ProjectReport.Modules.VolumeBalance.Views"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="900">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Volume Balance" FontSize="24" FontWeight="Bold" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="1" Orientation="Vertical">
+            <!-- Wellbore Section -->
+            <GroupBox Header="Wellbore (Calculated)">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Category" FontWeight="Bold"/>
+                    <TextBlock Text="Theoretical (bbl)" Grid.Column="1" FontWeight="Bold"/>
+                    <TextBlock Text="Actual (bbl)" Grid.Column="2" FontWeight="Bold"/>
+                    <TextBlock Text="String" Grid.Row="1"/>
+                    <TextBlock Text="{Binding StringTheoretical}" Grid.Row="1" Grid.Column="1"/>
+                    <TextBlock Text="{Binding StringActual}" Grid.Row="1" Grid.Column="2"/>
+                    <TextBlock Text="Annulus" Grid.Row="2"/>
+                    <TextBlock Text="{Binding AnnulusTheoretical}" Grid.Row="2" Grid.Column="1"/>
+                    <TextBlock Text="{Binding AnnulusActual}" Grid.Row="2" Grid.Column="2"/>
+                    <TextBlock Text="Total In Well" Grid.Row="3"/>
+                    <TextBlock Text="{Binding TotalWellTheoretical}" Grid.Row="3" Grid.Column="1"/>
+                    <TextBlock Text="{Binding TotalWellActual}" Grid.Row="3" Grid.Column="2"/>
+                </Grid>
+            </GroupBox>
+            <!-- Surface Section -->
+            <GroupBox Header="Surface (User Input)">
+                <StackPanel>
+                    <DataGrid ItemsSource="{Binding SurfaceTanks}" AutoGenerateColumns="False" CanUserAddRows="True" Margin="0,8,0,0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tank Name" Binding="{Binding Name}" Width="2*"/>
+                            <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding VolumeBbl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                            <DataGridTextColumn Header="Max Capacity (bbl)" Binding="{Binding MaxCapacity}" Width="*"/>
+                            <DataGridTextColumn Header="% Full" Binding="{Binding PercentFull}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <TextBlock Text="Total Surface Volume: " FontWeight="Bold"/>
+                        <TextBlock Text="{Binding TotalSurfaceVolume}" Margin="8,0,0,0"/>
+                        <TextBlock Text=" | Total Max Capacity: " FontWeight="Bold" Margin="16,0,0,0"/>
+                        <TextBlock Text="{Binding TotalSurfaceMaxCapacity}" Margin="8,0,0,0"/>
+                        <Image Source="/Assets/info_icon.png" Width="18" Height="18" Margin="8,0,0,0" ToolTip="Data pulled from Rig Profile. To change tank capacities, update Rig Profile module."/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            <!-- Inventory/Chemicals Section -->
+            <GroupBox Header="Inventory Additions (Chemicals)">
+                <DataGrid ItemsSource="{Binding ChemicalUsages}" AutoGenerateColumns="False" CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}"/>
+                        <DataGridTextColumn Header="Description" Binding="{Binding Description}"/>
+                        <DataGridTextColumn Header="Qty Used" Binding="{Binding QtyUsed}"/>
+                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit}"/>
+                        <DataGridTextColumn Header="SG" Binding="{Binding SG}"/>
+                        <DataGridTextColumn Header="Volume Added (bbl)" Binding="{Binding VolumeAdded}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </GroupBox>
+        </StackPanel>
+        <!-- Summary Section -->
+        <GroupBox Header="Volume Balance Summary" Grid.Row="2" Margin="0,16,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Volume Category" FontWeight="Bold"/>
+                <TextBlock Text="Theoretical (bbl)" Grid.Column="1" FontWeight="Bold"/>
+                <TextBlock Text="Actual (bbl)" Grid.Column="2" FontWeight="Bold"/>
+                <TextBlock Text="Variance (bbl)" Grid.Column="3" FontWeight="Bold"/>
+                <TextBlock Text="In Well" Grid.Row="1"/>
+                <TextBlock Text="{Binding TotalWellTheoretical}" Grid.Row="1" Grid.Column="1"/>
+                <TextBlock Text="{Binding TotalWellActual}" Grid.Row="1" Grid.Column="2"/>
+                <TextBlock Text="{Binding WellVariance}" Grid.Row="1" Grid.Column="3"/>
+                <TextBlock Text="Surface" Grid.Row="2"/>
+                <TextBlock Text="--" Grid.Row="2" Grid.Column="1"/>
+                <TextBlock Text="{Binding TotalSurfaceVolume}" Grid.Row="2" Grid.Column="2"/>
+                <TextBlock Text="--" Grid.Row="2" Grid.Column="3"/>
+                <TextBlock Text="Total System" Grid.Row="3"/>
+                <TextBlock Text="{Binding TotalSystemTheoretical}" Grid.Row="3" Grid.Column="1"/>
+                <TextBlock Text="{Binding TotalSystemActual}" Grid.Row="3" Grid.Column="2"/>
+                <TextBlock Text="{Binding SystemVariance}" Grid.Row="3" Grid.Column="3"/>
+            </Grid>
+        </GroupBox>
+    </Grid>
+</UserControl>

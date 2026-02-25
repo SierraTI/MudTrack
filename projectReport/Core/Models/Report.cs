@@ -214,7 +214,7 @@ namespace ProjectReport.Models
         {
             var clone = new Report
             {
-                IntervalNumber = this.IntervalNumber + " (Copy)",
+                IntervalNumber = this.IntervalNumber,
                 ReportNumber = this.ReportNumber,
                 ReportDateTime = DateTime.Now,
                 MD = this.MD,

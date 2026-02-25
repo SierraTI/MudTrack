@@ -1511,11 +1511,11 @@
                                     <TextBlock Text="Wellbore &amp; Drill String" Foreground="{StaticResource TextMuted}" FontSize="12"/>
                                 </StackPanel>
                             </Border>
-
-                            <!-- Dynamic Schematic Canvas -->
-                            <Viewbox Grid.Row="1" Stretch="Uniform" VerticalAlignment="Top" Margin="20">
-                                <geometry:WellboreDrillStringSchematicView x:Name="MasterSchematic" MinWidth="260" DataContext="{Binding}"/>
-                            </Viewbox>
+                            
+                            <!-- Dynamic Schematic Canvas con scroll -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10">
+                                <geometry:BhaSchematicView x:Name="MasterSchematic" MinWidth="200" MinHeight="600"/>
+                            </ScrollViewer>
 
                             <Border Grid.Row="2" Padding="20" Background="White" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0">
                                 <StackPanel>

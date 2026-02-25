@@ -114,14 +114,31 @@ namespace ProjectReport.ViewModels
             {
                 // NEW MODE
                 var nextNumber = (_well.Reports?.Count ?? 0) + 1;
+                string interval = "1";
                 var newReport = new Report
                 {
                     ReportNumber = nextNumber,
                     ReportDateTime = DateTime.Now,
                     CreatedDate = DateTime.Now,
                     IsDraft = true,
-                    IntervalNumber = nextNumber.ToString()
                 };
+
+
+                if (_well.Reports != null && _well.Reports.Count > 0)
+                {
+                    var previousReport = _well.Reports
+                          .OrderByDescending(r => r.ReportDateTime)
+                          .FirstOrDefault();
+
+                    if (previousReport != null &&
+                        !string.IsNullOrWhiteSpace(previousReport.IntervalNumber))
+                    {
+                        interval = previousReport.IntervalNumber;
+                    }
+                }
+
+                newReport.IntervalNumber = interval;
+
 
                 // Jalar (Inheritance) Logic
                 var lastReport = _well.Reports?.OrderByDescending(r => r.ReportDateTime).FirstOrDefault();
@@ -266,7 +283,7 @@ namespace ProjectReport.ViewModels
             if (CurrentStep == 1)
             {
                 // Optional: Live validation disable
-                // return string.IsNullOrEmpty(Report["IntervalNumber"]) && ...
+               // return string.IsNullOrEmpty(Report["IntervalNumber"]);
                 return true;
             }
 
@@ -422,6 +439,16 @@ namespace ProjectReport.ViewModels
             await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
         }
 
+        public ObservableCollection<string> WellSectionOptions { get; }
+             = new ObservableCollection<string>
+             {
+                  "Sidetrack",
+                  "Original"
+             };
+
         #endregion
+
+
+
     }
 }

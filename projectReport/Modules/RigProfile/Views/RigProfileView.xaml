@@ -529,8 +529,7 @@
         <Border Grid.Row="2" Background="White" BorderBrush="#E6E8EB" BorderThickness="0,1,0,0" Padding="14" Margin="-20,15,-20,-20">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Reset to Default" Command="{Binding ResetToDefaultCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Padding="16,10"/>
-                <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0" Padding="16,10"/>
-                <Button Content="Save &amp; Return" Command="{Binding SaveAndReturnCommand}" Style="{StaticResource BrandPrimaryButton}" Padding="20,10"/>
+                <Button Content="Save" Command="{Binding SaveAndReturnCommand}" Style="{StaticResource BrandPrimaryButton}" Padding="20,10"/>
             </StackPanel>
         </Border>
 

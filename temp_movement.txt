@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace ProjectReport.Models.Inventory
 {
@@ -17,8 +17,6 @@ namespace ProjectReport.Models.Inventory
 
         public double UnitPrice { get; set; }
         public string OriginOrUse { get; set; } = "";
-        public string Remision { get; set; } = "";     // New from SPEC
-        public string SupplierName { get; set; } = "";  // New from SPEC
         public string User { get; set; } = "";
         public string Observations { get; set; } = "";
 
@@ -29,3 +27,4 @@ namespace ProjectReport.Models.Inventory
         public string Requisition { get; set; } = "";
     }
 }
+

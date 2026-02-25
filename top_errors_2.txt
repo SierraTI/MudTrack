@@ -1,0 +1,577 @@
+﻿
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Chem
+icalListViewModel.cs(
+145,46): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(26,43):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReturnedViewModel.c
+s(141,82): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(44,26):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(44,56):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(47,26):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"QtyPackage" ni un 
+m├®todo de 
+extensi├│n accesible 
+"QtyPackage" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(47,47):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"QtyPackage" ni un 
+m├®todo de 
+extensi├│n accesible 
+"QtyPackage" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(64,23):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(66,23):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReturnedViewModel.c
+s(168,71): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Repo
+rtConsumedViewModel.c
+s(182,62): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Repo
+rtConsumedViewModel.c
+s(196,50): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryProductsDashboar
+dViewModel.cs(520,47)
+: error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Chem
+icalListViewModel.cs(
+145,46): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(26,43):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReturnedViewModel.c
+s(141,82): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(44,26):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(44,56):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(47,26):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"QtyPackage" ni un 
+m├®todo de 
+extensi├│n accesible 
+"QtyPackage" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(47,47):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"QtyPackage" ni un 
+m├®todo de 
+extensi├│n accesible 
+"QtyPackage" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(64,23):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Services\Invent
+oryService.cs(66,23):
+ error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReturnedViewModel.c
+s(168,71): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Repo
+rtConsumedViewModel.c
+s(182,62): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Repo
+rtConsumedViewModel.c
+s(196,50): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryProductsDashboar
+dViewModel.cs(520,47)
+: error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para "IsS
+electedForReport" ni 
+un m├®todo de 
+extensi├│n accesible 
+"IsSelectedForReport"
+ que acepte un 
+primer argumento del 
+tipo "Product" 
+(┬┐falta alguna 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_l3ef1
+l3d_wpftmp.csproj]
+
+

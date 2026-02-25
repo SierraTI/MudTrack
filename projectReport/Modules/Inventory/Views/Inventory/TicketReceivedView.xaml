@@ -93,13 +93,25 @@
                                  Text="{Binding ShipmentReference, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
-                    <!-- ADD button -->
-                    <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Bottom">
+                    <!-- Buttons: ADD, Select Products -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
                         <Button Content="ADD"
-                                Width="72"
+                                Width="80"
                                 Height="30"
+                                Background="#10B981"
+                                Foreground="White"
+                                BorderThickness="0"
+                                FontWeight="SemiBold"
                                 Command="{Binding AddLineCommand}"
-                                ToolTip="Add a new line"/>
+                                Margin="0,0,8,0"/>
+                        <Button Content="Select Products"
+                                Width="120"
+                                Height="30"
+                                Background="#3B82F6"
+                                Foreground="White"
+                                BorderThickness="0"
+                                FontWeight="SemiBold"
+                                Command="{Binding SelectProductsCommand}"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>

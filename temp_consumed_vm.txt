@@ -364,4 +364,3 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
-

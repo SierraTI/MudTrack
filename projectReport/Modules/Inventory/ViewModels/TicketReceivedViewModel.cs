@@ -145,8 +145,10 @@ namespace ProjectReport.ViewModels.Inventory
 
         public RelayCommand AddLineCommand { get; }
         public RelayCommand RemoveLineCommand { get; }
+        public RelayCommand SelectProductsCommand { get; }
 
         public event Action? RequestClose;
+        public event Action? RequestSelectProducts;
 
         public TicketReceivedViewModel(InventoryService service)
         {
@@ -160,8 +162,34 @@ namespace ProjectReport.ViewModels.Inventory
 
             AddLineCommand = new RelayCommand(_ => AddLine());
             RemoveLineCommand = new RelayCommand(param => RemoveLine(param as TicketLine));
+            SelectProductsCommand = new RelayCommand(_ => RequestSelectProducts?.Invoke());
+
+            WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
 
             LoadProductsFromExcelOrRepo();
+        }
+
+        private void OnChemicalSelectionUpdated(object? sender, ChemicalSelectionUpdatedEventArgs e)
+        {
+            if (e.SelectedItems == null || !e.SelectedItems.Any()) return;
+
+            foreach (var item in e.SelectedItems)
+            {
+                // Avoid adding the same product twice in the same ticket draft
+                bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
+                if (alreadyExists) continue;
+
+                Lines.Add(new TicketLine
+                {
+                    ProductCode = item.Code,
+                    ProductName = item.Nombre ?? item.Code,
+                    Quantity = 1,
+                    UnitPrice = 0,
+                    Context = Origin
+                });
+            }
+
+            Error = $"{e.SelectedItems.Count} products added from selection.";
         }
 
         // Nuevo: añade una fila vacía (editable) al borrador y prefill Context con Origin.
@@ -244,9 +272,15 @@ namespace ProjectReport.ViewModels.Inventory
                         loaded.Add(p);
                     }
                 }
-                else
+
+                // Filtering by project selection is MANDATORY as per SPEC
+                var selectedCodes = _service.GetSelectedProducts().Select(p => p.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                loaded = loaded.Where(p => selectedCodes.Contains(p.Code)).OrderBy(p => p.Name).ToList();
+
+                // If fallback to repository is needed
+                if (loaded.Count == 0 && !File.Exists(excelPath))
                 {
-                    loaded = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name).ToList();
+                    loaded = _service.GetSelectedProducts();
                 }
 
                 var app = Application.Current;

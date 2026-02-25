@@ -40,6 +40,14 @@ namespace ProjectReport.Models.Inventory
             set { if (_unit != value) { _unit = value; OnPropertyChanged(); } }
         }
 
+        private double _sg = 1.0;
+        /// <summary>Specific Gravity of the product (default: 1.0 for water-based or generic).</summary>
+        public double SG
+        {
+            get => _sg;
+            set { if (Math.Abs(_sg - value) > 0.0001) { _sg = value; OnPropertyChanged(); } }
+        }
+
         // Concentration (ppb/SG) - for mud calculations
         private double _concentration = 0;
         public double Concentration

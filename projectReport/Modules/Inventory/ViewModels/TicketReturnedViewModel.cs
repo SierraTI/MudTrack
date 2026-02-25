@@ -15,11 +15,11 @@ namespace ProjectReport.ViewModels.Inventory
     {
         private readonly InventoryService _service;
 
-        // Lista de productos y líneas (tabla)
+        // Lista de productos y lÃ­neas (tabla)
         public ObservableCollection<Product> Products { get; } = new();
         public ObservableCollection<TicketLine> Lines { get; } = new();
 
-        // Productos disponibles para el Combo al añadir (filtrados por movimientos Received del pozo)
+        // Productos disponibles para el Combo al aÃ±adir (filtrados por movimientos Received del pozo)
         public ObservableCollection<Product> AvailableProductsForAdd { get; } = new();
 
         private string _requisition = "";
@@ -61,11 +61,13 @@ namespace ProjectReport.ViewModels.Inventory
         public RelayCommand CancelCommand { get; }
         public RelayCommand AddLineCommand { get; }
         public RelayCommand RemoveLineCommand { get; }
+        public RelayCommand SelectProductsCommand { get; }
         public RelayCommand LoadFromReceivedCommand { get; }
 
         public event Action? RequestClose;
+        public event Action? RequestSelectProducts;
 
-        // Nuevo: Id del ticket que se está editando (si aplica)
+        // Nuevo: Id del ticket que se estÃ¡ editando (si aplica)
         private string? _editingTicketId;
         public string? EditingTicketId
         {
@@ -73,7 +75,7 @@ namespace ProjectReport.ViewModels.Inventory
             private set => SetProperty(ref _editingTicketId, value);
         }
 
-        // Nuevo: Requisition por la que se está editando (si aplica)
+        // Nuevo: Requisition por la que se estÃ¡ editando (si aplica)
         private string? _editingRequisition;
         public string? EditingRequisition
         {
@@ -89,6 +91,7 @@ namespace ProjectReport.ViewModels.Inventory
             CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
             AddLineCommand = new RelayCommand(_ => AddLine());
             RemoveLineCommand = new RelayCommand(param => RemoveLine(param as TicketLine));
+            SelectProductsCommand = new RelayCommand(_ => RequestSelectProducts?.Invoke());
             LoadFromReceivedCommand = new RelayCommand(_ => LoadFromInventory());
 
             LoadProducts();
@@ -96,27 +99,51 @@ namespace ProjectReport.ViewModels.Inventory
             // precargar productos disponibles para ADD (basado en pozo actual)
             LoadProductsForAdd();
 
-            // NO cargar automáticamente las líneas al abrir la vista:
-            // LoadFromInventory();  <-- eliminado intencionadamente
+            // NO cargar automÃ¡ticamente las lÃ­neas al abrir la vista
+            
+            // Subscribe to batch selection event
+            WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
 
             // refrescar listas cuando cambie inventario
             _service.InventoryUpdated += () =>
             {
                 LoadProducts();
                 LoadProductsForAdd();
-                // NO volver a llamar a LoadFromInventory() para evitar repoblar Lines automáticamente
             };
+        }
+
+        private void OnChemicalSelectionUpdated(object? sender, ChemicalSelectionUpdatedEventArgs e)
+        {
+            if (e.SelectedItems == null || !e.SelectedItems.Any()) return;
+
+            foreach (var item in e.SelectedItems)
+            {
+                // Avoid adding the same product twice in the same ticket draft
+                bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
+                if (alreadyExists) continue;
+
+                Lines.Add(new TicketLine
+                {
+                    ProductCode = item.Code,
+                    ProductName = item.Nombre ?? item.Code,
+                    Quantity = 1,
+                    Context = Origin
+                });
+            }
+
+            Error = $"{e.SelectedItems.Count} products added from selection.";
         }
 
         private void LoadProducts()
         {
             Products.Clear();
-            var list = _service.GetProducts().Where(p => p.Status == ProductStatus.Active).OrderBy(p => p.Name).ToList();
+            var list = _service.GetProducts()
+                               .Where(p => p.Status == ProductStatus.Active && p.IsSelectedForReport)
+                               .OrderBy(p => p.Name)
+                               .ToList();
             foreach (var p in list) Products.Add(p);
         }
 
-        // Rellena AvailableProductsForAdd usando movimientos Received del pozo actual,
-        // agrupando por ProductCode para evitar duplicados y excluyendo productos con stock == 0.
         private void LoadProductsForAdd()
         {
             try
@@ -136,14 +163,9 @@ namespace ProjectReport.ViewModels.Inventory
                                     m.OriginOrUse.IndexOf(wellName, StringComparison.OrdinalIgnoreCase) >= 0)
                         .ToList();
                 }
-                else
-                {
-                    // si no hay pozo seleccionado, considerar todos los movimientos Received
-                }
 
-                // Catálogo para consultar StockQty y CurrentUnitCost
                 var catalog = _service.GetProducts()
-                    .Where(p => p.Status == ProductStatus.Active)
+                    .Where(p => p.Status == ProductStatus.Active && p.IsSelectedForReport)
                     .ToDictionary(p => (p.Code ?? "").ToUpperInvariant(), p => p, StringComparer.OrdinalIgnoreCase);
 
                 foreach (var g in movements.GroupBy(m => (m.ProductCode ?? "").ToUpperInvariant()))
@@ -151,10 +173,9 @@ namespace ProjectReport.ViewModels.Inventory
                     var code = g.Key;
                     if (string.IsNullOrWhiteSpace(code)) continue;
 
-                    // Preferir información del catálogo y requerir stock > 0
                     if (catalog.TryGetValue(code, out var prodCatalog))
                     {
-                        if (prodCatalog.StockQty <= 0) continue; // excluir si stock 0
+                        if (prodCatalog.StockQty <= 0) continue; 
                         if (!AvailableProductsForAdd.Any(p => string.Equals(p.Code, prodCatalog.Code, StringComparison.OrdinalIgnoreCase)))
                         {
                             AvailableProductsForAdd.Add(new Product
@@ -169,8 +190,6 @@ namespace ProjectReport.ViewModels.Inventory
                     }
                     else
                     {
-                        // Si no está en catálogo, sumar cantidad recibida en movimientos agrupados;
-                        // incluir solo si suma > 0
                         var totalReceived = g.Sum(x => x.Quantity);
                         if (totalReceived <= 0) continue;
 
@@ -189,24 +208,23 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch
             {
-                // No propagar excepción al UI
+                // No propagar excepciÃ³n al UI
             }
         }
 
         private void AddLine()
         {
-            // Añadir línea vacía; Combo en celda usará AvailableProductsForAdd que ya está precargada
             Lines.Add(new TicketLine
             {
                 ProductCode = string.Empty,
                 ProductName = string.Empty,
-                Quantity = 0,   // el usuario indicará cuánto devolver
+                Quantity = 0,
                 UnitPrice = 0,
                 Context = Origin ?? string.Empty,
                 Observations = string.Empty
             });
 
-            Error = $"Línea agregada. Total líneas: {Lines.Count}";
+            Error = $"LÃ­nea agregada. Total lÃ­neas: {Lines.Count}";
         }
 
         private void RemoveLine(TicketLine? line)
@@ -215,7 +233,6 @@ namespace ProjectReport.ViewModels.Inventory
             Lines.Remove(line);
         }
 
-        // Carga desde la lista principal de productos (inventario) productos con stock>0.
         private void LoadFromInventory()
         {
             try
@@ -233,14 +250,14 @@ namespace ProjectReport.ViewModels.Inventory
                     {
                         ProductCode = p.Code ?? string.Empty,
                         ProductName = p.Name ?? string.Empty,
-                        Quantity = 0, // el usuario especificará cuánto devolver
+                        Quantity = 0,
                         UnitPrice = p.CurrentUnitCost,
                         Context = Origin ?? string.Empty,
                         Observations = string.Empty
                     });
                 }
 
-                Error = $"Cargadas {Lines.Count} línea(s) desde inventario.";
+                Error = $"Cargadas {Lines.Count} lÃ­nea(s) desde inventario.";
             }
             catch (Exception ex)
             {
@@ -248,7 +265,6 @@ namespace ProjectReport.ViewModels.Inventory
             }
         }
 
-        // Nuevo: cargar ticket existente (Returned) para editar
         public void LoadTicket(string ticketId)
         {
             if (string.IsNullOrWhiteSpace(ticketId)) return;
@@ -269,7 +285,6 @@ namespace ProjectReport.ViewModels.Inventory
 
             Lines.Clear();
 
-            // Cargar movimientos de tipo Returned como líneas editables
             foreach (var mv in movements.Where(m => m.Type == TicketType.Returned))
             {
                 Lines.Add(new TicketLine
@@ -286,7 +301,6 @@ namespace ProjectReport.ViewModels.Inventory
             OnPropertyChanged(nameof(Lines));
         }
 
-        // Nuevo: cargar por Requisition (agrupa movimientos Returned)
         public void LoadByRequisition(string requisition)
         {
             if (string.IsNullOrWhiteSpace(requisition)) return;
@@ -326,36 +340,33 @@ namespace ProjectReport.ViewModels.Inventory
             OnPropertyChanged(nameof(Lines));
         }
 
-        // Save() se mantiene (usa Lines para crear Ticket Returned) + soporte edición
         private void Save()
         {
             Error = "";
 
             if (Lines.Count == 0)
             {
-                Error = "No hay líneas para guardar.";
+                Error = "No hay lÃ­neas para guardar.";
                 return;
             }
 
-            // Validaciones
             for (int i = 0; i < Lines.Count; i++)
             {
                 var ln = Lines[i];
                 if (string.IsNullOrWhiteSpace(ln.ProductCode) && string.IsNullOrWhiteSpace(ln.ProductName))
                 {
-                    Error = $"Línea {i + 1}: producto requerido.";
+                    Error = $"LÃ­nea {i + 1}: producto requerido.";
                     return;
                 }
                 if (ln.Quantity <= 0)
                 {
-                    Error = $"Línea {i + 1}: la cantidad debe ser mayor que 0.";
+                    Error = $"LÃ­nea {i + 1}: la cantidad debe ser mayor que 0.";
                     return;
                 }
             }
 
             try
             {
-                // Ensure products exist and normalize codes/names
                 var currentProducts = _service.GetProducts();
                 foreach (var ln in Lines)
                 {
@@ -396,7 +407,6 @@ namespace ProjectReport.ViewModels.Inventory
                         ln.ProductCode = existing.Code;
                         ln.ProductName = existing.Name;
 
-                        // Si en la línea no se indicó UnitPrice, tomar el precio actual del producto
                         if (ln.UnitPrice <= 0)
                         {
                             ln.UnitPrice = existing.CurrentUnitCost;
@@ -404,7 +414,6 @@ namespace ProjectReport.ViewModels.Inventory
                     }
                 }
 
-                // === NUEVA LÓGICA: si aún hay líneas sin precio, intentar tomar del último Received ===
                 var allMovements = _service.GetMovements();
                 foreach (var ln in Lines)
                 {
@@ -413,7 +422,6 @@ namespace ProjectReport.ViewModels.Inventory
                     var code = (ln.ProductCode ?? "").Trim();
                     if (string.IsNullOrEmpty(code)) continue;
 
-                    // Buscar último Received con precio > 0
                     var lastReceived = allMovements
                         .Where(m => string.Equals(m.ProductCode, code, StringComparison.OrdinalIgnoreCase) && m.Type == TicketType.Received && m.UnitPrice > 0)
                         .OrderByDescending(m => m.Date)
@@ -425,14 +433,12 @@ namespace ProjectReport.ViewModels.Inventory
                         continue;
                     }
 
-                    // Fallback: usar precio actual del producto del catálogo
                     var prodFromCatalog = currentProducts.FirstOrDefault(p => string.Equals(p.Code, code, StringComparison.OrdinalIgnoreCase));
                     if (prodFromCatalog != null && prodFromCatalog.CurrentUnitCost > 0)
                     {
                         ln.UnitPrice = prodFromCatalog.CurrentUnitCost;
                     }
                 }
-                // ========================================================================
 
                 var ticket = new Ticket
                 {
@@ -444,13 +450,11 @@ namespace ProjectReport.ViewModels.Inventory
                     Lines = Lines.ToList()
                 };
 
-                // Si estamos editando un ticket existente, eliminar movimientos previos de ese ticket
                 if (!string.IsNullOrWhiteSpace(EditingTicketId))
                 {
                     _service.DeleteMovementsForTicket(EditingTicketId, removeLinkedByRequisition: false);
                     ticket.TicketId = EditingTicketId;
                 }
-                // Si estamos editando por Requisition, eliminar movimientos previos asociados a esa requisicion
                 else if (!string.IsNullOrWhiteSpace(EditingRequisition))
                 {
                     _service.DeleteMovementsByRequisition(EditingRequisition);
@@ -460,7 +464,7 @@ namespace ProjectReport.ViewModels.Inventory
                 _service.CreateTicketReturned(ticket);
 
                 Lines.Clear();
-                Error = "Ticket de devolución guardado correctamente.";
+                Error = "Ticket de devoluciÃ³n guardado correctamente.";
                 EditingTicketId = null;
                 EditingRequisition = null;
                 RequestClose?.Invoke();

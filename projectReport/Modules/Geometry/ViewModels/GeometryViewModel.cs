@@ -2062,6 +2062,19 @@ namespace ProjectReport.ViewModels.Geometry
         public double TotalAnnularVolume { get; private set; }
         public double TotalCirculationVolume { get; private set; }
 
+        /// <summary>
+        /// Open-end steel displacement of ALL drill string components (bbl).
+        /// Formula per component: (OD² - ID²) / 1029.4 × Length
+        /// This is the volume of fluid displaced when the string is run in hole.
+        /// </summary>
+        public double TotalStringDisplacement { get; private set; }
+
+        /// <summary>
+        /// Fluid capacity of the wellbore with the drill string in place.
+        /// = HoleCapacity (TotalWellboreVolume) − StringDisplacement
+        /// </summary>
+        public double TheoreticalWellboreVolume { get; private set; }
+
         // Circulation & Trip Volume (Off-Bottom)
         private double? _currentBitDepth;
         public double CurrentBitDepth
@@ -2814,6 +2827,19 @@ namespace ProjectReport.ViewModels.Geometry
             OnPropertyChanged(nameof(AnnularVolumePercent));
             OnPropertyChanged(nameof(StringVolumePercent));
             RecalculateSafetyMetrics();
+
+            // ── Publish to Volume Balance ──────────────────────────────────────────────
+            TotalStringDisplacement = DrillStringComponents.Sum(c => c.DisplacementVolume);
+            TheoreticalWellboreVolume = Math.Max(0, TotalWellboreVolume - TotalStringDisplacement);
+            OnPropertyChanged(nameof(TotalStringDisplacement));
+            OnPropertyChanged(nameof(TheoreticalWellboreVolume));
+
+            WellContextService.Instance.PublishGeometryData(
+                holeCapacity:        TotalWellboreVolume,
+                stringDisplacement:  TotalStringDisplacement,
+                stringInternalVolume: CalculatedInternalStringVolume,
+                annularVolume:       CalculatedAnnularActiveVolume,
+                theoreticalWellbore: TheoreticalWellboreVolume);
         }
 
         /// <summary>

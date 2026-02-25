@@ -10,7 +10,8 @@ namespace ProjectReport.Views.Inventory
         public UsageView()
         {
             InitializeComponent();
-            DataContext = new UsageViewModel();
+            var service = ProjectReport.Services.ServiceLocator.InventoryService;
+            DataContext = new UsageViewModel(service);
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)

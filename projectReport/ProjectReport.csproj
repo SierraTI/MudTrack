@@ -13,8 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Models\Inventory\InventoryItem.cs" />
-    <Compile Remove="ViewModels\Inventory\InventoryViewModel.cs" />
   </ItemGroup>
 
   <ItemGroup>

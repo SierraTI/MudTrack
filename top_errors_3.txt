@@ -1,0 +1,173 @@
+﻿
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryViewModel.cs(21,
+37): error CS0246: 
+El nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryViewModel.cs(24,
+16): error CS0246: 
+El nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryViewModel.cs(23,
+17): error CS0246: 
+El nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Services\Inv
+entory\InventoryStora
+geService.cs(11,21): 
+error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Services\Inv
+entory\InventoryStora
+geService.cs(30,38): 
+error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryViewModel.cs(21,
+37): error CS0246: 
+El nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryViewModel.cs(24,
+16): error CS0246: 
+El nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryViewModel.cs(23,
+17): error CS0246: 
+El nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Services\Inv
+entory\InventoryStora
+geService.cs(11,21): 
+error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Services\Inv
+entory\InventoryStora
+geService.cs(30,38): 
+error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryItem' no 
+se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_frvoi
+jqe_wpftmp.csproj]
+
+

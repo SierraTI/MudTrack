@@ -59,7 +59,7 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Row 2: ADD Button -->
+                <!-- Row 2: ADD Buttons -->
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -68,7 +68,24 @@
 
                     <TextBlock Grid.Column="0"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="ADD" Width="72" Height="30" Command="{Binding AddLineCommand}" ToolTip="Add a new return line"/>
+                        <Button Content="ADD"
+                                Width="80"
+                                Height="30"
+                                Background="#10B981"
+                                Foreground="White"
+                                BorderThickness="0"
+                                FontWeight="SemiBold"
+                                Command="{Binding AddLineCommand}"
+                                Margin="0,0,8,0"
+                                ToolTip="Add a new return line"/>
+                        <Button Content="Select Products"
+                                Width="120"
+                                Height="30"
+                                Background="#3B82F6"
+                                Foreground="White"
+                                BorderThickness="0"
+                                FontWeight="SemiBold"
+                                Command="{Binding SelectProductsCommand}"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
@@ -108,7 +125,7 @@
                         <DataGridTemplateColumn Header="Product" Width="2*" MinWidth="180">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis"/>
+                                     <TextBlock Text="{Binding ProductName}" TextTrimming="CharacterEllipsis"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>

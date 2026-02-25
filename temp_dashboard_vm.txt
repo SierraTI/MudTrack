@@ -65,6 +65,17 @@ namespace ProjectReport.ViewModels.Inventory
             }
         }
 
+        private bool _isProjectFilterEnabled = true;
+        public bool IsProjectFilterEnabled
+        {
+            get => _isProjectFilterEnabled;
+            set
+            {
+                if (SetProperty(ref _isProjectFilterEnabled, value))
+                    ApplyFilter();
+            }
+        }
+
         private bool _isRigFilterEnabled;
         public bool IsRigFilterEnabled
         {
@@ -541,5 +552,4 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
-
 

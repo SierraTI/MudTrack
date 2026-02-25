@@ -8,13 +8,7 @@
     </UserControl.Resources>
 
     <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <TabControl Grid.Row="0" Margin="0,0,0,8">
+        <TabControl Margin="0,0,0,8">
             <TabItem Header="Chemical List">
                 <local:ChemicalListView />
             </TabItem>
@@ -33,6 +27,8 @@
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="Ticket Received" Width="160" Margin="0,0,10,0" Command="{Binding OpenTicketReceivedCommand}"/>
                         <Button Content="Ticket Returned" Width="160" Margin="0,0,10,0" Command="{Binding OpenTicketReturnedCommand}"/>
+                        <CheckBox Content="Project Filter" IsChecked="{Binding IsProjectFilterEnabled}" VerticalAlignment="Center" Margin="10,0,0,0"
+                                  ToolTip="Show only products selected for this project report"/>
                     </StackPanel>
 
                     <!-- Ticket History moved inside Products tab -->
@@ -69,8 +65,5 @@
                 <local:AdditionalChargeView />
             </TabItem>
         </TabControl>
-
-        <!-- El GroupBox global se ha eliminado para que el historial solo se muestre dentro de Products -->
-
     </Grid>
 </UserControl>

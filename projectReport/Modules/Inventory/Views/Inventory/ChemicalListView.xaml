@@ -32,6 +32,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="🔍 Search:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBox x:Name="SearchTextBox" 
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          Width="250" 
                          Padding="8"
                          VerticalAlignment="Center"
@@ -42,13 +43,14 @@
                 
                 <TextBlock Text="Category:" FontSize="12" VerticalAlignment="Center" Margin="16,0,8,0"/>
                 <ComboBox x:Name="CategoryCombo" 
+                          ItemsSource="{Binding Categories}"
+                          SelectedItem="{Binding SelectedCategory}"
                           Width="180" 
                           Padding="8"
                           VerticalAlignment="Center"
                           Margin="0,0,16,0"
                           BorderBrush="#D1D5DB"
                           BorderThickness="1">
-                    <ComboBoxItem>All Categories</ComboBoxItem>
                 </ComboBox>
             </StackPanel>
         </Border>
@@ -94,61 +96,59 @@
                 Padding="0"
                 Margin="0,0,0,8"
                 Background="White">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                <DataGrid x:Name="ChemicalsDataGrid"
-                          ItemsSource="{Binding ChemicalItems}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          IsReadOnly="False"
-                          SelectionUnit="CellOrRowHeader"
-                          SelectionMode="Single"
-                          RowHeight="32"
-                          HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
-                          BorderThickness="0"
-                          Background="White">
-                    <DataGrid.ColumnHeaderStyle>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="#F3F4F6"/>
-                            <Setter Property="Foreground" Value="#1F2937"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="Padding" Value="8"/>
-                            <Setter Property="BorderBrush" Value="#E5E7EB"/>
-                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                            <Setter Property="Height" Value="36"/>
-                        </Style>
-                    </DataGrid.ColumnHeaderStyle>
-                    <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="White"/>
-                            <Style.Triggers>
-                                <Trigger Property="AlternationIndex" Value="0">
-                                    <Setter Property="Background" Value="White"/>
-                                </Trigger>
-                                <Trigger Property="AlternationIndex" Value="1">
-                                    <Setter Property="Background" Value="#F9FAFB"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#F0F9FF"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.RowStyle>
-                    <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="✓" Binding="{Binding IsSelected}" Width="50"/>
-                        <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="80"/>
-                        <DataGridTextColumn Header="Name" Binding="{Binding Nombre}" Width="180"/>
-                        <DataGridTextColumn Header="Description" Binding="{Binding Descripcion}" Width="200"/>
-                        <DataGridTextColumn Header="Physical State" Binding="{Binding EstadoFisico}" Width="100"/>
-                        <DataGridTextColumn Header="Presentation" Binding="{Binding Presentacion}" Width="100"/>
-                        <DataGridTextColumn Header="Qty/Package" Binding="{Binding Cantidad}" Width="90"/>
-                        <DataGridTextColumn Header="Unit" Binding="{Binding Unidad}" Width="70"/>
-                        <DataGridTextColumn Header="SG" Binding="{Binding SG}" Width="60"/>
-                        <DataGridTextColumn Header="Category" Binding="{Binding Categoria}" Width="120"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </ScrollViewer>
+            <DataGrid x:Name="ChemicalsDataGrid"
+                      ItemsSource="{Binding ChemicalItemsView}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      IsReadOnly="False"
+                      SelectionUnit="CellOrRowHeader"
+                      SelectionMode="Single"
+                      RowHeight="32"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      BorderThickness="0"
+                      Background="White">
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#F3F4F6"/>
+                        <Setter Property="Foreground" Value="#1F2937"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Padding" Value="8"/>
+                        <Setter Property="BorderBrush" Value="#E5E7EB"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                        <Setter Property="Height" Value="36"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="White"/>
+                        <Style.Triggers>
+                            <Trigger Property="AlternationIndex" Value="0">
+                                <Setter Property="Background" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="#F9FAFB"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#F0F9FF"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="✓" Binding="{Binding IsSelected}" Width="50"/>
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="80"/>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Nombre}" Width="180"/>
+                    <DataGridTextColumn Header="Description" Binding="{Binding Descripcion}" Width="200"/>
+                    <DataGridTextColumn Header="Physical State" Binding="{Binding EstadoFisico}" Width="100"/>
+                    <DataGridTextColumn Header="Presentation" Binding="{Binding Presentacion}" Width="100"/>
+                    <DataGridTextColumn Header="Qty/Package" Binding="{Binding Cantidad}" Width="90"/>
+                    <DataGridTextColumn Header="Unit" Binding="{Binding Unidad}" Width="70"/>
+                    <DataGridTextColumn Header="SG" Binding="{Binding SG}" Width="60"/>
+                    <DataGridTextColumn Header="Category" Binding="{Binding Categoria}" Width="120"/>
+                </DataGrid.Columns>
+            </DataGrid>
         </Border>
 
         <!-- Footer Info -->

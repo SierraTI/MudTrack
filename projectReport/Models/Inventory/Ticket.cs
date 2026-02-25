@@ -19,6 +19,9 @@ namespace ProjectReport.Models.Inventory
 
         // Requisition number/identifier
         public string Requisition { get; set; } = "";
+        public string Remision { get; set; } = "";
+        public string Origin { get; set; } = "";
+        public string SupplierName { get; set; } = "";
 
         // Shipment metadata (for Ticket Received)
         public string ShipmentReference { get; set; } = "";

@@ -5,20 +5,21 @@ namespace ProjectReport.Models.Inventory
         public string Code { get; set; } = "";
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
-        public string OtherNames { get; set; } = "";
-        public string PhysicalState { get; set; } = "";
-        public string Presentation { get; set; } = "";
-        public double Quantity { get; set; } = 0;
+        public string OtherNames { get; set; } = ""; // "Descripción - Otros nombres"
+        public string PhysicalState { get; set; } = ""; // "Estado físico"
+        public string Presentation { get; set; } = ""; // "Presentación"
+        public double Quantity { get; set; } = 0; // "Cantidad"
         public string Category { get; set; } = "";
-        public string Unit { get; set; } = "kg";
-        public double SG { get; set; } = 0;
+        public string Unit { get; set; } = "kg"; // kg, L, pza...
+        public double SG { get; set; } = 1.0; // Specific Gravity
+        public int QtyPackage { get; set; } = 1;
 
-        public double StockQty { get; set; }
-        public double CurrentUnitCost { get; set; }
-
+        public double StockQty { get; set; } // NO editar a mano: solo InventoryService
+        public double CurrentUnitCost { get; set; } // último costo (referencia), histórico va en movimientos
         public ProductStatus Status { get; set; } = ProductStatus.Active;
+        public bool IsSelectedForReport { get; set; } = false;
 
-        // Nuevo: etiqueta combinada para b�squeda (no rompe serializaci�n simple)
+        // Label for UI search and display
         public string SearchLabel => $"{Code} {Name} {Category} {Unit}".Trim();
     }
 }

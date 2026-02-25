@@ -4,14 +4,18 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using ProjectReport.Models.Inventory;
+using ProjectReport.Services.Inventory;
 using ProjectReport.Services;
 
 namespace ProjectReport.ViewModels.Inventory
 {
     public class UsageViewModel : INotifyPropertyChanged
     {
+        private readonly InventoryService _service;
         private readonly RelayCommand _saveCommand;
         private double _totalProductsCost;
+
+        public ObservableCollection<Product> AvailableProducts { get; } = new();
 
         public ObservableCollection<ConsumoItem> ConsumoItems { get; } = new ObservableCollection<ConsumoItem>();
 
@@ -35,10 +39,23 @@ namespace ProjectReport.ViewModels.Inventory
 
         public ICommand SaveCommand => _saveCommand;
 
-        public UsageViewModel()
+        public UsageViewModel(InventoryService service)
         {
+            _service = service ?? throw new ArgumentNullException(nameof(service));
             _saveCommand = new RelayCommand(_ => SaveUsage());
+
+            LoadProducts();
             LoadUsage();
+        }
+
+        private void LoadProducts()
+        {
+            AvailableProducts.Clear();
+            var selected = _service.GetSelectedProducts();
+            foreach (var p in selected)
+            {
+                AvailableProducts.Add(p);
+            }
         }
 
         /// <summary>

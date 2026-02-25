@@ -5,97 +5,231 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:local="clr-namespace:ProjectReport.Modules.VolumeBalance.Views"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900">
+             d:DesignHeight="800" d:DesignWidth="900">
+    <UserControl.Resources>
+        <Style x:Key="ReadOnlySectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="ValueHighlight" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> <!-- Header -->
+            <RowDefinition Height="Auto"/> <!-- Sync Bar -->
+            <RowDefinition Height="*"/>    <!-- Content -->
         </Grid.RowDefinitions>
-        <TextBlock Text="Volume Balance" FontSize="24" FontWeight="Bold" Margin="0,0,0,16"/>
-        <StackPanel Grid.Row="1" Orientation="Vertical">
-            <!-- Wellbore Section -->
-            <GroupBox Header="Wellbore (Calculated)">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Category" FontWeight="Bold"/>
-                    <TextBlock Text="Theoretical (bbl)" Grid.Column="1" FontWeight="Bold"/>
-                    <TextBlock Text="Actual (bbl)" Grid.Column="2" FontWeight="Bold"/>
-                    <TextBlock Text="String" Grid.Row="1"/>
-                    <TextBlock Text="{Binding StringTheoretical}" Grid.Row="1" Grid.Column="1"/>
-                    <TextBlock Text="{Binding StringActual}" Grid.Row="1" Grid.Column="2"/>
-                    <TextBlock Text="Annulus" Grid.Row="2"/>
-                    <TextBlock Text="{Binding AnnulusTheoretical}" Grid.Row="2" Grid.Column="1"/>
-                    <TextBlock Text="{Binding AnnulusActual}" Grid.Row="2" Grid.Column="2"/>
-                    <TextBlock Text="Total In Well" Grid.Row="3"/>
-                    <TextBlock Text="{Binding TotalWellTheoretical}" Grid.Row="3" Grid.Column="1"/>
-                    <TextBlock Text="{Binding TotalWellActual}" Grid.Row="3" Grid.Column="2"/>
-                </Grid>
-            </GroupBox>
-            <!-- Surface Section -->
-            <GroupBox Header="Surface (User Input)">
-                <StackPanel>
-                    <DataGrid ItemsSource="{Binding SurfaceTanks}" AutoGenerateColumns="False" CanUserAddRows="True" Margin="0,8,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Tank Name" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding VolumeBbl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                            <DataGridTextColumn Header="Max Capacity (bbl)" Binding="{Binding MaxCapacity}" Width="*"/>
-                            <DataGridTextColumn Header="% Full" Binding="{Binding PercentFull}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                        <TextBlock Text="Total Surface Volume: " FontWeight="Bold"/>
-                        <TextBlock Text="{Binding TotalSurfaceVolume}" Margin="8,0,0,0"/>
-                        <TextBlock Text=" | Total Max Capacity: " FontWeight="Bold" Margin="16,0,0,0"/>
-                        <TextBlock Text="{Binding TotalSurfaceMaxCapacity}" Margin="8,0,0,0"/>
-                        <Image Source="/Assets/info_icon.png" Width="18" Height="18" Margin="8,0,0,0" ToolTip="Data pulled from Rig Profile. To change tank capacities, update Rig Profile module."/>
-                    </StackPanel>
-                </StackPanel>
-            </GroupBox>
-            <!-- Inventory/Chemicals Section -->
-            <GroupBox Header="Inventory Additions (Chemicals)">
-                <DataGrid ItemsSource="{Binding ChemicalUsages}" AutoGenerateColumns="False" CanUserAddRows="False">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Product Code" Binding="{Binding ProductCode}"/>
-                        <DataGridTextColumn Header="Description" Binding="{Binding Description}"/>
-                        <DataGridTextColumn Header="Qty Used" Binding="{Binding QtyUsed}"/>
-                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit}"/>
-                        <DataGridTextColumn Header="SG" Binding="{Binding SG}"/>
-                        <DataGridTextColumn Header="Volume Added (bbl)" Binding="{Binding VolumeAdded}"/>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </GroupBox>
-        </StackPanel>
-        <!-- Summary Section -->
-        <GroupBox Header="Volume Balance Summary" Grid.Row="2" Margin="0,16,0,0">
+
+        <TextBlock Text="Volume Balance" FontSize="24" FontWeight="Bold" Margin="0,0,0,8"/>
+
+        <!-- Sync / Status Bar -->
+        <Border Grid.Row="1" Background="#F5F5F5" CornerRadius="4" Padding="12,8" Margin="0,0,0,16">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Volume Category" FontWeight="Bold"/>
-                <TextBlock Text="Theoretical (bbl)" Grid.Column="1" FontWeight="Bold"/>
-                <TextBlock Text="Actual (bbl)" Grid.Column="2" FontWeight="Bold"/>
-                <TextBlock Text="Variance (bbl)" Grid.Column="3" FontWeight="Bold"/>
-                <TextBlock Text="In Well" Grid.Row="1"/>
-                <TextBlock Text="{Binding TotalWellTheoretical}" Grid.Row="1" Grid.Column="1"/>
-                <TextBlock Text="{Binding TotalWellActual}" Grid.Row="1" Grid.Column="2"/>
-                <TextBlock Text="{Binding WellVariance}" Grid.Row="1" Grid.Column="3"/>
-                <TextBlock Text="Surface" Grid.Row="2"/>
-                <TextBlock Text="--" Grid.Row="2" Grid.Column="1"/>
-                <TextBlock Text="{Binding TotalSurfaceVolume}" Grid.Row="2" Grid.Column="2"/>
-                <TextBlock Text="--" Grid.Row="2" Grid.Column="3"/>
-                <TextBlock Text="Total System" Grid.Row="3"/>
-                <TextBlock Text="{Binding TotalSystemTheoretical}" Grid.Row="3" Grid.Column="1"/>
-                <TextBlock Text="{Binding TotalSystemActual}" Grid.Row="3" Grid.Column="2"/>
-                <TextBlock Text="{Binding SystemVariance}" Grid.Row="3" Grid.Column="3"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Path Data="M19,8L15,12H18A6,6 0 0,1 12,18C11,18 10.1,17.7 9.3,17.2L8.1,18.4C9.2,19.4 10.5,20 12,20A8,8 0 0,0 20,12H23L19,8M7,12H4A8,8 0 0,0 12,4C13.5,4 14.8,4.6 15.9,5.6L17.1,4.4C16.1,3.4 14.7,2.8 13.2,2.8C10.6,2.8 8.3,4.6 7.4,7H4L8,11L12,7H8.8C9.5,5.8 10.7,5 12,5A7,7 0 0,1 19,12H16L20,16L24,12H21L17,8H13L17,12H20" 
+                          Fill="#666" Width="16" Height="16" Stretch="Uniform" Margin="0,0,8,0"/>
+                    <TextBlock Text="Last synced with Geometry: " VerticalAlignment="Center" Foreground="#666"/>
+                    <TextBlock Text="{Binding LastSyncedAt}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#333"/>
+                </StackPanel>
+                <Button Content="↻ Sync Now" Command="{Binding SyncCommand}" 
+                        HorizontalAlignment="Right" Padding="12,4" Background="#E0E0E0" BorderThickness="0"/>
             </Grid>
-        </GroupBox>
+        </Border>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Orientation="Vertical">
+                <!-- Wellbore Section -->
+                <GroupBox Header="Wellbore Volumes (Calculated from Geometry)" BorderBrush="#BDBDBD" Margin="0,0,0,16">
+                    <Grid Margin="8" Background="#FAFAFA">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/> <!-- Header -->
+                            <RowDefinition Height="Auto"/> <!-- String -->
+                            <RowDefinition Height="Auto"/> <!-- Annulus -->
+                            <RowDefinition Height="Auto"/> <!-- Divider -->
+                            <RowDefinition Height="Auto"/> <!-- Total -->
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Headers -->
+                        <TextBlock Text="Category" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="Theoretical (bbl)" Grid.Column="1" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,12,8"/>
+                        <TextBlock Text="Actual (bbl)" Grid.Column="2" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,0,8"/>
+
+                        <!-- String -->
+                        <TextBlock Text="Drill String (Internal)" Grid.Row="1" VerticalAlignment="Center" Margin="0,4"/>
+                        <TextBlock Text="{Binding StringTheoretical, StringFormat=F2}" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,4,12,4" Style="{StaticResource ValueHighlight}"/>
+                        <TextBox Text="{Binding StringActual, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="2" HorizontalContentAlignment="Right" VerticalAlignment="Center" Padding="4,2"/>
+
+                        <!-- Annulus -->
+                        <TextBlock Text="Annulus (Active)" Grid.Row="2" VerticalAlignment="Center" Margin="0,4"/>
+                        <TextBlock Text="{Binding AnnulusTheoretical, StringFormat=F2}" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,4,12,4" Style="{StaticResource ValueHighlight}"/>
+                        <TextBox Text="{Binding AnnulusActual, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" Grid.Row="2" Grid.Column="2" HorizontalContentAlignment="Right" VerticalAlignment="Center" Padding="4,2"/>
+
+                        <!-- Divider -->
+                        <Separator Grid.Row="3" Grid.ColumnSpan="3" Margin="0,8" Background="#BDBDBD"/>
+
+                        <!-- Total -->
+                        <TextBlock Text="Fluid in Sections (Total)" Grid.Row="4" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalWellTheoretical, StringFormat=F2}" Grid.Row="4" Grid.Column="1" HorizontalAlignment="Right" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding TotalWellActual, StringFormat=F2}" Grid.Row="4" Grid.Column="2" HorizontalAlignment="Right" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Surface Section -->
+                <GroupBox Header="Surface Volumes (from Rig Profile)" Margin="0,0,0,16">
+                    <StackPanel Margin="4">
+                        <DataGrid ItemsSource="{Binding SurfaceTanks}" AutoGenerateColumns="False" CanUserAddRows="False" 
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" RowHeight="32">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Tank Name" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
+                                <DataGridTemplateColumn Header="Volume (bbl)" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding VolumeBbl, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" 
+                                                     BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Right" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Max (bbl)" Binding="{Binding MaxCapacity, StringFormat=F1}" Width="*" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Margin" Value="0,0,4,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="% Full" Binding="{Binding PercentFull, StringFormat=P0}" Width="60" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Margin" Value="0,0,4,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        
+                        <Border Background="#F0F4C3" Padding="12,8" Margin="0,8,0,0" CornerRadius="4">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Total Surface Volume: " FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalSurfaceVolume, StringFormat=F2}" FontSize="14" FontWeight="Bold" Foreground="#33691E" VerticalAlignment="Center"/>
+                                    <TextBlock Text=" bbl" VerticalAlignment="Center"/>
+                                    
+                                    <TextBlock Text=" | Capacity: " Margin="16,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding TotalSurfaceMaxCapacity, StringFormat=F1}" VerticalAlignment="Center"/>
+                                    <TextBlock Text=" bbl" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="ℹ Sync with Rig Profile" HorizontalAlignment="Right" Foreground="#777" FontSize="11" FontStyle="Italic" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Inventory/Chemicals Section -->
+                <GroupBox Header="Chemical Additions (Barrels Added)" Margin="0,0,0,16">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <DataGrid ItemsSource="{Binding ChemicalUsages}" AutoGenerateColumns="False" CanUserAddRows="False" 
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" MinHeight="100">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Product" Binding="{Binding Description}" Width="2*"/>
+                                <DataGridTextColumn Header="Qty" Binding="{Binding QtyUsed, StringFormat=N0}" Width="60"/>
+                                <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" Width="80"/>
+                                <DataGridTextColumn Header="SG" Binding="{Binding SG, StringFormat=F2}" Width="60"/>
+                                <DataGridTextColumn Header="Vol (bbl)" Binding="{Binding VolumeAdded, StringFormat=F2}" Width="80" IsReadOnly="True" FontWeight="Bold"/>
+                                <DataGridTemplateColumn Width="40">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="×" Command="{Binding DataContext.RemoveChemicalCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                    CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="Red" FontSize="16" FontWeight="Bold"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button Grid.Row="1" Content="+ Add Chemical Line" Command="{Binding AddChemicalCommand}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,4"/>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                            <TextBlock Text="Total Added: " FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding TotalChemicalVolumeAdded, StringFormat=F2}" FontWeight="Bold" Foreground="#1565C0" VerticalAlignment="Center"/>
+                            <TextBlock Text=" bbl" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Summary Section -->
+                <GroupBox Header="Grand Summary (The Golden Equation)" BorderBrush="#2E7D32" BorderThickness="2" Margin="0,0,0,32">
+                    <Grid Margin="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Headers -->
+                        <TextBlock Text="Parameter" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <TextBlock Text="Theoretical (bbl)" Grid.Column="1" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,12,8"/>
+                        <TextBlock Text="Actual (bbl)" Grid.Column="2" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,12,8"/>
+                        <TextBlock Text="Variance (bbl)" Grid.Column="3" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,0,8"/>
+
+                        <!-- Theoretical Wellbore Base -->
+                        <TextBlock Text="Wellbore (Hole Cap - Displacement)" Grid.Row="1" VerticalAlignment="Center" Margin="0,4"/>
+                        <TextBlock Text="{Binding TheoreticalWellbore, StringFormat=F2}" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding TotalWellActual, StringFormat=F2}" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding WellVariance, StringFormat=F2}" Grid.Row="1" Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                        <!-- Surface -->
+                        <TextBlock Text="Surface Tanks" Grid.Row="2" VerticalAlignment="Center" Margin="0,4"/>
+                        <TextBlock Text="{Binding TotalSurfaceVolume, StringFormat=F2}" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding TotalSurfaceVolume, StringFormat=F2}" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="--" Grid.Row="2" Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                        <!-- Chemicals -->
+                        <TextBlock Text="Chemical Additions" Grid.Row="3" VerticalAlignment="Center" Margin="0,4"/>
+                        <TextBlock Text="--" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding TotalChemicalVolumeAdded, StringFormat=F2}" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="--" Grid.Row="3" Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                        <Separator Grid.Row="4" Grid.ColumnSpan="4" Margin="0,8" Background="#2E7D32"/>
+
+                        <!-- System Totals -->
+                        <TextBlock Text="SYSTEM TOTAL" Grid.Row="5" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding SystemTotalTheoretical, StringFormat=F2}" Grid.Row="5" Grid.Column="1" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding SystemTotalActual, StringFormat=F2}" Grid.Row="5" Grid.Column="2" FontSize="16" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        
+                        <Border Grid.Row="5" Grid.Column="3" Background="{Binding VarianceColor}" CornerRadius="4" Padding="8,4" Margin="8,0,0,0">
+                            <TextBlock Text="{Binding SystemVariance, StringFormat=F2}" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <TextBlock Grid.Row="6" Grid.Column="3" Text="{Binding VarianceStatus}" Foreground="{Binding VarianceColor}" FontWeight="Bold" HorizontalAlignment="Center" Margin="8,4,0,0"/>
+
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

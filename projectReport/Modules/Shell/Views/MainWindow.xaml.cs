@@ -38,6 +38,13 @@ namespace ProjectReport.Views
             ContentArea.Content = _volumeBalanceView;
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;
+
+            // Trigger data push from other modules
+            if (_geometryView?.DataContext is ProjectReport.ViewModels.Geometry.GeometryViewModel gvm)
+                gvm.RecalculateTotals();
+
+            if (_rigProfileView?.DataContext is ProjectReport.Modules.RigProfile.ViewModels.RigProfileViewModel rvm)
+                rvm.GetType().GetMethod("PublishPits", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.Invoke(rvm, null);
         }
 
         private GeometryView? _geometryView;

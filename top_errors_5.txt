@@ -1,0 +1,361 @@
+﻿
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReceivedView.x
+aml.cs(94,40): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReturnedView.x
+aml.cs(139,40): 
+error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReceivedView.x
+aml.cs(141,36): 
+error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReceivedView.x
+aml.cs(142,28): 
+error CS1929: 'int' 
+no contiene una 
+definici├│n para 
+'Contains' y la 
+mejor sobrecarga del 
+m├®todo de 
+extensi├│n 'MemoryExt
+ensions.Contains<stri
+ng>(ReadOnlySpan<stri
+ng>, string)' 
+requiere un receptor 
+del tipo 'System.Read
+OnlySpan<string>' [C:
+\Dev\MudTrack\Project
+Report\ProjectReport_
+dnw1gduj_wpftmp.cspro
+j]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReturnedView.x
+aml.cs(186,36): 
+error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReturnedView.x
+aml.cs(187,28): 
+error CS1929: 'int' 
+no contiene una 
+definici├│n para 
+'Contains' y la 
+mejor sobrecarga del 
+m├®todo de 
+extensi├│n 'MemoryExt
+ensions.Contains<stri
+ng>(ReadOnlySpan<stri
+ng>, string)' 
+requiere un receptor 
+del tipo 'System.Read
+OnlySpan<string>' [C:
+\Dev\MudTrack\Project
+Report\ProjectReport_
+dnw1gduj_wpftmp.cspro
+j]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReceivedViewModel.c
+s(349,32): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReceivedViewModel.c
+s(362,21): error 
+CS1929: 'int' no 
+contiene una 
+definici├│n para 
+'IndexOf' y la mejor 
+sobrecarga del 
+m├®todo de 
+extensi├│n 'MemoryExt
+ensions.IndexOf(ReadO
+nlySpan<char>, 
+ReadOnlySpan<char>, 
+StringComparison)' 
+requiere un receptor 
+del tipo 'System.Read
+OnlySpan<char>' [C:\D
+ev\MudTrack\ProjectRe
+port\ProjectReport_dn
+w1gduj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReceivedView.x
+aml.cs(94,40): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReturnedView.x
+aml.cs(139,40): 
+error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReceivedView.x
+aml.cs(141,36): 
+error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReceivedView.x
+aml.cs(142,28): 
+error CS1929: 'int' 
+no contiene una 
+definici├│n para 
+'Contains' y la 
+mejor sobrecarga del 
+m├®todo de 
+extensi├│n 'MemoryExt
+ensions.Contains<stri
+ng>(ReadOnlySpan<stri
+ng>, string)' 
+requiere un receptor 
+del tipo 'System.Read
+OnlySpan<string>' [C:
+\Dev\MudTrack\Project
+Report\ProjectReport_
+dnw1gduj_wpftmp.cspro
+j]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReturnedView.x
+aml.cs(186,36): 
+error CS1061: 
+"Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Views\Inventory
+\TicketReturnedView.x
+aml.cs(187,28): 
+error CS1929: 'int' 
+no contiene una 
+definici├│n para 
+'Contains' y la 
+mejor sobrecarga del 
+m├®todo de 
+extensi├│n 'MemoryExt
+ensions.Contains<stri
+ng>(ReadOnlySpan<stri
+ng>, string)' 
+requiere un receptor 
+del tipo 'System.Read
+OnlySpan<string>' [C:
+\Dev\MudTrack\Project
+Report\ProjectReport_
+dnw1gduj_wpftmp.cspro
+j]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReceivedViewModel.c
+s(349,32): error 
+CS1061: "Product" no 
+contiene una 
+definici├│n para 
+"SearchLabel" ni un 
+m├®todo de 
+extensi├│n accesible 
+"SearchLabel" que 
+acepte un primer 
+argumento del tipo 
+"Product" (┬┐falta 
+alguna directiva 
+using o una 
+referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_dnw1g
+duj_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Tick
+etReceivedViewModel.c
+s(362,21): error 
+CS1929: 'int' no 
+contiene una 
+definici├│n para 
+'IndexOf' y la mejor 
+sobrecarga del 
+m├®todo de 
+extensi├│n 'MemoryExt
+ensions.IndexOf(ReadO
+nlySpan<char>, 
+ReadOnlySpan<char>, 
+StringComparison)' 
+requiere un receptor 
+del tipo 'System.Read
+OnlySpan<char>' [C:\D
+ev\MudTrack\ProjectRe
+port\ProjectReport_dn
+w1gduj_wpftmp.csproj]
+
+

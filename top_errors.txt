@@ -1,0 +1,227 @@
+﻿
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(24,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'Description' [C:\Dev
+\MudTrack\ProjectRepo
+rt\ProjectReport_m2bi
+2ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(25,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'PhysicalState' [C:\D
+ev\MudTrack\ProjectRe
+port\ProjectReport_m2
+bi2ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(26,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'Presentation' [C:\De
+v\MudTrack\ProjectRep
+ort\ProjectReport_m2b
+i2ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(28,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'SG' [C:\Dev\MudTrack
+\ProjectReport\Projec
+tReport_m2bi2ef1_wpft
+mp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryProductsDashboar
+dViewModel.cs(68,22):
+ error CS0102: El 
+tipo 'InventoryProduc
+tsDashboardViewModel'
+ ya contiene una 
+definici├│n para '_is
+ProjectFilterEnabled'
+ [C:\Dev\MudTrack\Pro
+jectReport\ProjectRep
+ort_m2bi2ef1_wpftmp.c
+sproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryProductsDashboar
+dViewModel.cs(69,21):
+ error CS0102: El 
+tipo 'InventoryProduc
+tsDashboardViewModel'
+ ya contiene una 
+definici├│n para 'IsP
+rojectFilterEnabled' 
+[C:\Dev\MudTrack\Proj
+ectReport\ProjectRepo
+rt_m2bi2ef1_wpftmp.cs
+proj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Usag
+eViewModel.cs(13,26):
+ error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryService' 
+no se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_m2bi2
+ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Usag
+eViewModel.cs(41,31):
+ error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryService' 
+no se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_m2bi2
+ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(24,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'Description' [C:\Dev
+\MudTrack\ProjectRepo
+rt\ProjectReport_m2bi
+2ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(25,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'PhysicalState' [C:\D
+ev\MudTrack\ProjectRe
+port\ProjectReport_m2
+bi2ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(26,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'Presentation' [C:\De
+v\MudTrack\ProjectRep
+ort\ProjectReport_m2b
+i2ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\Models\Product.
+cs(28,23): error 
+CS0102: El tipo 
+'Product' ya 
+contiene una 
+definici├│n para 
+'SG' [C:\Dev\MudTrack
+\ProjectReport\Projec
+tReport_m2bi2ef1_wpft
+mp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryProductsDashboar
+dViewModel.cs(68,22):
+ error CS0102: El 
+tipo 'InventoryProduc
+tsDashboardViewModel'
+ ya contiene una 
+definici├│n para '_is
+ProjectFilterEnabled'
+ [C:\Dev\MudTrack\Pro
+jectReport\ProjectRep
+ort_m2bi2ef1_wpftmp.c
+sproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Inve
+ntoryProductsDashboar
+dViewModel.cs(69,21):
+ error CS0102: El 
+tipo 'InventoryProduc
+tsDashboardViewModel'
+ ya contiene una 
+definici├│n para 'IsP
+rojectFilterEnabled' 
+[C:\Dev\MudTrack\Proj
+ectReport\ProjectRepo
+rt_m2bi2ef1_wpftmp.cs
+proj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Usag
+eViewModel.cs(13,26):
+ error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryService' 
+no se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_m2bi2
+ef1_wpftmp.csproj]
+C:\Dev\MudTrack\Proje
+ctReport\Modules\Inve
+ntory\ViewModels\Usag
+eViewModel.cs(41,31):
+ error CS0246: El 
+nombre del tipo o 
+del espacio de 
+nombres 
+'InventoryService' 
+no se encontr├│ 
+(┬┐falta una 
+directiva using o 
+una referencia de 
+ensamblado?) [C:\Dev\
+MudTrack\ProjectRepor
+t\ProjectReport_m2bi2
+ef1_wpftmp.csproj]
+
+

@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -103,11 +103,11 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             {
                 "GN Solids Control",
                 "KEMTRON Technologies",
-                "Sistemas integrados de control de sólidos.",
+                "Sistemas integrados de control de sï¿½lidos.",
                 "Elgin Separation Solutions",
                 "H-Screening Separation",
                 "FLC (Fluid Systems Inc.)",
-                "PetroSolids (México)",
+                "PetroSolids (Mï¿½xico)",
                 "MAS OPCIONES"
             };
 
@@ -119,6 +119,9 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             SaveCommand = new RelayCommand(async _ => await SaveAsync());
             SaveAndReturnCommand = new RelayCommand(async _ => await SaveAndReturnAsync());
             ResetToDefaultCommand = new RelayCommand(_ => ResetToDefault());
+
+            // Listen for pit changes
+            Pits.CollectionChanged += (s, e) => PublishPits();
         }
 
         private void OnWellChanged(object? sender, Well well) => LoadRigProfile(well);
@@ -129,6 +132,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             CurrentRigProfile = well.RigProfile ?? new RigProfileClass();
             EnsureSurfaceDefaults();
             EnsureServiceLineDefaults();
+            PublishPits();
         }
 
         public RigProfileClass CurrentRigProfile
@@ -144,7 +148,22 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                     OnPropertyChanged(nameof(SolidsControl));
                     OnPropertyChanged(nameof(Pits));
                     OnPropertyChanged(nameof(TotalSurfaceLoss));
+
+                    if (Pits != null)
+                    {
+                        Pits.CollectionChanged -= (s, e) => PublishPits();
+                        Pits.CollectionChanged += (s, e) => PublishPits();
+                        PublishPits();
+                    }
                 }
+            }
+        }
+
+        private void PublishPits()
+        {
+            if (Pits != null)
+            {
+                _contextService.PublishRigProfilePits(Pits.Where(p => p.IsActive).ToList());
             }
         }
 
@@ -462,6 +481,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 {
                     await DataPersistenceService.SaveProjectAsync(projectFilePath, project);
                     ToastNotificationService.Instance.ShowSuccess("Rig Profile saved successfully");
+                    PublishPits();
                 }
                 else
                 {
@@ -525,7 +545,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
             SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
 
-            // ? Asegura que la lista fija de Models siga disponible después del reset
+            // ? Asegura que la lista fija de Models siga disponible despuï¿½s del reset
             AvailableModels.Clear();
             foreach (var m in FixedModelOptions)
                 AvailableModels.Add(m);
@@ -544,7 +564,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 .OrderBy(x => x);
         }
 
-        // ? CAMBIO CRÍTICO: ya NO filtra por Excel / manufacturer. Siempre lista fija.
+        // ? CAMBIO CRï¿½TICO: ya NO filtra por Excel / manufacturer. Siempre lista fija.
         public void UpdateAvailableModels(string type, string manufacturer)
         {
             if (AvailableModels == null) return;
@@ -565,7 +585,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             if (match != null)
             {
                 item.GpmCapacity = match.Gpm;
-                // también asignar al campo explícito de "Cap flow (gpm)"
+                // tambiï¿½n asignar al campo explï¿½cito de "Cap flow (gpm)"
                 item.CapFlowGpm = match.Gpm;
             }
         }
@@ -580,3 +600,4 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         }
     }
 }
+

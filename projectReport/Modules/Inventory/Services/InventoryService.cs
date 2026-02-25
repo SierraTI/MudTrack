@@ -21,6 +21,10 @@ namespace ProjectReport.Services.Inventory
         public List<Product> GetProducts() => _repo.LoadProducts();
         public List<InventoryMovement> GetMovements() => _repo.LoadMovements();
 
+        // New from SPEC: Return only items selected for project
+        public List<Product> GetSelectedProducts() 
+            => GetProducts().Where(p => p.IsSelectedForReport).ToList();
+
         public void UpsertProduct(Product product)
         {
             var products = _repo.LoadProducts();
@@ -37,10 +41,38 @@ namespace ProjectReport.Services.Inventory
                 existing.Category = product.Category;
                 existing.Unit = product.Unit;
                 existing.Status = product.Status;
+                existing.IsSelectedForReport = product.IsSelectedForReport;
+                existing.PhysicalState = product.PhysicalState;
+                existing.Presentation = product.Presentation;
+                existing.QtyPackage = product.QtyPackage;
+                existing.SG = product.SG;
             }
 
             _repo.SaveProducts(products);
             RaiseInventoryUpdated();
+        }
+
+        public void UpdateProductSelection(IEnumerable<string> selectedCodes)
+        {
+            var products = _repo.LoadProducts();
+            var selectedSet = new HashSet<string>(selectedCodes, StringComparer.OrdinalIgnoreCase);
+
+            bool changed = false;
+            foreach (var p in products)
+            {
+                bool shouldBeSelected = selectedSet.Contains(p.Code);
+                if (p.IsSelectedForReport != shouldBeSelected)
+                {
+                    p.IsSelectedForReport = shouldBeSelected;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                _repo.SaveProducts(products);
+                RaiseInventoryUpdated();
+            }
         }
 
         public void CreateTicketConsumed(Ticket ticket)
@@ -52,27 +84,28 @@ namespace ProjectReport.Services.Inventory
                 ticket.TicketId = Guid.NewGuid().ToString();
             }
 
-            if (ticket.Lines != null && ticket.Lines.Count > 0)
-            {
-                foreach (var line in ticket.Lines) ProcessConsumedLine(ticket, line);
-            }
-            else
-            {
-                ProcessConsumedLine(ticket, ticket.Line);
-            }
-
-            RaiseInventoryUpdated();
-        }
-
-        private void ProcessConsumedLine(Ticket ticket, TicketLine line)
-        {
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
+            var lines = ticket.Lines != null && ticket.Lines.Count > 0 
+                ? ticket.Lines 
+                : new List<TicketLine> { ticket.Line };
+
+            foreach (var line in lines)
+            {
+                ProcessConsumedLine(ticket, line, products, movements);
+            }
+
+            _repo.SaveProducts(products);
+            _repo.SaveMovements(movements);
+            RaiseInventoryUpdated();
+        }
+
+        private void ProcessConsumedLine(Ticket ticket, TicketLine line, List<Product> products, List<InventoryMovement> movements)
+        {
             var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
             if (p == null)
             {
-                // Optionally create product or throw error. Usually for consumption we want it to exist.
                 p = new Product
                 {
                     Code = line.ProductCode,
@@ -103,13 +136,12 @@ namespace ProjectReport.Services.Inventory
                 Observations = ticket.Observations,
                 StockBefore = before,
                 StockAfter = p.StockQty,
-                Requisition = ticket.Requisition ?? ""
+                Requisition = ticket.Requisition ?? "",
+                Remision = ticket.Remision ?? "",
+                SupplierName = ticket.SupplierName ?? ""
             };
 
             movements.Add(mv);
-
-            _repo.SaveProducts(products);
-            _repo.SaveMovements(movements);
         }
 
         public void CreateTicketReceived(Ticket ticket)
@@ -131,23 +163,25 @@ namespace ProjectReport.Services.Inventory
                 catch { }
             }
 
-            if (ticket.Lines != null && ticket.Lines.Count > 0)
-            {
-                foreach (var line in ticket.Lines) ProcessReceivedLine(ticket, line);
-            }
-            else
-            {
-                ProcessReceivedLine(ticket, ticket.Line);
-            }
-
-            RaiseInventoryUpdated();
-        }
-
-        private void ProcessReceivedLine(Ticket ticket, TicketLine line)
-        {
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
+            var lines = ticket.Lines != null && ticket.Lines.Count > 0 
+                ? ticket.Lines 
+                : new List<TicketLine> { ticket.Line };
+
+            foreach (var line in lines)
+            {
+                ProcessReceivedLine(ticket, line, products, movements);
+            }
+
+            _repo.SaveProducts(products);
+            _repo.SaveMovements(movements);
+            RaiseInventoryUpdated();
+        }
+
+        private void ProcessReceivedLine(Ticket ticket, TicketLine line, List<Product> products, List<InventoryMovement> movements)
+        {
             var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
             if (p == null)
             {
@@ -184,13 +218,12 @@ namespace ProjectReport.Services.Inventory
                 Observations = ticket.Observations,
                 StockBefore = before,
                 StockAfter = p.StockQty,
-                Requisition = ticket.Requisition ?? ""
+                Requisition = ticket.Requisition ?? "",
+                Remision = ticket.Remision ?? "",
+                SupplierName = ticket.SupplierName ?? ""
             };
 
             movements.Add(mv);
-
-            _repo.SaveProducts(products);
-            _repo.SaveMovements(movements);
         }
 
         public void CreateTicketReturned(Ticket ticket)
@@ -203,23 +236,25 @@ namespace ProjectReport.Services.Inventory
                 ticket.TicketId = Guid.NewGuid().ToString();
             }
 
-            if (ticket.Lines != null && ticket.Lines.Count > 0)
-            {
-                foreach (var line in ticket.Lines) ProcessReturnedLine(ticket, line);
-            }
-            else
-            {
-                ProcessReturnedLine(ticket, ticket.Line);
-            }
-
-            RaiseInventoryUpdated();
-        }
-
-        private void ProcessReturnedLine(Ticket ticket, TicketLine line)
-        {
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
+            var lines = ticket.Lines != null && ticket.Lines.Count > 0 
+                ? ticket.Lines 
+                : new List<TicketLine> { ticket.Line };
+
+            foreach (var line in lines)
+            {
+                ProcessReturnedLine(ticket, line, products, movements);
+            }
+
+            _repo.SaveProducts(products);
+            _repo.SaveMovements(movements);
+            RaiseInventoryUpdated();
+        }
+
+        private void ProcessReturnedLine(Ticket ticket, TicketLine line, List<Product> products, List<InventoryMovement> movements)
+        {
             var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
             if (p == null)
             {
@@ -277,13 +312,12 @@ namespace ProjectReport.Services.Inventory
                 Observations = ticket.Observations,
                 StockBefore = before,
                 StockAfter = p.StockQty,
-                Requisition = ticket is { } ? (ticket.Requisition ?? "") : ""
+                Requisition = ticket is { } ? (ticket.Requisition ?? "") : "",
+                Remision = ticket.Remision ?? "",
+                SupplierName = ticket.SupplierName ?? ""
             };
 
             movements.Add(mv);
-
-            _repo.SaveProducts(products);
-            _repo.SaveMovements(movements);
         }
 
         // Eliminar movimientos para un ticket (por TicketId).

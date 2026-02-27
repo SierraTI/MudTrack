@@ -329,12 +329,36 @@
                             <!-- Fluid Type -->
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Fluid Type"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+        <Run Text="Fluid Type"/>
+        <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <ComboBox ItemsSource="{Binding LoadFluid}"
-                                              SelectedItem="{Binding CurrentWell.LoadFluid, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource InputComboBoxStyle}"/>
+
+                                <ComboBox 
+    ItemsSource="{Binding LoadFluid}"
+    SelectedItem="{Binding SelectedFluid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+    Style="{StaticResource InputComboBoxStyle}"
+/>
+
                             </StackPanel>
+
+                            <!-- Fluid Stock -->
+                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+        <Run Text="Fluid Stock"/>
+        <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+
+                                <ComboBox 
+    ItemsSource="{Binding FilteredFluids}"
+    SelectedItem="{Binding SelectedFluidStock, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+    DisplayMemberPath="Name"
+    Style="{StaticResource InputComboBoxStyle}"
+/>
+
+                               
+                            </StackPanel>
+
+
 
                             <!-- Spud Date -->
                             <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,14">
@@ -344,6 +368,7 @@
                                 <DatePicker SelectedDate="{Binding CurrentWell.SpudDate, UpdateSourceTrigger=PropertyChanged}"
                                                 Height="34"/>
                             </StackPanel>
+                            
                         </Grid>
                     </Expander>
                 </Border>

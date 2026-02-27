@@ -8,7 +8,7 @@ using ProjectReport.Models;
 using ProjectReport.Views.Geometry;
 using ProjectReport.Views.Inventory;
 using ProjectReport.Views.ReportWizard; 
-using ProjectReport.ViewModels; // <-- added to reference ReportDetailsViewModel
+using ProjectReport.ViewModels;
 using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Modules.RigProfile.Views;
@@ -23,6 +23,7 @@ namespace ProjectReport.Views
 
         private ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView? _volumeBalanceView;
         private ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel? _volumeBalanceViewModel;
+        private int? _currentWellId;
 
         private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
         {
@@ -80,6 +81,19 @@ namespace ProjectReport.Views
 
             NavigateToHome();
         }
+
+        private void SetTopMenuButtonsVisibility(Visibility visibility)
+        {
+            HomeButton.Visibility = visibility;
+            GeometryButton.Visibility = visibility;
+            InventoryButton.Visibility = visibility;
+            VolumeBalanceButton.Visibility = visibility;
+            ContentTitle.Visibility = visibility;
+
+            if (ContentIndicator != null)
+                ContentIndicator.Visibility = visibility;
+        }
+
 
         private void Timer_Tick(object? sender, EventArgs e)
         {
@@ -139,7 +153,12 @@ namespace ProjectReport.Views
 
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;
+
+            
+            SetTopMenuButtonsVisibility(Visibility.Collapsed);
+            
         }
+
 
         private void NavigateToWellData(int wellId)
         {
@@ -147,6 +166,8 @@ namespace ProjectReport.Views
 
             var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
             if (well == null) return;
+
+            _currentWellId = wellId; // <-- guardamos el pozo actual
 
             _wellDataView = new WellDataView();
             var vm = new ProjectReport.ViewModels.WellDataViewModel(CurrentProject);
@@ -159,6 +180,7 @@ namespace ProjectReport.Views
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;
         }
+
 
         private void NavigateToGeometry(int wellId)
         {
@@ -175,12 +197,15 @@ namespace ProjectReport.Views
             ContentArea.Content = _geometryView;
 
             GeometrySubmenu.Visibility = Visibility.Visible;
+
         }
 
         private void NavigateToWellDashboard(int wellId)
         {
             var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
             if (well == null) return;
+
+            _currentWellId = wellId;
 
             _wellDashboardView = new Views.WellDashboardView();
             var vm = new ProjectReport.ViewModels.WellDashboardViewModel(CurrentProject);
@@ -192,7 +217,10 @@ namespace ProjectReport.Views
 
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;
+            SetTopMenuButtonsVisibility(Visibility.Visible);
+
         }
+
 
         private void NavigateToRigProfile(int wellId)
         {
@@ -535,6 +563,15 @@ namespace ProjectReport.Views
 
         private void HomeButton_Click(object sender, RoutedEventArgs e)
         {
+            if (_currentWellId.HasValue)
+            {
+                NavigateToWellDashboard(_currentWellId.Value);
+            }
+        }
+
+
+        private void Logo_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
             NavigateToHome();
         }
 
@@ -566,6 +603,11 @@ namespace ProjectReport.Views
             NavigationService.Instance.NavigationRequested -= OnNavigationRequested;
             _databaseService?.Dispose();
             base.OnClosed(e);
+        }
+
+        private void ToastNotificationControl_Loaded(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

@@ -155,113 +155,113 @@
 
     </UserControl.Resources>
 
+        <!-- TAB 1: DASHBOARD -->
     <Grid>
-        <TabControl>
+        <Grid Margin="24,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <!-- Dashboard -->
+                <RowDefinition Height="Auto" />
+                <!-- Filters -->
+                <RowDefinition Height="*" />
+                <!-- Content -->
+            </Grid.RowDefinitions>
 
-            <!-- TAB 1: DASHBOARD -->
-            <TabItem Header="Dashboard">
-                <Grid Margin="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />   <!-- Dashboard -->
-                        <RowDefinition Height="Auto" />   <!-- Filters -->
-                        <RowDefinition Height="*" />      <!-- Content -->
-                    </Grid.RowDefinitions>
-
-                    <!-- DASHBOARD CARD -->
-                    <Border Grid.Row="0"
+            <!-- DASHBOARD CARD -->
+            <Border Grid.Row="0"
                             Background="White"
                             CornerRadius="8"
                             Padding="20"
                             BorderBrush="#DDD"
                             BorderThickness="1"
                             Margin="0,0,0,16">
-                        <StackPanel>
-                            <TextBlock Text="DRILLING FLUIDS INTELLIGENCE"
+                <StackPanel>
+                    <TextBlock Text="DRILLING FLUIDS INTELLIGENCE"
                                        FontSize="22"
                                        FontWeight="Bold"
                                        Margin="0,0,0,4" />
-                            <TextBlock Text="Well Selector Dashboard"
+                    <TextBlock Text="Well Selector Dashboard"
                                        FontSize="12"
                                        Foreground="#777"
                                        Margin="0,0,0,16" />
 
-                            <!-- KPIs responsive: columnas se adaptan al ancho -->
-                            <UniformGrid
+                    <!-- KPIs responsive: columnas se adaptan al ancho -->
+                    <UniformGrid
                                 Columns="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource WidthToColumnsConverter}}">
 
-                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="TOTAL WELLS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding TotalWells}" FontSize="26" FontWeight="Bold" Foreground="Black"/>
-                                    </StackPanel>
-                                </Border>
+                        <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="TOTAL WELLS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding TotalWells}" FontSize="26" FontWeight="Bold" Foreground="Black"/>
+                            </StackPanel>
+                        </Border>
 
-                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="DRAFT" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding DraftWells}" FontSize="26" FontWeight="Bold" Foreground="#FFA500"/>
-                                    </StackPanel>
-                                </Border>
+                        <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="DRAFT" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding DraftWells}" FontSize="26" FontWeight="Bold" Foreground="#FFA500"/>
+                            </StackPanel>
+                        </Border>
 
-                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="IN PROGRESS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding InProgressWells}" FontSize="26" FontWeight="Bold" Foreground="#0078D7"/>
-                                    </StackPanel>
-                                </Border>
+                        <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="IN PROGRESS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding InProgressWells}" FontSize="26" FontWeight="Bold" Foreground="#0078D7"/>
+                            </StackPanel>
+                        </Border>
 
-                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="COMPLETED" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding CompletedWells}" FontSize="26" FontWeight="Bold" Foreground="Green"/>
-                                    </StackPanel>
-                                </Border>
+                        <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="COMPLETED" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding CompletedWells}" FontSize="26" FontWeight="Bold" Foreground="Green"/>
+                            </StackPanel>
+                        </Border>
 
-                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="ARCHIVED" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding ArchivedWells}" FontSize="26" FontWeight="Bold" Foreground="#888"/>
-                                    </StackPanel>
-                                </Border>
+                        <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="ARCHIVED" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding ArchivedWells}" FontSize="26" FontWeight="Bold" Foreground="#888"/>
+                            </StackPanel>
+                        </Border>
 
-                                <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="OPERATORS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
-                                        <TextBlock Text="{Binding ActiveOperators}" FontSize="26" FontWeight="Bold" Foreground="#800080"/>
-                                    </StackPanel>
-                                </Border>
+                        <Border Margin="6" Padding="14" CornerRadius="10" BorderBrush="#EEE" BorderThickness="1" Background="White">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="OPERATORS" FontSize="11" FontWeight="SemiBold" Foreground="#666" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding ActiveOperators}" FontSize="26" FontWeight="Bold" Foreground="#800080"/>
+                            </StackPanel>
+                        </Border>
 
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
 
-                    <!-- FILTROS / ACCIONES responsive -->
-                    <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,12">
+            <!-- FILTROS / ACCIONES responsive -->
+            <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,12">
 
-                        <!-- Acciones derecha -->
-                        <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                            <ToggleButton Margin="0,0,8,0"
+                <!-- Acciones derecha -->
+                <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <ToggleButton Margin="0,0,8,0"
                                           Padding="12,4"
                                           Content="Card View"
                                           IsChecked="{Binding IsCardView, Mode=TwoWay}" />
 
-                            <Button Margin="0,0,8,0"
+                    <Button Margin="0,0,8,0"
                                     Content="Clear Filters"
                                     Padding="12,4"
                                     VerticalAlignment="Center"
                                     Command="{Binding ClearFiltersCommand}" />
 
-                            <Button Background="{DynamicResource OrangeBrush}"
+                    <Button Background="{DynamicResource OrangeBrush}"
                                     Foreground="White"
                                     Padding="16,4"
                                     Content="New Well"
                                     VerticalAlignment="Center"
                                     Command="{Binding NewWellCommand}" />
-                        </WrapPanel>
+                </WrapPanel>
 
-                        <!-- Search + Sort -->
-                        <WrapPanel>
-                            <TextBox Width="360"
+                <!-- Search + Sort -->
+                <WrapPanel>
+                    <TextBox Width="360"
                                      MinWidth="220"
                                      Margin="0,0,8,0"
                                      VerticalAlignment="Center"
@@ -269,32 +269,29 @@
                                      Padding="6,2"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
 
-                            <ComboBox Width="240"
+                    <ComboBox Width="240"
                                       MinWidth="180"
                                       Height="28"
                                       VerticalAlignment="Center"
                                       ItemsSource="{Binding SortOptions}"
                                       SelectedItem="{Binding SelectedSortOption}" />
-                        </WrapPanel>
-                    </DockPanel>
+                </WrapPanel>
+            </DockPanel>
 
-                    <!-- CONTENT: Grid o Cards según IsCardView -->
-                    <ContentControl Grid.Row="2" Content="{Binding}">
-                        <ContentControl.Style>
-                            <Style TargetType="ContentControl">
-                                <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsCardView}" Value="True">
-                                        <Setter Property="ContentTemplate" Value="{StaticResource CardTemplate}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ContentControl.Style>
-                    </ContentControl>
+            <!-- CONTENT: Grid o Cards según IsCardView -->
+            <ContentControl Grid.Row="2" Content="{Binding}">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCardView}" Value="True">
+                                <Setter Property="ContentTemplate" Value="{StaticResource CardTemplate}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
 
-                </Grid>
-            </TabItem>
-
-        </TabControl>
+        </Grid>
     </Grid>
 </UserControl>

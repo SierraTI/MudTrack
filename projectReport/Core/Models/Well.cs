@@ -65,6 +65,15 @@ namespace ProjectReport.Models
         private DateTime _lastModified = DateTime.Now;
         private string _lastModifiedBy = string.Empty;
 
+
+        private string? _loadFluidStock;
+        public string? LoadFluidStock
+        {
+            get => _loadFluidStock;
+            set => SetProperty(ref _loadFluidStock, value);
+        }
+
+
         #endregion
 
         #region General Information Properties
@@ -502,6 +511,7 @@ namespace ProjectReport.Models
                 return string.Join(", ", warnings);
             }
         }
+
 
         #endregion
 

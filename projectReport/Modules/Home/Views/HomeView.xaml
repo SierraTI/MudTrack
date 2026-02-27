@@ -176,7 +176,7 @@
                             BorderThickness="1"
                             Margin="0,0,0,16">
                         <StackPanel>
-                            <TextBlock Text="PROJECT REPORT MANAGER"
+                            <TextBlock Text="DRILLING FLUIDS INTELLIGENCE"
                                        FontSize="22"
                                        FontWeight="Bold"
                                        Margin="0,0,0,4" />

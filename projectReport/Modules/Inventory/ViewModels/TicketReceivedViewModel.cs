@@ -89,6 +89,27 @@ namespace ProjectReport.ViewModels.Inventory
             set => SetProperty(ref _origin, value);
         }
 
+        private string _supplierName = "";
+        public string SupplierName
+        {
+            get => _supplierName;
+            set => SetProperty(ref _supplierName, value);
+        }
+
+        private string _shipmentMethod = "";
+        public string ShipmentMethod
+        {
+            get => _shipmentMethod;
+            set => SetProperty(ref _shipmentMethod, value);
+        }
+
+        private string _shipmentReference = "";
+        public string ShipmentReference
+        {
+            get => _shipmentReference;
+            set => SetProperty(ref _shipmentReference, value);
+        }
+
         private double _unitPrice;
         public double UnitPrice
         {
@@ -162,7 +183,7 @@ namespace ProjectReport.ViewModels.Inventory
 
             AddLineCommand = new RelayCommand(_ => AddLine());
             RemoveLineCommand = new RelayCommand(param => RemoveLine(param as TicketLine));
-            SelectProductsCommand = new RelayCommand(_ => RequestSelectProducts?.Invoke());
+            SelectProductsCommand = new RelayCommand(_ => LoadSelectedChemicals());
 
             WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
 
@@ -173,18 +194,34 @@ namespace ProjectReport.ViewModels.Inventory
         {
             if (e.SelectedItems == null || !e.SelectedItems.Any()) return;
 
+            var productCatalog = _service.GetProducts()
+                .Where(p => !string.IsNullOrWhiteSpace(p.Code))
+                .ToDictionary(p => p.Code ?? string.Empty, p => p, StringComparer.OrdinalIgnoreCase);
+
             foreach (var item in e.SelectedItems)
             {
                 // Avoid adding the same product twice in the same ticket draft
                 bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
                 if (alreadyExists) continue;
 
+                var unitFromChemical = item.Unidad ?? string.Empty;
+                var unitFromProduct = productCatalog.TryGetValue(item.Code ?? string.Empty, out var mappedProduct)
+                    ? (mappedProduct.Unit ?? string.Empty)
+                    : string.Empty;
+                var resolvedUnit = !string.IsNullOrWhiteSpace(unitFromChemical)
+                    ? unitFromChemical
+                    : (!string.IsNullOrWhiteSpace(unitFromProduct) ? unitFromProduct : "Each");
+                var resolvedPrice = productCatalog.TryGetValue(item.Code ?? string.Empty, out var pricedProduct)
+                    ? pricedProduct.CurrentUnitCost
+                    : item.UnitPrice;
+
                 Lines.Add(new TicketLine
                 {
                     ProductCode = item.Code,
                     ProductName = item.Nombre ?? item.Code,
+                    Unit = resolvedUnit,
                     Quantity = 1,
-                    UnitPrice = 0,
+                    UnitPrice = resolvedPrice,
                     Context = Origin
                 });
             }
@@ -228,6 +265,36 @@ namespace ProjectReport.ViewModels.Inventory
                 System.Diagnostics.Debug.WriteLine($"[TicketReceived] AddLine exception: {ex}");
                 Error = "Error al agregar línea: " + ex.Message;
             }
+        }
+
+        private void LoadSelectedChemicals()
+        {
+            var selected = _service.GetSelectedProducts();
+            if (!selected.Any())
+            {
+                Error = "No products are currently selected in the Chemical List.";
+                return;
+            }
+
+            int addedCount = 0;
+            foreach (var item in selected)
+            {
+                bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
+                if (alreadyExists) continue;
+
+                Lines.Add(new TicketLine
+                {
+                    ProductCode = item.Code ?? string.Empty,
+                    ProductName = item.Name ?? item.Code ?? string.Empty,
+                    Unit = string.IsNullOrWhiteSpace(item.Unit) ? "Each" : item.Unit,
+                    Quantity = 1,
+                    UnitPrice = item.CurrentUnitCost,
+                    Context = Origin
+                });
+                addedCount++;
+            }
+
+            Error = $"{addedCount} products added from Chemical List.";
         }
 
         private void RemoveLine(TicketLine? line)
@@ -425,6 +492,7 @@ namespace ProjectReport.ViewModels.Inventory
                 {
                     ProductCode = mv.ProductCode ?? string.Empty,
                     ProductName = mv.ProductName ?? string.Empty,
+                    Unit = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, mv.ProductCode, StringComparison.OrdinalIgnoreCase))?.Unit ?? "Each",
                     Quantity = mv.Quantity,
                     UnitPrice = mv.UnitPrice,
                     Context = mv.OriginOrUse ?? string.Empty,
@@ -507,6 +575,8 @@ namespace ProjectReport.ViewModels.Inventory
                     // ensure line has product code set
                     ln.ProductCode = existing.Code;
                     ln.ProductName = existing.Name;
+                    if (ln.UnitPrice <= 0)
+                        ln.UnitPrice = existing.CurrentUnitCost;
                 }
             }
 
@@ -517,6 +587,10 @@ namespace ProjectReport.ViewModels.Inventory
                 User = User,
                 Observations = Observations,
                 Requisition = Requisition ?? string.Empty,
+                Origin = Origin,
+                SupplierName = SupplierName,
+                ShipmentMethod = ShipmentMethod,
+                Remision = ShipmentReference,
                 Lines = Lines.ToList()
             };
 

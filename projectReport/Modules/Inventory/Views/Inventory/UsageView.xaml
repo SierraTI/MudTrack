@@ -15,113 +15,54 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Industry-Standard Usage Table -->
+        <!-- Daily Balance Usage Table -->
         <DataGrid Grid.Row="0"
                   x:Name="UsageDataGrid"
-                  ItemsSource="{Binding ConsumoItems}"
+                  ItemsSource="{Binding BalanceItems}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  IsReadOnly="False"
+                  IsReadOnly="True"
                   SelectionUnit="CellOrRowHeader"
                   SelectionMode="Single"
                   Margin="0,0,0,10"
-                  Background="White">
+                  Background="White"
+                  GridLinesVisibility="Horizontal"
+                  BorderThickness="1"
+                  BorderBrush="#E5E7EB">
             <DataGrid.Columns>
-                <!-- Product/Chemical (Dropdown from Master) -->
-                <DataGridComboBoxColumn Header="Product/Chemical" 
-                                        ItemsSource="{Binding DataContext.AvailableProducts, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        SelectedValuePath="Code"
-                                        SelectedValueBinding="{Binding ProductCode}"
-                                        DisplayMemberPath="Name"
-                                        Width="2*"/>
+                <DataGridTextColumn Header="Name" Binding="{Binding ProductName}" Width="2*"/>
+                <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" Width="*"/>
+                <DataGridTextColumn Header="Initial" Binding="{Binding InitialQuantity, StringFormat={}{0:N2}}" Width="*"/>
+                <DataGridTextColumn Header="Received" Binding="{Binding ReceivedQuantity, StringFormat={}{0:N2}}" Width="*"/>
+                <DataGridTextColumn Header="Return" Binding="{Binding ReturnQuantity, StringFormat={}{0:N2}}" Width="*"/>
 
-                <!-- Unit (Auto-fill from Product Master) -->
-                <DataGridTextColumn Header="Unit" 
-                                   Binding="{Binding Unit}" 
-                                   Width="*" 
-                                   IsReadOnly="True"/>
-
-                <!-- Concentration (ppb/SG) -->
-                <DataGridTextColumn Header="Concentration (ppb/SG)" 
-                                   Binding="{Binding Concentration}" 
-                                   Width="*"/>
-
-                <!-- Quantity Used (Manual Input) -->
-                <DataGridTextColumn Header="Quantity Used" 
-                                   Binding="{Binding Quantity}" 
-                                   Width="*"/>
-
-                <!-- Current Stock (Read-only Badge) -->
-                <DataGridTemplateColumn Header="Current Stock" Width="*">
+                <!-- Use Detail Button -->
+                <DataGridTemplateColumn Header="Use" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Border Background="#E0F2FE" Padding="6,2" CornerRadius="2" Margin="2">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding CurrentStock}" 
-                                              Foreground="#0369A1" FontWeight="Bold"/>
-                                    <TextBlock Text=" " Foreground="#0369A1"/>
-                                    <TextBlock Text="{Binding Unit}" 
-                                              Foreground="#0369A1" FontWeight="Bold"/>
-                                </StackPanel>
-                            </Border>
+                            <Button Content="USE" 
+                                    Command="{Binding DataContext.OpenUseSpecificationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Background="#3B82F6" Foreground="White"
+                                    FontWeight="Bold" FontSize="10"
+                                    Padding="8,2" Height="24"
+                                    BorderThickness="0"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!-- Unit Cost (USD) - Auto-fill from Stock or Manual -->
-                <DataGridTextColumn Header="Unit Cost (USD)" 
-                                   Binding="{Binding UnitCost}" 
-                                   Width="*"/>
-
-                <!-- Daily Cost (Auto-calculated) -->
-                <DataGridTemplateColumn Header="Daily Cost (USD)" Width="*" IsReadOnly="True">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock FontWeight="Bold" Foreground="#059669">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="${0:F2}">
-                                        <Binding Path="DailyCost"/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-
-                <!-- Category (Grouping: Weighting Materials, Viscosifiers, etc.) -->
-                <DataGridTextColumn Header="Category" 
-                                   Binding="{Binding Category}" 
-                                   Width="*"/>
-
-                <!-- Date -->
-                <DataGridTextColumn Header="Date" 
-                                   Binding="{Binding Date, StringFormat=yyyy-MM-dd}" 
-                                   Width="*"
-                                   IsReadOnly="True"/>
-
-                <!-- Notes/Observations -->
-                <DataGridTextColumn Header="Notes" 
-                                   Binding="{Binding Notes}" 
-                                   Width="2*"/>
-
-                <!-- Validation Error Indicator -->
-                <DataGridTemplateColumn Header="Status" Width="100" CanUserSort="False">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                                <TextBlock Foreground="Red" FontWeight="Bold" 
-                                          Text="{Binding ValidationError}"
-                                          TextWrapping="Wrap"/>
-                                <Border Background="#FEE2E2" Visibility="{Binding IsInsufficientStock, Converter={StaticResource BoolToVisibility}}"
-                                       Padding="4,2" CornerRadius="2" Margin="0,2,0,0">
-                                    <TextBlock Foreground="#991B1B" FontSize="11" 
-                                              Text="⚠ Low Stock"/>
-                                </Border>
-                            </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Total Used" Binding="{Binding TotalUsedQuantity, StringFormat={}{0:N2}}" Width="*"/>
+                <DataGridTextColumn Header="Current Stock" Binding="{Binding CurrentStock, StringFormat={}{0:N2}}" Width="*"/>
+                <DataGridTextColumn Header="Unit Cost" Binding="{Binding UnitCost, StringFormat={}{0:C2}}" Width="*"/>
+                <DataGridTextColumn Header="Daily Cost" Binding="{Binding DailyCost, StringFormat={}{0:C2}}" Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="Foreground" Value="#059669"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
 
@@ -129,20 +70,15 @@
         <Border Grid.Row="1" Padding="12" BorderThickness="1" BorderBrush="#DDDDDD" CornerRadius="6" Margin="0,8,0,0">
             <DockPanel>
                 <TextBlock Text="Daily Total Cost (Usage)" FontWeight="Bold" DockPanel.Dock="Left"/>
-                <TextBlock FontWeight="Bold" DockPanel.Dock="Right" Foreground="#059669">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="${0:F2}">
-                            <Binding Path="TotalProductsCost"/>
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
+                <TextBlock FontWeight="Bold" DockPanel.Dock="Right" Foreground="#059669" 
+                           Text="{Binding TotalProductsCost, StringFormat={}{0:C2}}"/>
             </DockPanel>
         </Border>
 
         <!-- Action Buttons -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="ADD ROW" Width="110" Margin="0,0,8,0" Click="AddButton_Click"/>
-            <Button Content="SAVE" Width="110" Command="{Binding SaveCommand}"/>
+            <Button Content="SAVE" Width="110" Command="{Binding SaveCommand}"
+                    Background="#10B981" Foreground="White" FontWeight="SemiBold"/>
         </StackPanel>
 
     </Grid>

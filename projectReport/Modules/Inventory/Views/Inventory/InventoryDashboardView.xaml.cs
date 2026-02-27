@@ -1,11 +1,11 @@
-using System.Linq;
+ï»¿using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Diagnostics;
 using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Views.Inventory;
 using ProjectReport.Services;
-using ProjectReport.Services.Inventory; // <-- añadido
+using ProjectReport.Services.Inventory; // <-- aÃ±adido
 
 namespace ProjectReport.Views.Inventory
 {
@@ -39,8 +39,8 @@ namespace ProjectReport.Views.Inventory
             }
 
 #if DEBUG
-            // Sólo mostrar el MessageBox durante depuración local si realmente lo necesitas.
-            // Descomenta la siguiente línea para ver el pop-up en builds DEBUG.
+            // SÃ³lo mostrar el MessageBox durante depuraciÃ³n local si realmente lo necesitas.
+            // Descomenta la siguiente lÃ­nea para ver el pop-up en builds DEBUG.
             // MessageBox.Show($"DEBUG: Inventory view loaded.\nDataContext: {typeName}\nHash: {hash}", "Debug", MessageBoxButton.OK, MessageBoxImage.Information);
 #endif
         }
@@ -124,7 +124,7 @@ namespace ProjectReport.Views.Inventory
             var view = new ProjectReport.Views.Inventory.InventoryHistoryView { DataContext = vm };
             var win = new System.Windows.Window
             {
-                Title = "Inventory History",
+                Title = "Tickets",
                 Content = view,
                 Width = 1000,
                 Height = 600
@@ -133,3 +133,4 @@ namespace ProjectReport.Views.Inventory
         }
     }
 }
+

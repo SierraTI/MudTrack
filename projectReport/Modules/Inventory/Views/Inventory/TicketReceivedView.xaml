@@ -47,19 +47,15 @@
                                  Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
-                    <!-- Origin (Dropdown) -->
+                    <!-- Origin (TextBox) -->
                     <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0">
                         <TextBlock Text="Origin / Storage Base" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <ComboBox Height="30"
+                        <TextBox Height="30"
                                  HorizontalAlignment="Stretch"
-                                 ItemsSource="{Binding StorageBases}"
-                                 DisplayMemberPath="Name"
-                                 SelectedValuePath="Code"
-                                 SelectedValue="{Binding Origin, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEditable="False"/>
+                                 Text="{Binding Origin, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
-                    <!-- Supplier Name (Conditional) -->
+                    <!-- Supplier Name -->
                     <StackPanel Grid.Column="2" Orientation="Vertical">
                         <TextBlock Text="Supplier Name" FontWeight="SemiBold" Margin="0,0,0,6"/>
                         <TextBox Height="30"
@@ -76,13 +72,12 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Shipment Method -->
+                    <!-- Shipment Method (TextBox) -->
                     <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0">
                         <TextBlock Text="Shipment Method" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <ComboBox Height="30"
+                        <TextBox Height="30"
                                  HorizontalAlignment="Stretch"
-                                 ItemsSource="{Binding ShipmentMethods}"
-                                 SelectedValue="{Binding ShipmentMethod, UpdateSourceTrigger=PropertyChanged}"/>
+                                 Text="{Binding ShipmentMethod, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
                     <!-- Shipment Reference -->
@@ -93,26 +88,18 @@
                                  Text="{Binding ShipmentReference, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
 
-                    <!-- Buttons: ADD, Select Products -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                        <Button Content="ADD"
-                                Width="80"
-                                Height="30"
-                                Background="#10B981"
-                                Foreground="White"
-                                BorderThickness="0"
-                                FontWeight="SemiBold"
-                                Command="{Binding AddLineCommand}"
-                                Margin="0,0,8,0"/>
-                        <Button Content="Select Products"
-                                Width="120"
-                                Height="30"
-                                Background="#3B82F6"
-                                Foreground="White"
-                                BorderThickness="0"
-                                FontWeight="SemiBold"
-                                Command="{Binding SelectProductsCommand}"/>
-                    </StackPanel>
+                    <!-- Unified Add Products Button -->
+                    <Button Grid.Column="2" 
+                            Content="Add Products"
+                            Width="160"
+                            Height="32"
+                            Background="#3B82F6"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontWeight="SemiBold"
+                            Command="{Binding SelectProductsCommand}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"/>
                 </Grid>
             </StackPanel>
         </Border>
@@ -187,10 +174,6 @@
                     <DataGridTextColumn Header="Quantity"
                                         Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         Width="110" MinWidth="80"/>
-
-                    <DataGridTextColumn Header="Unit Price (USD)"
-                                        Binding="{Binding UnitPrice, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                                        Width="120" MinWidth="100"/>
 
                     <DataGridTextColumn Header="Observations"
                                         Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

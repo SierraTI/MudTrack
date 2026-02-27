@@ -29,11 +29,32 @@ namespace ProjectReport.ViewModels.Inventory
             set => SetProperty(ref _requisition, value);
         }
 
-        private string _origin = "";
-        public string Origin
+        private string _destination = "";
+        public string Destination
         {
-            get => _origin;
-            set => SetProperty(ref _origin, value);
+            get => _destination;
+            set => SetProperty(ref _destination, value);
+        }
+
+        private string _supplierName = "";
+        public string SupplierName
+        {
+            get => _supplierName;
+            set => SetProperty(ref _supplierName, value);
+        }
+
+        private string _shipmentMethod = "";
+        public string ShipmentMethod
+        {
+            get => _shipmentMethod;
+            set => SetProperty(ref _shipmentMethod, value);
+        }
+
+        private string _shipmentReference = "";
+        public string ShipmentReference
+        {
+            get => _shipmentReference;
+            set => SetProperty(ref _shipmentReference, value);
         }
 
         private string _observations = "";
@@ -91,7 +112,7 @@ namespace ProjectReport.ViewModels.Inventory
             CancelCommand = new RelayCommand(_ => RequestClose?.Invoke());
             AddLineCommand = new RelayCommand(_ => AddLine());
             RemoveLineCommand = new RelayCommand(param => RemoveLine(param as TicketLine));
-            SelectProductsCommand = new RelayCommand(_ => RequestSelectProducts?.Invoke());
+            SelectProductsCommand = new RelayCommand(_ => LoadFromInventory());
             LoadFromReceivedCommand = new RelayCommand(_ => LoadFromInventory());
 
             LoadProducts();
@@ -116,18 +137,33 @@ namespace ProjectReport.ViewModels.Inventory
         {
             if (e.SelectedItems == null || !e.SelectedItems.Any()) return;
 
+            var productUnits = _service.GetProducts()
+                .ToDictionary(
+                    p => p.Code ?? string.Empty,
+                    p => p.Unit ?? string.Empty,
+                    StringComparer.OrdinalIgnoreCase);
+
             foreach (var item in e.SelectedItems)
             {
                 // Avoid adding the same product twice in the same ticket draft
                 bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
                 if (alreadyExists) continue;
 
+                var unitFromChemical = item.Unidad ?? string.Empty;
+                var unitFromProduct = productUnits.TryGetValue(item.Code ?? string.Empty, out var mappedUnit)
+                    ? mappedUnit
+                    : string.Empty;
+                var resolvedUnit = !string.IsNullOrWhiteSpace(unitFromChemical)
+                    ? unitFromChemical
+                    : (!string.IsNullOrWhiteSpace(unitFromProduct) ? unitFromProduct : "Each");
+
                 Lines.Add(new TicketLine
                 {
                     ProductCode = item.Code,
                     ProductName = item.Nombre ?? item.Code,
+                    Unit = resolvedUnit,
                     Quantity = 1,
-                    Context = Origin
+                    Context = Destination
                 });
             }
 
@@ -220,7 +256,7 @@ namespace ProjectReport.ViewModels.Inventory
                 ProductName = string.Empty,
                 Quantity = 0,
                 UnitPrice = 0,
-                Context = Origin ?? string.Empty,
+                Context = Destination ?? string.Empty,
                 Observations = string.Empty
             });
 
@@ -239,25 +275,50 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 Lines.Clear();
 
+                var movements = _service.GetMovements();
+                var receivedProductCodes = movements
+                    .Where(m => m.Type == TicketType.Received)
+                    .Select(m => m.ProductCode)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
                 var products = _service.GetProducts()
-                    .Where(p => p.Status == ProductStatus.Active && p.StockQty > 0)
+                    .Where(p => receivedProductCodes.Contains(p.Code ?? string.Empty, StringComparer.OrdinalIgnoreCase))
                     .OrderBy(p => p.Name)
                     .ToList();
 
+                int addedCount = 0;
                 foreach (var p in products)
                 {
-                    Lines.Add(new TicketLine
+                    bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, p.Code, StringComparison.OrdinalIgnoreCase));
+                    if (alreadyExists) continue;
+
+                    var line = new TicketLine
                     {
                         ProductCode = p.Code ?? string.Empty,
                         ProductName = p.Name ?? string.Empty,
+                        Unit = string.IsNullOrWhiteSpace(p.Unit) ? "Each" : p.Unit,
                         Quantity = 0,
                         UnitPrice = p.CurrentUnitCost,
-                        Context = Origin ?? string.Empty,
+                        Context = Destination ?? string.Empty,
                         Observations = string.Empty
-                    });
+                    };
+
+                    // Calculate quantity received for this product
+                    var quantityReceived = movements
+                        .Where(m => m.Type == TicketType.Received && 
+                                    string.Equals(m.ProductCode, p.Code, StringComparison.OrdinalIgnoreCase))
+                        .Sum(m => m.Quantity);
+
+                    line.QuantityReceived = quantityReceived;
+                    line.CurrentStock = p.StockQty;
+                    ValidateReturnQuantity(line);
+
+                    Lines.Add(line);
+                    addedCount++;
                 }
 
-                Error = $"Cargadas {Lines.Count} línea(s) desde inventario.";
+                Error = $"Cargadas {addedCount} línea(s) desde inventario recibido.";
             }
             catch (Exception ex)
             {
@@ -279,7 +340,10 @@ namespace ProjectReport.ViewModels.Inventory
             var first = movements.First();
             EditingTicketId = ticketId;
             Requisition = first.Requisition ?? string.Empty;
-            Origin = first.OriginOrUse ?? string.Empty;
+            Destination = first.OriginOrUse ?? string.Empty;
+            SupplierName = first.SupplierName ?? string.Empty;
+            ShipmentMethod = first.ShipmentMethod ?? string.Empty;
+            ShipmentReference = first.Remision ?? string.Empty;
             Observations = first.Observations ?? string.Empty;
             User = first.User ?? Environment.UserName;
 
@@ -287,15 +351,27 @@ namespace ProjectReport.ViewModels.Inventory
 
             foreach (var mv in movements.Where(m => m.Type == TicketType.Returned))
             {
-                Lines.Add(new TicketLine
+                var line = new TicketLine
                 {
                     ProductCode = mv.ProductCode ?? string.Empty,
                     ProductName = mv.ProductName ?? string.Empty,
+                    Unit = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, mv.ProductCode, StringComparison.OrdinalIgnoreCase))?.Unit ?? "Each",
                     Quantity = mv.Quantity,
                     UnitPrice = mv.UnitPrice,
                     Context = mv.OriginOrUse ?? string.Empty,
                     Observations = mv.Observations ?? string.Empty
-                });
+                };
+
+                // Calculate quantity received for this product
+                var quantityReceived = _service.GetMovements()
+                    .Where(m => m.Type == TicketType.Received && 
+                                string.Equals(m.ProductCode, mv.ProductCode, StringComparison.OrdinalIgnoreCase))
+                    .Sum(m => m.Quantity);
+
+                line.QuantityReceived = quantityReceived;
+                ValidateReturnQuantity(line);
+
+                Lines.Add(line);
             }
 
             OnPropertyChanged(nameof(Lines));
@@ -318,7 +394,10 @@ namespace ProjectReport.ViewModels.Inventory
             EditingRequisition = requisition;
             var first = movements.First();
             Requisition = first.Requisition ?? string.Empty;
-            Origin = first.OriginOrUse ?? string.Empty;
+            Destination = first.OriginOrUse ?? string.Empty;
+            SupplierName = first.SupplierName ?? string.Empty;
+            ShipmentMethod = first.ShipmentMethod ?? string.Empty;
+            ShipmentReference = first.Remision ?? string.Empty;
             Observations = first.Observations ?? string.Empty;
             User = first.User ?? Environment.UserName;
 
@@ -326,15 +405,27 @@ namespace ProjectReport.ViewModels.Inventory
 
             foreach (var mv in movements)
             {
-                Lines.Add(new TicketLine
+                var line = new TicketLine
                 {
                     ProductCode = mv.ProductCode ?? string.Empty,
                     ProductName = mv.ProductName ?? string.Empty,
+                    Unit = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, mv.ProductCode, StringComparison.OrdinalIgnoreCase))?.Unit ?? "Each",
                     Quantity = mv.Quantity,
                     UnitPrice = mv.UnitPrice,
                     Context = mv.OriginOrUse ?? string.Empty,
                     Observations = mv.Observations ?? string.Empty
-                });
+                };
+
+                // Calculate quantity received for this product
+                var quantityReceived = _service.GetMovements()
+                    .Where(m => m.Type == TicketType.Received && 
+                                string.Equals(m.ProductCode, mv.ProductCode, StringComparison.OrdinalIgnoreCase))
+                    .Sum(m => m.Quantity);
+
+                line.QuantityReceived = quantityReceived;
+                ValidateReturnQuantity(line);
+
+                Lines.Add(line);
             }
 
             OnPropertyChanged(nameof(Lines));
@@ -361,6 +452,13 @@ namespace ProjectReport.ViewModels.Inventory
                 if (ln.Quantity <= 0)
                 {
                     Error = $"Línea {i + 1}: la cantidad debe ser mayor que 0.";
+                    return;
+                }
+
+                // Validate that return quantity doesn't exceed received quantity
+                if (ln.Quantity > ln.QuantityReceived)
+                {
+                    Error = $"Línea {i + 1}: No puede devolver {ln.Quantity} {ln.ProductName}. Solo fue recibido {ln.QuantityReceived}.";
                     return;
                 }
             }
@@ -392,7 +490,7 @@ namespace ProjectReport.ViewModels.Inventory
                             Name = string.IsNullOrWhiteSpace(name) ? $"PROD_{DateTime.Now.Ticks % 100000}" : name,
                             Description = string.Empty,
                             Category = string.Empty,
-                            Unit = "Each",
+                            Unit = string.IsNullOrWhiteSpace(ln.Unit) ? "Each" : ln.Unit,
                             StockQty = 0,
                             CurrentUnitCost = ln.UnitPrice,
                             Status = ProductStatus.Active
@@ -406,6 +504,7 @@ namespace ProjectReport.ViewModels.Inventory
                     {
                         ln.ProductCode = existing.Code;
                         ln.ProductName = existing.Name;
+                        ln.Unit = string.IsNullOrWhiteSpace(existing.Unit) ? "Each" : existing.Unit;
 
                         if (ln.UnitPrice <= 0)
                         {
@@ -447,6 +546,10 @@ namespace ProjectReport.ViewModels.Inventory
                     User = User,
                     Observations = Observations,
                     Requisition = Requisition ?? string.Empty,
+                    Origin = Destination,
+                    SupplierName = SupplierName,
+                    ShipmentMethod = ShipmentMethod,
+                    Remision = ShipmentReference,
                     Lines = Lines.ToList()
                 };
 
@@ -486,6 +589,23 @@ namespace ProjectReport.ViewModels.Inventory
             if (baseCode.Length > 20) baseCode = baseCode.Substring(0, 20);
             var suffix = DateTime.Now.Ticks % 10000;
             return $"{baseCode}_{suffix}";
+        }
+
+        // Helper method to validate and update error message for return quantity
+        private void ValidateReturnQuantity(TicketLine line)
+        {
+            if (line == null) return;
+
+            line.ValidationError = "";
+
+            if (line.Quantity > 0 && line.QuantityReceived > 0 && line.Quantity > line.QuantityReceived)
+            {
+                line.ValidationError = $"⚠️ Cannot return {line.Quantity} - Only {line.QuantityReceived} received";
+            }
+            else if (line.Quantity > 0 && line.QuantityReceived == 0)
+            {
+                line.ValidationError = "⚠️ No quantity received for this product";
+            }
         }
     }
 }

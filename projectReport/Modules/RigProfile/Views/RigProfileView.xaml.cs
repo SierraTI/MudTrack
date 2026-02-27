@@ -1,10 +1,9 @@
+ï»¿using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Globalization;
-using ProjectReport.Modules.RigProfile.ViewModels;
 using ProjectReport.Models.Rig;
-using System.ComponentModel;
+using ProjectReport.Modules.RigProfile.ViewModels;
 
 namespace ProjectReport.Modules.RigProfile.Views
 {
@@ -20,14 +19,9 @@ namespace ProjectReport.Modules.RigProfile.Views
         {
             if (sender is ComboBox comboBox && comboBox.DataContext is RigSolidsControl item)
             {
-                var vm = DataContext as RigProfileViewModel;
-                if (vm != null)
+                if (DataContext is RigProfileViewModel vm)
                 {
-                    // Update available models based on selected type and manufacturer
-                    vm.UpdateAvailableModels(item.Type, item.Manufacturer);
-                    
-                    // Auto-fill capacity if model matches catalog
-                    vm.UpdateSolidsControlSpecs(item);
+                    vm.ApplySolidControlModelSelection(item);
                 }
             }
         }
@@ -36,15 +30,9 @@ namespace ProjectReport.Modules.RigProfile.Views
         {
             if (sender is ComboBox comboBox && comboBox.DataContext is RigSolidsControl item)
             {
-                var vm = DataContext as RigProfileViewModel;
-                if (vm != null && !string.IsNullOrEmpty(item.Type))
+                if (DataContext is RigProfileViewModel vm)
                 {
-                    vm.FilterManufacturers(item.Type);
-                    
-                    if (!string.IsNullOrEmpty(item.Manufacturer))
-                    {
-                        vm.UpdateAvailableModels(item.Type, item.Manufacturer);
-                    }
+                    vm.ApplySolidControlStyleSelection(item);
                 }
             }
         }
@@ -53,15 +41,36 @@ namespace ProjectReport.Modules.RigProfile.Views
         {
             if (sender is ComboBox comboBox && comboBox.DataContext is RigSolidsControl item)
             {
-                var vm = DataContext as RigProfileViewModel;
-                if (vm != null && !string.IsNullOrEmpty(item.Type) && !string.IsNullOrEmpty(item.Manufacturer))
+                if (DataContext is RigProfileViewModel vm)
                 {
-                    vm.UpdateAvailableModels(item.Type, item.Manufacturer);
+                    vm.ApplySolidControlManufacturerSelection(item);
                 }
             }
         }
 
-        // Inicia edición en la fila seleccionada (invocado por el botón Edit en la fila)
+        private void StyleComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox comboBox && comboBox.DataContext is RigSolidsControl item)
+            {
+                if (DataContext is RigProfileViewModel vm)
+                {
+                    vm.ApplySolidControlStyleSelection(item);
+                }
+            }
+        }
+
+        private void ModelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox comboBox && comboBox.DataContext is RigSolidsControl item)
+            {
+                if (DataContext is RigProfileViewModel vm)
+                {
+                    vm.ApplySolidControlModelSelection(item);
+                }
+            }
+        }
+
+        // Starts editing the selected surface row.
         private void EditSurface_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && SurfaceDataGrid != null)
@@ -72,7 +81,6 @@ namespace ProjectReport.Modules.RigProfile.Views
                 SurfaceDataGrid.SelectedItem = item;
                 SurfaceDataGrid.ScrollIntoView(item);
 
-                // Seleccionar la celda ID (columna index 2 en la vista actual) para empezar edición
                 if (SurfaceDataGrid.Columns.Count > 2)
                 {
                     var cellInfo = new DataGridCellInfo(item, SurfaceDataGrid.Columns[2]);
@@ -83,7 +91,7 @@ namespace ProjectReport.Modules.RigProfile.Views
             }
         }
 
-        // Restringe entrada a dígitos y separador decimal según la cultura
+        // Restricts input to digits and one decimal separator.
         private void NumericOnly_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             var text = e.Text;

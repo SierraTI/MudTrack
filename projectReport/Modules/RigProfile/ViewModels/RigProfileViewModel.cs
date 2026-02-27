@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -23,44 +24,101 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         private readonly HydraulicsCalculationService _hydraulicsService;
         private Well? _currentWell;
         private readonly List<CatalogItem> _catalog = new();
-
-        // =========================
-        // LISTA FIJA PARA MODEL
-        // =========================
-        private static readonly string[] FixedModelOptions =
+        private readonly List<SolidControlCatalogItem> _solidControlCatalog = new()
         {
-            "FLC 500 Scalper",
-            "VSM 300 Scalper",
-            "GNZS703 Series Scalper",
-            "Hyperpool",
-            "FLC 500 Series",
-            "FLC 2000 Series",
-            "King Cobra",
-            "VSM 300 Series",
-            "Mongoose PT",
-            "MD-3",
-            "GNZS703 Series",
-            "GNZS594 Series",
-            "FLC 503/504",
-            "Mud King Combo",
-            "Mongoose Combo",
-            "GNZJ703 Series",
-            "FLC Series (10\" cones)",
-            "10\" Hydrocyclone",
-            "DC-10",
-            "GN Hydrocyclone Desander",
-            "FLC Series (4\" cones)",
-            "4\" Hydrocyclone",
-            "DC-4",
-            "GN Hydrocyclone Desilter",
-            "DE-1000",
-            "DE-7200",
-            "HS-3400",
-            "VSM Decanter",
-            "CD-500",
-            "CD-600",
-            "GNLW363",
-            "GNLW452"
+            new() { Style = "Scalper", Manufacturer = "Derrick", Model = "FLC 500 Scalper" },
+            new() { Style = "Scalper", Manufacturer = "NOV Brandt", Model = "VSM 300 Scalper" },
+            new() { Style = "Scalper", Manufacturer = "GN Solids Control", Model = "GNZS703 Series Scalper" },
+
+            new() { Style = "Shaker", Manufacturer = "Derrick", Model = "Hyperpool" },
+            new() { Style = "Shaker", Manufacturer = "Derrick", Model = "FLC 500 Series" },
+            new() { Style = "Shaker", Manufacturer = "Derrick", Model = "FLC 2000 Series" },
+            new() { Style = "Shaker", Manufacturer = "NOV Brandt", Model = "King Cobra" },
+            new() { Style = "Shaker", Manufacturer = "NOV Brandt", Model = "VSM 300 Series" },
+            new() { Style = "Shaker", Manufacturer = "MI-SWACO", Model = "Mongoose PT" },
+            new() { Style = "Shaker", Manufacturer = "MI-SWACO", Model = "MD-3" },
+            new() { Style = "Shaker", Manufacturer = "GN Solids Control", Model = "GNZS703 Series" },
+            new() { Style = "Shaker", Manufacturer = "GN Solids Control", Model = "GNZS594 Series" },
+
+            new() { Style = "Mud Cleaner", Manufacturer = "Derrick", Model = "FLC 503/504" },
+            new() { Style = "Mud Cleaner", Manufacturer = "NOV Brandt", Model = "Mud King Combo" },
+            new() { Style = "Mud Cleaner", Manufacturer = "MI-SWACO", Model = "Mongoose Combo" },
+            new() { Style = "Mud Cleaner", Manufacturer = "GN Solids Control", Model = "GNZJ703 Series" },
+
+            new() { Style = "Desander", Manufacturer = "Derrick", Model = "FLC Series (10\" cones)" },
+            new() { Style = "Desander", Manufacturer = "NOV Brandt", Model = "10\" Hydrocyclone" },
+            new() { Style = "Desander", Manufacturer = "MI-SWACO", Model = "DC-10" },
+            new() { Style = "Desander", Manufacturer = "GN Solids Control", Model = "GN Hydrocyclone Desander" },
+
+            new() { Style = "Desilter", Manufacturer = "Derrick", Model = "FLC Series (4\" cones)" },
+            new() { Style = "Desilter", Manufacturer = "NOV Brandt", Model = "4\" Hydrocyclone" },
+            new() { Style = "Desilter", Manufacturer = "MI-SWACO", Model = "DC-4" },
+            new() { Style = "Desilter", Manufacturer = "GN Solids Control", Model = "GN Hydrocyclone Desilter" },
+
+            new() { Style = "Centrifuge", Manufacturer = "Derrick", Model = "DE-1000" },
+            new() { Style = "Centrifuge", Manufacturer = "Derrick", Model = "DE-7200" },
+            new() { Style = "Centrifuge", Manufacturer = "NOV Brandt", Model = "HS-3400" },
+            new() { Style = "Centrifuge", Manufacturer = "NOV Brandt", Model = "VSM Decanter" },
+            new() { Style = "Centrifuge", Manufacturer = "MI-SWACO", Model = "CD-500" },
+            new() { Style = "Centrifuge", Manufacturer = "MI-SWACO", Model = "CD-600" },
+            new() { Style = "Centrifuge", Manufacturer = "GN Solids Control", Model = "GNLW363" },
+            new() { Style = "Centrifuge", Manufacturer = "GN Solids Control", Model = "GNLW452" }
+        };
+        private readonly List<RigPump> _pumpCatalog = new()
+        {
+            new() { Model = "BOMCO F-1300", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "BOMCO F-1600", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "BOMCO F-1600HL", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "BOMCO F-2200", PumpType = "Triplex", StrokeLength = 14, MaxStrokeRate = 105 },
+            new() { Model = "BOMCO F-2200HL", PumpType = "Triplex", StrokeLength = 14, MaxStrokeRate = 105 },
+            new() { Model = "BOSS P-275/310", PumpType = "Triplex", StrokeLength = 8, RodSize = 5, MaxStrokeRate = 175 },
+            new() { Model = "BOSS P-550", PumpType = "Triplex" },
+            new() { Model = "Drillmec 12T-1600", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Drillmec 14T-2200", PumpType = "Triplex", StrokeLength = 14, MaxStrokeRate = 105 },
+            new() { Model = "Emsco F-1000", PumpType = "Triplex", StrokeLength = 10, MaxStrokeRate = 140 },
+            new() { Model = "Emsco F-1300", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Emsco F-1600", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Emsco F-2200", PumpType = "Triplex", StrokeLength = 14, MaxStrokeRate = 105 },
+            new() { Model = "Emsco F-500", PumpType = "Triplex", StrokeLength = 7.5, MaxStrokeRate = 165 },
+            new() { Model = "Emsco F-800", PumpType = "Triplex", StrokeLength = 9, MaxStrokeRate = 150 },
+            new() { Model = "Gardner Denver PZ-10", PumpType = "Triplex", StrokeLength = 10, RodSize = 7, MaxStrokeRate = 115 },
+            new() { Model = "Gardner Denver PZ-11", PumpType = "Triplex", StrokeLength = 11, RodSize = 7, MaxStrokeRate = 115 },
+            new() { Model = "Gardner Denver PZ-11 Hi-Flow", PumpType = "Triplex", StrokeLength = 11, RodSize = 8, MaxStrokeRate = 115 },
+            new() { Model = "Gardner Denver PZ-1600", PumpType = "Triplex", StrokeLength = 11, MaxStrokeRate = 115 },
+            new() { Model = "Gardner Denver PZ-2000", PumpType = "Triplex", StrokeLength = 11 },
+            new() { Model = "Gardner Denver PZ-2400", PumpType = "Triplex", StrokeLength = 14 },
+            new() { Model = "Gardner Denver PZ-7", PumpType = "Triplex", StrokeLength = 7, RodSize = 7, MaxStrokeRate = 145 },
+            new() { Model = "Gardner Denver PZ-8", PumpType = "Triplex", StrokeLength = 8, RodSize = 7, MaxStrokeRate = 145 },
+            new() { Model = "Gardner Denver PZ-9", PumpType = "Triplex", StrokeLength = 9, RodSize = 7, MaxStrokeRate = 130 },
+            new() { Model = "Halliburton HQ-2000", PumpType = "Triplex" },
+            new() { Model = "Halliburton HT-400", PumpType = "Triplex", StrokeLength = 8 },
+            new() { Model = "Honghua HHF-1600", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Honghua HHF-2200HL", PumpType = "Triplex", StrokeLength = 14, MaxStrokeRate = 105 },
+            new() { Model = "Loadmaster LSF-1300", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Loadmaster LSF-1600", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Nabors Rig Pump 1600HP", PumpType = "Triplex", StrokeLength = 12, RodSize = 7, MaxStrokeRate = 120 },
+            new() { Model = "Nabors Rig Pump 2200HP", PumpType = "Triplex", StrokeLength = 14, RodSize = 9, MaxStrokeRate = 105 },
+            new() { Model = "National JWS-165-L", PumpType = "Triplex", MaxStrokeRate = 165 },
+            new() { Model = "National JWS-340", PumpType = "Triplex", MaxStrokeRate = 340 },
+            new() { Model = "National JWS-400", PumpType = "Triplex", MaxStrokeRate = 400 },
+            new() { Model = "NOV 10-P-130", PumpType = "Triplex", StrokeLength = 10, RodSize = 6.75, MaxStrokeRate = 140 },
+            new() { Model = "NOV 12-P-160", PumpType = "Triplex", StrokeLength = 12, RodSize = 7.25, MaxStrokeRate = 120 },
+            new() { Model = "NOV 14-P-220", PumpType = "Triplex", StrokeLength = 14, RodSize = 9, MaxStrokeRate = 105 },
+            new() { Model = "NOV 7-P-50", PumpType = "Triplex", MaxStrokeRate = 180 },
+            new() { Model = "NOV 8-P-80", PumpType = "Triplex", MaxStrokeRate = 160 },
+            new() { Model = "NOV 9-P-100", PumpType = "Triplex", MaxStrokeRate = 154 },
+            new() { Model = "NOV F-1000 / FD-1000", PumpType = "Triplex", StrokeLength = 10, MaxStrokeRate = 140 },
+            new() { Model = "Oilwell A-1100-PT", PumpType = "Triplex", StrokeLength = 12 },
+            new() { Model = "Oilwell A-1400-PT", PumpType = "Triplex", StrokeLength = 12 },
+            new() { Model = "Oilwell A-1700-PT", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 150 },
+            new() { Model = "Oilwell A-650-PT", PumpType = "Triplex", StrokeLength = 12 },
+            new() { Model = "Oilwell A-850-PT", PumpType = "Triplex", StrokeLength = 12 },
+            new() { Model = "Pioneer Rig Pump 2200HP", PumpType = "Triplex", StrokeLength = 14, RodSize = 9, MaxStrokeRate = 105 },
+            new() { Model = "Weatherford MP10", PumpType = "Triplex", StrokeLength = 10, MaxStrokeRate = 140 },
+            new() { Model = "Weatherford MP13", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
+            new() { Model = "Weatherford MP16", PumpType = "Triplex", StrokeLength = 12, RodSize = 7, MaxStrokeRate = 120 },
+            new() { Model = "Weatherford W250", PumpType = "Triplex", StrokeLength = 5, MaxStrokeRate = 310 },
+            new() { Model = "Wheatley 7024", PumpType = "Duplex", StrokeLength = 6.125, MaxStrokeRate = 90 }
         };
 
         public RigProfileViewModel()
@@ -74,11 +132,9 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             if (_contextService.CurrentWell != null)
                 LoadRigProfile(_contextService.CurrentWell);
 
-            // ?? CAMBIO: AvailableModels debe poder setearse y arrancar con la lista fija
-            AvailableModels = new ObservableCollection<string>(FixedModelOptions);
-
             AvailableTypes = new ObservableCollection<string>();
             AvailableManufacturers = new ObservableCollection<string>();
+            AvailableModels = new ObservableCollection<string>();
             AvailablePitShapes = new ObservableCollection<string> { "Rectangular", "Cylindrical", "Oval", "Other" };
 
             // Lista de estilos para la columna "Style" (tal como pediste)
@@ -86,8 +142,8 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             {
                 "Scalper",
                 "Shaker",
-                "Mud cleaner",
-                "Deilter",
+                "Mud Cleaner",
+                "Desilter",
                 "Desander",
                 "Centrifuge"
             };
@@ -97,19 +153,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
             LoadCatalogFromExcel();
             InitializeCatalogCollections();
-
-            // Sobrescribimos la lista de fabricantes con la lista fija solicitada
-            AvailableManufacturers = new ObservableCollection<string>
-            {
-                "GN Solids Control",
-                "KEMTRON Technologies",
-                "Sistemas integrados de control de s�lidos.",
-                "Elgin Separation Solutions",
-                "H-Screening Separation",
-                "FLC (Fluid Systems Inc.)",
-                "PetroSolids (M�xico)",
-                "MAS OPCIONES"
-            };
+            InitializePumpCatalog();
 
             SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
 
@@ -119,6 +163,9 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             SaveCommand = new RelayCommand(async _ => await SaveAsync());
             SaveAndReturnCommand = new RelayCommand(async _ => await SaveAndReturnAsync());
             ResetToDefaultCommand = new RelayCommand(_ => ResetToDefault());
+            ClearPumpFiltersCommand = new RelayCommand(_ => ClearPumpFilters());
+            EditSelectedPumpCommand = new RelayCommand(p => EditSelectedPump(p as RigPump));
+            RemoveSelectedPumpCommand = new RelayCommand(p => RemoveSelectedPump(p as RigPump));
 
             // Listen for pit changes
             Pits.CollectionChanged += (s, e) => PublishPits();
@@ -130,6 +177,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             _currentWell = well;
             CurrentRigProfile = well.RigProfile ?? new RigProfileClass();
+            InitializeSolidsControlRows();
             EnsureSurfaceDefaults();
             EnsureServiceLineDefaults();
             PublishPits();
@@ -145,6 +193,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                     OnPropertyChanged(nameof(SurfaceEquipment));
                     OnPropertyChanged(nameof(ServiceLine));
                     OnPropertyChanged(nameof(Pumps));
+                    OnPropertyChanged(nameof(SelectedPumps));
                     OnPropertyChanged(nameof(SolidsControl));
                     OnPropertyChanged(nameof(Pits));
                     OnPropertyChanged(nameof(TotalSurfaceLoss));
@@ -173,6 +222,85 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public ObservableCollection<RigPump> Pumps => CurrentRigProfile?.Pumps ?? new ObservableCollection<RigPump>();
         public ObservableCollection<RigSolidsControl> SolidsControl => CurrentRigProfile?.SolidsControl ?? new ObservableCollection<RigSolidsControl>();
         public ObservableCollection<RigPit> Pits => CurrentRigProfile?.Pits ?? new ObservableCollection<RigPit>();
+        public ObservableCollection<RigPump> SelectedPumps => Pumps;
+
+        private ObservableCollection<RigPump> _filteredPumpCatalog = new();
+        public ObservableCollection<RigPump> FilteredPumpCatalog
+        {
+            get => _filteredPumpCatalog;
+            private set => SetProperty(ref _filteredPumpCatalog, value);
+        }
+
+        private RigPump? _selectedCatalogPump;
+        public RigPump? SelectedCatalogPump
+        {
+            get => _selectedCatalogPump;
+            set
+            {
+                if (SetProperty(ref _selectedCatalogPump, value) && value != null)
+                    PopulateEditPumpFromCatalog(value);
+            }
+        }
+
+        private RigPump? _selectedPump;
+        public RigPump? SelectedPump
+        {
+            get => _selectedPump;
+            set => SetProperty(ref _selectedPump, value);
+        }
+
+        private RigPump _editPump = new();
+        public RigPump EditPump
+        {
+            get => _editPump;
+            set
+            {
+                if (SetProperty(ref _editPump, value))
+                    HookEditPump();
+            }
+        }
+
+        private string _pumpSearchText = string.Empty;
+        public string PumpSearchText
+        {
+            get => _pumpSearchText;
+            set
+            {
+                if (SetProperty(ref _pumpSearchText, value))
+                    ApplyPumpFilters();
+            }
+        }
+
+        public ObservableCollection<string> PumpTypes { get; } = new() { "All", "Triplex", "Duplex" };
+
+        private string _selectedPumpTypeFilter = "All";
+        public string SelectedPumpTypeFilter
+        {
+            get => _selectedPumpTypeFilter;
+            set
+            {
+                if (SetProperty(ref _selectedPumpTypeFilter, value))
+                    ApplyPumpFilters();
+            }
+        }
+
+        private string _pumpValidationMessage = string.Empty;
+        public string PumpValidationMessage
+        {
+            get => _pumpValidationMessage;
+            private set => SetProperty(ref _pumpValidationMessage, value);
+        }
+
+        public bool CanAddPump =>
+            !string.IsNullOrWhiteSpace(EditPump.Model) &&
+            EditPump.MaxLinerSize > 0;
+
+        private bool _isPumpsCatalogExpanded = true;
+        public bool IsPumpsCatalogExpanded
+        {
+            get => _isPumpsCatalogExpanded;
+            set => SetProperty(ref _isPumpsCatalogExpanded, value);
+        }
 
         // Catalog collections
         public ObservableCollection<string> AvailableTypes { get; private set; }
@@ -190,7 +318,77 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public string SelectedSurfaceType
         {
             get => _selectedSurfaceType;
-            set => SetProperty(ref _selectedSurfaceType, value);
+            set 
+            { 
+                if (SetProperty(ref _selectedSurfaceType, value))
+                {
+                    // Auto-populate surface equipment when a type is selected
+                    PopulateSurfaceEquipmentByType(value);
+                }
+            }
+        }
+
+        // Mapping data for Surface Equipment Types (from reference table)
+        private static readonly Dictionary<string, (double StandPipeID, double StandPipeLen,
+                                                    double DrillingHoseID, double DrillingHoseLen,
+                                                    double SwivelID, double SwivelLen,
+                                                    double KellyID, double KellyLen)> SurfaceTypeMapping =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                // Type 1: Stand Pipe(ID=3", Len=40"), Drilling Hose(ID=2", Len=45"), Swivel(ID=4", Len=2"), Kelly(ID=40", Len=2.25")
+                { "Type 1", (3, 40, 2, 45, 4, 2, 40, 2.25) },
+                
+                // Type 2: Stand Pipe(ID=3.5", Len=40"), Drilling Hose(ID=2.5", Len=55"), Swivel(ID=5", Len=2.25"), Kelly(ID=40", Len=3.25")
+                { "Type 2", (3.5, 40, 2.5, 55, 5, 2.25, 40, 3.25) },
+                
+                // Type 3: Stand Pipe(ID=4", Len=45"), Drilling Hose(ID=3", Len=55"), Swivel(ID=5", Len=2.25"), Kelly(ID=40", Len=3.25")
+                { "Type 3", (4, 45, 3, 55, 5, 2.25, 40, 3.25) },
+                
+                // Type 4: Stand Pipe(ID=4", Len=45"), Drilling Hose(ID=3", Len=65"), Swivel(ID=6", Len=3"), Kelly(ID=40", Len=4")
+                { "Type 4", (4, 45, 3, 65, 6, 3, 40, 4) }
+            };
+
+        private void PopulateSurfaceEquipmentByType(string selectedType)
+        {
+            if (string.IsNullOrWhiteSpace(selectedType) || !SurfaceTypeMapping.ContainsKey(selectedType))
+                return;
+
+            if (SurfaceEquipment == null || SurfaceEquipment.Count != 4)
+                return;
+
+            var (standPipeID, standPipeLen, drillingHoseID, drillingHoseLen, 
+                 swivelID, swivelLen, kellyID, kellyLen) = SurfaceTypeMapping[selectedType];
+
+            // Stand Pipe - convert from inches to feet (divide by 12)
+            if (SurfaceEquipment.Count > 0)
+            {
+                SurfaceEquipment[0].InternalDiameter = standPipeID;
+                SurfaceEquipment[0].Length = standPipeLen / 12.0;
+            }
+
+            // Drilling Hose - convert from inches to feet
+            if (SurfaceEquipment.Count > 1)
+            {
+                SurfaceEquipment[1].InternalDiameter = drillingHoseID;
+                SurfaceEquipment[1].Length = drillingHoseLen / 12.0;
+            }
+
+            // Swivel / Top Drive - convert from inches to feet
+            if (SurfaceEquipment.Count > 2)
+            {
+                SurfaceEquipment[2].InternalDiameter = swivelID;
+                SurfaceEquipment[2].Length = swivelLen / 12.0;
+            }
+
+            // Kelly - Special handling: ID is likely correct, but Length should use raw value
+            // Based on the user's note, Kelly appears to have swapped data
+            // ID = 40 should be the length, but keeping as-is per specification
+            if (SurfaceEquipment.Count > 3)
+            {
+                SurfaceEquipment[3].InternalDiameter = kellyID;
+                // Kelly length conversion: convert to feet
+                SurfaceEquipment[3].Length = kellyLen / 12.0;
+            }
         }
 
         public void FilterManufacturers(string type)
@@ -330,12 +528,85 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
         private void InitializeCatalogCollections()
         {
-            AvailableTypes = new ObservableCollection<string>(_catalog.Select(x => x.Type).Distinct().OrderBy(x => x));
+            // Initialize Surface Equipment types with predefined Type 1-4 mapping
+            AvailableTypes = new ObservableCollection<string> { "Type 1", "Type 2", "Type 3", "Type 4" };
             AvailableManufacturers = new ObservableCollection<string>(_catalog.Select(x => x.Manufacturer).Distinct().OrderBy(x => x));
 
-            // ? por si alguien quiere "re-inicializar", lo blindamos
-            if (AvailableModels == null || AvailableModels.Count == 0)
-                AvailableModels = new ObservableCollection<string>(FixedModelOptions);
+            if (AvailableModels == null)
+                AvailableModels = new ObservableCollection<string>();
+        }
+
+        private void InitializePumpCatalog()
+        {
+            EditPump = new RigPump();
+            HookEditPump();
+            ApplyPumpFilters();
+        }
+
+        private void HookEditPump()
+        {
+            if (EditPump == null) return;
+            EditPump.PropertyChanged -= EditPump_PropertyChanged;
+            EditPump.PropertyChanged += EditPump_PropertyChanged;
+            OnPropertyChanged(nameof(CanAddPump));
+        }
+
+        private void EditPump_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            PumpValidationMessage = string.Empty;
+            OnPropertyChanged(nameof(CanAddPump));
+        }
+
+        private void ApplyPumpFilters()
+        {
+            IEnumerable<RigPump> query = _pumpCatalog;
+
+            if (!string.IsNullOrWhiteSpace(PumpSearchText))
+            {
+                query = query.Where(p =>
+                    !string.IsNullOrWhiteSpace(p.Model) &&
+                    p.Model.Contains(PumpSearchText, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(SelectedPumpTypeFilter) &&
+                !string.Equals(SelectedPumpTypeFilter, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(p => string.Equals(p.PumpType, SelectedPumpTypeFilter, StringComparison.OrdinalIgnoreCase));
+            }
+
+            FilteredPumpCatalog = new ObservableCollection<RigPump>(
+                query.OrderBy(p => p.Model).Select(ClonePump));
+        }
+
+        private void PopulateEditPumpFromCatalog(RigPump selected)
+        {
+            var maxLiner = EditPump?.MaxLinerSize ?? 0;
+            EditPump = ClonePump(selected);
+            EditPump.MaxLinerSize = maxLiner;
+        }
+
+        private void ClearPumpFilters()
+        {
+            PumpSearchText = string.Empty;
+            SelectedPumpTypeFilter = "All";
+            ApplyPumpFilters();
+        }
+
+        private static RigPump ClonePump(RigPump source)
+        {
+            return new RigPump
+            {
+                No = source.No,
+                Model = source.Model,
+                PumpType = source.PumpType,
+                StrokeLength = source.StrokeLength,
+                RodSize = source.RodSize,
+                MaxLinerSize = source.MaxLinerSize,
+                MaxStrokeRate = source.MaxStrokeRate,
+                PumpName = source.PumpName,
+                LinerSize = source.LinerSize,
+                Efficiency = source.Efficiency
+            };
         }
 
         // Defaults
@@ -364,8 +635,11 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public ICommand AddSurfaceEquipmentCommand => new RelayCommand(_ => AddSurfaceItem());
         public ICommand RemoveSurfaceEquipmentCommand => new RelayCommand(p => RemoveSurfaceItem(p as RigSurfaceEquipment));
         public ICommand RemoveServiceLineCommand => new RelayCommand(p => RemoveServiceLineItem(p as RigSurfaceEquipment));
-        public ICommand AddPumpCommand => new RelayCommand(_ => AddPump());
+        public ICommand AddPumpCommand => new RelayCommand(_ => AddSelectedPump(), _ => CanAddPump);
         public ICommand RemovePumpCommand => new RelayCommand(p => RemovePump(p as RigPump));
+        public ICommand EditSelectedPumpCommand { get; }
+        public ICommand RemoveSelectedPumpCommand { get; }
+        public ICommand ClearPumpFiltersCommand { get; }
         public ICommand AddSolidsControlCommand => new RelayCommand(_ => AddSolidsControl());
         public ICommand RemoveSolidsControlCommand => new RelayCommand(p => RemoveSolidsControl(p as RigSolidsControl));
         public ICommand AddPitCommand => new RelayCommand(_ => AddPit());
@@ -400,10 +674,22 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             }
         }
 
-        private void AddPump()
+        private void AddSelectedPump()
         {
-            int nextNo = (Pumps?.Count ?? 0) + 1;
-            Pumps?.Add(new RigPump { No = nextNo });
+            if (!CanAddPump)
+            {
+                PumpValidationMessage = "Max Liner Size is required.";
+                return;
+            }
+
+            int nextNo = (SelectedPumps?.Count ?? 0) + 1;
+            var toAdd = ClonePump(EditPump);
+            toAdd.No = nextNo;
+            SelectedPumps?.Add(toAdd);
+
+            PumpValidationMessage = string.Empty;
+            EditPump = ClonePump(toAdd);
+            SelectedPump = toAdd;
         }
 
         private void RemovePump(RigPump? item)
@@ -415,10 +701,31 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             }
         }
 
+        private void EditSelectedPump(RigPump? item)
+        {
+            if (item == null) return;
+            EditPump = ClonePump(item);
+            SelectedPump = item;
+        }
+
+        private void RemoveSelectedPump(RigPump? item)
+        {
+            if (item == null || SelectedPumps == null) return;
+            SelectedPumps.Remove(item);
+            Renumber(SelectedPumps);
+            if (ReferenceEquals(SelectedPump, item))
+                SelectedPump = null;
+        }
+
         private void AddSolidsControl()
         {
             int nextNo = (SolidsControl?.Count ?? 0) + 1;
-            SolidsControl?.Add(new RigSolidsControl { No = nextNo });
+            SolidsControl?.Add(new RigSolidsControl
+            {
+                No = nextNo,
+                ManufacturerOptions = new ObservableCollection<string>(),
+                ModelOptions = new ObservableCollection<string>()
+            });
         }
 
         private void RemoveSolidsControl(RigSolidsControl? item)
@@ -531,11 +838,20 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 NumberOfScreens = 3,
                 ScreenType = "API",
                 Style = "Shaker",
+                ManufacturerOptions = new ObservableCollection<string>(),
+                ModelOptions = new ObservableCollection<string>(),
                 DesilterNumberOfCones = 0,
                 DesilterConeSize = 0.0,
                 DesanderNumberOfCones = 0,
                 DesanderConeSize = 0.0
             });
+            var defaultItem = SolidsControl?.FirstOrDefault();
+            if (defaultItem != null)
+            {
+                ApplySolidControlStyleSelection(defaultItem);
+                ApplySolidControlManufacturerSelection(defaultItem);
+                ApplySolidControlModelSelection(defaultItem);
+            }
 
             CurrentRigProfile.RigName = string.Empty;
             CurrentRigProfile.Contractor = string.Empty;
@@ -544,11 +860,6 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             CurrentRigProfile.CasingHeadElevation = 0;
 
             SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
-
-            // ? Asegura que la lista fija de Models siga disponible despu�s del reset
-            AvailableModels.Clear();
-            foreach (var m in FixedModelOptions)
-                AvailableModels.Add(m);
 
             ToastNotificationService.Instance.ShowInfo("Rig Profile reset to defaults");
         }
@@ -564,12 +875,11 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 .OrderBy(x => x);
         }
 
-        // ? CAMBIO CR�TICO: ya NO filtra por Excel / manufacturer. Siempre lista fija.
         public void UpdateAvailableModels(string type, string manufacturer)
         {
             if (AvailableModels == null) return;
             AvailableModels.Clear();
-            foreach (var model in FixedModelOptions)
+            foreach (var model in GetSolidControlModels(type, manufacturer))
                 AvailableModels.Add(model);
         }
 
@@ -590,6 +900,82 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             }
         }
 
+        public IEnumerable<string> GetSolidControlManufacturers(string style)
+        {
+            if (string.IsNullOrWhiteSpace(style)) return Enumerable.Empty<string>();
+            return _solidControlCatalog
+                .Where(x => string.Equals(x.Style, style, StringComparison.OrdinalIgnoreCase))
+                .Select(x => x.Manufacturer)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x);
+        }
+
+        public IEnumerable<string> GetSolidControlModels(string style, string manufacturer)
+        {
+            if (string.IsNullOrWhiteSpace(style) || string.IsNullOrWhiteSpace(manufacturer))
+                return Enumerable.Empty<string>();
+
+            return _solidControlCatalog
+                .Where(x =>
+                    string.Equals(x.Style, style, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(x.Manufacturer, manufacturer, StringComparison.OrdinalIgnoreCase))
+                .Select(x => x.Model)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x);
+        }
+
+        public void ApplySolidControlStyleSelection(RigSolidsControl item)
+        {
+            if (item == null) return;
+
+            item.Type = item.Style;
+
+            var manufacturers = GetSolidControlManufacturers(item.Style).ToList();
+            item.ManufacturerOptions = new ObservableCollection<string>(manufacturers);
+
+            if (!manufacturers.Any(m => string.Equals(m, item.Manufacturer, StringComparison.OrdinalIgnoreCase)))
+                item.Manufacturer = string.Empty;
+
+            item.Model = string.Empty;
+            item.ModelOptions = new ObservableCollection<string>();
+        }
+
+        public void ApplySolidControlManufacturerSelection(RigSolidsControl item)
+        {
+            if (item == null) return;
+
+            var models = GetSolidControlModels(item.Style, item.Manufacturer).ToList();
+            item.ModelOptions = new ObservableCollection<string>(models);
+
+            if (!models.Any(m => string.Equals(m, item.Model, StringComparison.OrdinalIgnoreCase)))
+                item.Model = string.Empty;
+        }
+
+        public void ApplySolidControlModelSelection(RigSolidsControl item)
+        {
+            if (item == null) return;
+            UpdateSolidsControlSpecs(item);
+        }
+
+        private void InitializeSolidsControlRows()
+        {
+            if (SolidsControl == null) return;
+
+            foreach (var item in SolidsControl)
+            {
+                if (item == null) continue;
+                item.ManufacturerOptions ??= new ObservableCollection<string>();
+                item.ModelOptions ??= new ObservableCollection<string>();
+                ApplySolidControlStyleSelection(item);
+                if (!string.IsNullOrWhiteSpace(item.Manufacturer))
+                {
+                    ApplySolidControlManufacturerSelection(item);
+                    if (!string.IsNullOrWhiteSpace(item.Model))
+                        ApplySolidControlModelSelection(item);
+                }
+            }
+        }
+
         // Internal Helper
         public class CatalogItem
         {
@@ -597,6 +983,13 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             public string Manufacturer { get; set; } = "";
             public string Model { get; set; } = "";
             public double Gpm { get; set; }
+        }
+
+        public class SolidControlCatalogItem
+        {
+            public string Style { get; set; } = "";
+            public string Manufacturer { get; set; } = "";
+            public string Model { get; set; } = "";
         }
     }
 }

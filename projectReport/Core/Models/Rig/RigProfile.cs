@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using ProjectReport.Models;
 
 namespace ProjectReport.Models.Rig
@@ -103,8 +104,13 @@ namespace ProjectReport.Models.Rig
     {
         private int _no;
         private string _pumpName = string.Empty;
+        private string _model = string.Empty;
+        private string _pumpType = string.Empty;
         private double _linerSize;
         private double _strokeLength;
+        private double _rodSize;
+        private double _maxLinerSize;
+        private double _maxStrokeRate;
         private double _efficiency;
 
         public int No
@@ -116,7 +122,39 @@ namespace ProjectReport.Models.Rig
         public string PumpName
         {
             get => _pumpName;
-            set => SetProperty(ref _pumpName, value);
+            set
+            {
+                if (SetProperty(ref _pumpName, value))
+                {
+                    if (!string.Equals(_model, value, StringComparison.Ordinal))
+                    {
+                        _model = value;
+                        OnPropertyChanged(nameof(Model));
+                    }
+                }
+            }
+        }
+
+        public string Model
+        {
+            get => _model;
+            set
+            {
+                if (SetProperty(ref _model, value))
+                {
+                    if (!string.Equals(_pumpName, value, StringComparison.Ordinal))
+                    {
+                        _pumpName = value;
+                        OnPropertyChanged(nameof(PumpName));
+                    }
+                }
+            }
+        }
+
+        public string PumpType
+        {
+            get => _pumpType;
+            set => SetProperty(ref _pumpType, value);
         }
 
         public double LinerSize
@@ -137,6 +175,24 @@ namespace ProjectReport.Models.Rig
                 if (SetProperty(ref _strokeLength, value))
                     OnPropertyChanged(nameof(Output));
             }
+        }
+
+        public double RodSize
+        {
+            get => _rodSize;
+            set => SetProperty(ref _rodSize, value);
+        }
+
+        public double MaxLinerSize
+        {
+            get => _maxLinerSize;
+            set => SetProperty(ref _maxLinerSize, value);
+        }
+
+        public double MaxStrokeRate
+        {
+            get => _maxStrokeRate;
+            set => SetProperty(ref _maxStrokeRate, value);
         }
 
         public double Efficiency
@@ -172,6 +228,8 @@ namespace ProjectReport.Models.Rig
         private string _model = string.Empty;
         private double _gpmCapacity;
         private int _numberOfScreens;
+        private ObservableCollection<string> _manufacturerOptions = new();
+        private ObservableCollection<string> _modelOptions = new();
 
         public int No
         {
@@ -195,6 +253,18 @@ namespace ProjectReport.Models.Rig
         {
             get => _model;
             set => SetProperty(ref _model, value);
+        }
+
+        public ObservableCollection<string> ManufacturerOptions
+        {
+            get => _manufacturerOptions;
+            set => SetProperty(ref _manufacturerOptions, value);
+        }
+
+        public ObservableCollection<string> ModelOptions
+        {
+            get => _modelOptions;
+            set => SetProperty(ref _modelOptions, value);
         }
 
         /// <summary>
@@ -224,8 +294,20 @@ namespace ProjectReport.Models.Rig
         public string Style
         {
             get => _style;
-            set => SetProperty(ref _style, value);
+            set
+            {
+                if (SetProperty(ref _style, value))
+                {
+                    OnPropertyChanged(nameof(IsShakerStyle));
+                    OnPropertyChanged(nameof(IsDesanderStyle));
+                    OnPropertyChanged(nameof(IsDesilterStyle));
+                }
+            }
         }
+
+        public bool IsShakerStyle => string.Equals(Style, "Shaker", StringComparison.OrdinalIgnoreCase);
+        public bool IsDesanderStyle => string.Equals(Style, "Desander", StringComparison.OrdinalIgnoreCase);
+        public bool IsDesilterStyle => string.Equals(Style, "Desilter", StringComparison.OrdinalIgnoreCase);
 
         private int _desilterNumberOfCones;
         public int DesilterNumberOfCones

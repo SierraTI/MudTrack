@@ -15,14 +15,9 @@ namespace ProjectReport.ViewModels.Inventory
         private readonly RelayCommand _saveCommand;
         private double _totalProductsCost;
 
-        public ObservableCollection<Product> AvailableProducts { get; } = new();
+        public ObservableCollection<UsageBalanceItem> BalanceItems { get; } = new();
 
-        public ObservableCollection<ConsumoItem> ConsumoItems { get; } = new ObservableCollection<ConsumoItem>();
-
-        /// <summary>
-        /// Grouped by category for UI display (Weighting Materials, Viscosifiers, Thinners, etc.)
-        /// </summary>
-        public ObservableCollection<ConsumoItemGroup> GroupedConsumos { get; } = new ObservableCollection<ConsumoItemGroup>();
+        public Action<UsageBalanceItem>? RequestUsageSpecification;
 
         public double TotalProductsCost
         {
@@ -38,112 +33,73 @@ namespace ProjectReport.ViewModels.Inventory
         }
 
         public ICommand SaveCommand => _saveCommand;
+        public ICommand OpenUseSpecificationCommand { get; }
 
         public UsageViewModel(InventoryService service)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _saveCommand = new RelayCommand(_ => SaveUsage());
+            OpenUseSpecificationCommand = new RelayCommand(param => OpenUseSpecification(param as UsageBalanceItem));
 
-            LoadProducts();
             LoadUsage();
-        }
-
-        private void LoadProducts()
-        {
-            AvailableProducts.Clear();
-            var selected = _service.GetSelectedProducts();
-            foreach (var p in selected)
-            {
-                AvailableProducts.Add(p);
-            }
-        }
-
-        /// <summary>
-        /// Add a new usage entry for a specific product
-        /// </summary>
-        public void AddNewUsageItem(string productCode = "", string productName = "", string category = "", double currentStock = 0)
-        {
-            var newUsageItem = new ConsumoItem
-            {
-                ProductCode = productCode,
-                ProductName = productName ?? "New Item",
-                Category = category ?? "General",
-                CurrentStock = currentStock,
-                Quantity = 0,
-                Unit = "Units",
-                Concentration = 0,
-                UnitCost = 0,
-                Date = DateTime.Now,
-                Notes = ""
-            };
-            ConsumoItems.Add(newUsageItem);
-            GroupByCategory();
-            UpdateTotalCost();
-        }
-
-        /// <summary>
-        /// Group consumos by category for better UI scannability
-        /// </summary>
-        private void GroupByCategory()
-        {
-            GroupedConsumos.Clear();
-            var grouped = ConsumoItems
-                .GroupBy(c => c.Category)
-                .OrderBy(g => g.Key);
-
-            foreach (var group in grouped)
-            {
-                var groupItem = new ConsumoItemGroup { Category = group.Key };
-                foreach (var item in group)
-                {
-                    groupItem.Items.Add(item);
-                }
-                GroupedConsumos.Add(groupItem);
-            }
-        }
-
-        /// <summary>
-        /// Validate all entries before saving (stock availability, etc.)
-        /// </summary>
-        private bool ValidateUsage()
-        {
-            foreach (var item in ConsumoItems)
-            {
-                if (item.IsInsufficientStock)
-                {
-                    item.ValidationError = $"Error: Insufficient stock (Only {item.CurrentStock} {item.Unit} available)";
-                    return false;
-                }
-                item.ValidationError = "";
-            }
-            return true;
         }
 
         private void LoadUsage()
         {
-            // Load existing usage items from service or database
-            // For now, this can be expanded with actual persistence logic
+            BalanceItems.Clear();
+
+            var selectedProducts = _service.GetSelectedProducts();
+            var movements = _service.GetMovements();
+            
+            // Assume report date is today for this view instance
+            var reportDate = DateTime.Today;
+
+            foreach (var product in selectedProducts)
+            {
+                var prodMovements = movements.Where(m => string.Equals(m.ProductCode, product.Code, StringComparison.OrdinalIgnoreCase)).ToList();
+                
+                // Movements before today
+                var historical = prodMovements.Where(m => m.Date.Date < reportDate).ToList();
+                double initial = historical.Where(m => m.Type == TicketType.Received).Sum(m => m.Quantity)
+                                - historical.Where(m => m.Type == TicketType.Returned).Sum(m => m.Quantity)
+                                - historical.Where(m => m.Type == TicketType.Consumed).Sum(m => m.Quantity);
+
+                // Movements today
+                var today = prodMovements.Where(m => m.Date.Date == reportDate).ToList();
+                double received = today.Where(m => m.Type == TicketType.Received).Sum(m => m.Quantity);
+                double returned = today.Where(m => m.Type == TicketType.Returned).Sum(m => m.Quantity);
+                double used = today.Where(m => m.Type == TicketType.Consumed).Sum(m => m.Quantity);
+
+                BalanceItems.Add(new UsageBalanceItem
+                {
+                    ProductCode = product.Code,
+                    ProductName = product.Name,
+                    Unit = product.Unit ?? "Units",
+                    InitialQuantity = initial,
+                    ReceivedQuantity = received,
+                    ReturnQuantity = returned,
+                    TotalUsedQuantity = used,
+                    UnitCost = product.CurrentUnitCost
+                });
+            }
+
             UpdateTotalCost();
+        }
+
+        private void OpenUseSpecification(UsageBalanceItem? item)
+        {
+            if (item == null) return;
+            RequestUsageSpecification?.Invoke(item);
         }
 
         private void SaveUsage()
         {
-            if (!ValidateUsage())
-            {
-                // Show validation errors to user
-                OnPropertyChanged(nameof(ConsumoItems));
-                return;
-            }
-
-            // Implement save logic to persist consumos
-            // This should trigger the Stock table to recalculate the "Used" column
-            OnPropertyChanged(nameof(ConsumoItems));
             UpdateTotalCost();
         }
 
         private void UpdateTotalCost()
         {
-            TotalProductsCost = ConsumoItems.Sum(c => c.DailyCost);
+            TotalProductsCost = BalanceItems.Sum(b => b.DailyCost);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -152,14 +108,5 @@ namespace ProjectReport.ViewModels.Inventory
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-    }
-
-    /// <summary>
-    /// Represents a grouped collection of consumo items by category
-    /// </summary>
-    public class ConsumoItemGroup
-    {
-        public string Category { get; set; } = "";
-        public ObservableCollection<ConsumoItem> Items { get; } = new ObservableCollection<ConsumoItem>();
     }
 }

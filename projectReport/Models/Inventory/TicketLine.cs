@@ -100,6 +100,14 @@ namespace ProjectReport.Models.Inventory
             set { if (_destination != value) { _destination = value; OnPropertyChanged(); } }
         }
 
+        // NEW: Quantity that was originally received (for returns validation)
+        private double _quantityReceived;
+        public double QuantityReceived
+        {
+            get => _quantityReceived;
+            set { if (_quantityReceived != value) { _quantityReceived = value; OnPropertyChanged(); } }
+        }
+
         // NEW: Condition of product (Sealed, Open, Damaged)
         private string _condition = "Sealed";
         public string Condition
@@ -136,6 +144,13 @@ namespace ProjectReport.Models.Inventory
             }
             ValidationError = "";
             return true;
+        }
+
+        private bool _isAddedToFluid = true;
+        public bool IsAddedToFluid
+        {
+            get => _isAddedToFluid;
+            set { if (_isAddedToFluid != value) { _isAddedToFluid = value; OnPropertyChanged(); } }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

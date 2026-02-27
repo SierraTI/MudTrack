@@ -23,70 +23,75 @@
                 CornerRadius="8"
                 Padding="12">
             <StackPanel Orientation="Vertical">
-                <!-- Row 1: Requisition, Destination, Condition -->
+                <!-- Row 1: Requisition, Destination, Supplier -->
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-
+ 
                     <!-- Requisition -->
-                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0" HorizontalAlignment="Stretch">
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0">
                         <TextBlock Text="# Remision" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <TextBox Height="30" HorizontalAlignment="Stretch" Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding Requisition, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
-
-                    <!-- Destination (Dropdown) -->
-                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0" HorizontalAlignment="Stretch">
+ 
+                    <!-- Destination (TextBox) -->
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0">
                         <TextBlock Text="Destination" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <ComboBox Height="30"
+                        <TextBox Height="30"
                                  HorizontalAlignment="Stretch"
-                                 ItemsSource="{Binding StorageBases}"
-                                 DisplayMemberPath="Name"
-                                 SelectedValuePath="Code"
-                                 SelectedValue="{Binding Destination, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEditable="True"/>
+                                 Text="{Binding Destination, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
-
-                    <!-- Condition (Sealed/Open/Damaged) -->
-                    <StackPanel Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Stretch">
-                        <TextBlock Text="Product Condition" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <ComboBox Height="30"
+ 
+                    <!-- Supplier Name -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical">
+                        <TextBlock Text="Supplier Name" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30"
                                  HorizontalAlignment="Stretch"
-                                 ItemsSource="{Binding ProductConditions}"
-                                 SelectedValue="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"/>
+                                 Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
                 </Grid>
-
-                <!-- Row 2: ADD Buttons -->
+ 
+                <!-- Row 2: Shipment Method, Reference, ADD Button -->
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Column="0"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="ADD"
-                                Width="80"
-                                Height="30"
-                                Background="#10B981"
-                                Foreground="White"
-                                BorderThickness="0"
-                                FontWeight="SemiBold"
-                                Command="{Binding AddLineCommand}"
-                                Margin="0,0,8,0"
-                                ToolTip="Add a new return line"/>
-                        <Button Content="Select Products"
-                                Width="120"
-                                Height="30"
-                                Background="#3B82F6"
-                                Foreground="White"
-                                BorderThickness="0"
-                                FontWeight="SemiBold"
-                                Command="{Binding SelectProductsCommand}"/>
+ 
+                    <!-- Shipment Method (TextBox) -->
+                    <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,12,0">
+                        <TextBlock Text="Shipment Method" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding ShipmentMethod, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
+ 
+                    <!-- Shipment Reference -->
+                    <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0,0,12,0">
+                        <TextBlock Text="Shipment Reference" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <TextBox Height="30"
+                                 HorizontalAlignment="Stretch"
+                                 Text="{Binding ShipmentReference, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+ 
+                    <!-- Unified Add Products Button -->
+                    <Button Grid.Column="2" 
+                            Content="Add Products"
+                            Width="160"
+                            Height="32"
+                            Background="#3B82F6"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontWeight="SemiBold"
+                            Command="{Binding SelectProductsCommand}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"/>
                 </Grid>
             </StackPanel>
         </Border>
@@ -118,7 +123,8 @@
                           HorizontalAlignment="Stretch"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          PreparingCellForEdit="LinesDataGrid_PreparingCellForEdit">
+                          PreparingCellForEdit="LinesDataGrid_PreparingCellForEdit"
+                          CellEditEnding="LinesDataGrid_CellEditEnding">
 
                     <DataGrid.Columns>
                         <!-- Product (Combo en edicion) -->
@@ -145,13 +151,13 @@
                         </DataGridTemplateColumn>
 
                         <!-- Unit (Display only) -->
-                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit, Mode=OneWay}" Width="80" MinWidth="70" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit, Mode=OneWay}" Width="60" MinWidth="50" IsReadOnly="True"/>
 
-                        <!-- Current Stock (Read-only availability check) -->
-                        <DataGridTemplateColumn Header="Stock Available" Width="110" MinWidth="90" IsReadOnly="True">
+                        <!-- Qty Received (Read-only) - shows how much was received -->
+                        <DataGridTemplateColumn Header="Qty Received" Width="100" MinWidth="90" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CurrentStock}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding QuantityReceived}" FontWeight="Bold" Foreground="#059669"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -159,7 +165,7 @@
                         <!-- Quantity to Return (with validation) -->
                         <DataGridTextColumn Header="Qty Return" Binding="{Binding Quantity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100" MinWidth="80"/>
 
-                        <!-- Condition (Sealed/Open/Damaged) -->
+                        <!-- Condition (TextBox in edicion) -->
                         <DataGridTemplateColumn Header="Condition" Width="100" MinWidth="90">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -168,28 +174,14 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <ComboBox Height="28"
-                                             ItemsSource="{Binding DataContext.ProductConditions, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                             SelectedValue="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Height="28"
+                                             Text="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
 
                         <!-- Observations -->
                         <DataGridTextColumn Header="Observations" Binding="{Binding Observations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="2*" MinWidth="180"/>
-
-                        <!-- Validation Error Indicator -->
-                        <DataGridTemplateColumn Header="Status" Width="120" CanUserSort="False">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border Background="#FEE2E2" Padding="4,2" CornerRadius="2" Margin="2">
-                                        <TextBlock Foreground="#991B1B" FontSize="11" 
-                                                  Text="{Binding ValidationError}"
-                                                  TextWrapping="Wrap"/>
-                                    </Border>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
 
                         <!-- Remove -->
                         <DataGridTemplateColumn Header="" Width="90" CanUserSort="False" MinWidth="70">

@@ -19,8 +19,6 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="8"/>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/> <!-- Row added for Ticket History dentro de Products -->
                     </Grid.RowDefinitions>
 
                     <!-- Ticket buttons (solo para Products) -->
@@ -31,23 +29,9 @@
                                   ToolTip="Show only products selected for this project report"/>
                     </StackPanel>
 
-                    <!-- Ticket History moved inside Products tab -->
-                    <GroupBox Header="Ticket History" Margin="8" Grid.Row="4" Grid.ColumnSpan="2">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,6">
-                                <!-- Command target: embedded panel's DataContext -->
-                                <Button Content="Refresh History" Command="{Binding DataContext.RefreshCommand, ElementName=InventoryHistoryPanel}" Margin="0,0,8,0" />
-                                <Button Content="Open Full History" Click="OpenInventoryHistory_Click" />
-                            </StackPanel>
-
-                            <!-- Embebe la vista de historial (ya existe: InventoryHistoryView) -->
-                            <inv:InventoryHistoryView x:Name="InventoryHistoryPanel" Grid.Row="1" />
-                        </Grid>
+                    <!-- Tickets -->
+                    <GroupBox Header="Tickets" Margin="0,0,0,0" Grid.Row="2">
+                        <inv:InventoryHistoryView x:Name="InventoryHistoryPanel" />
                     </GroupBox>
 
                 </Grid>

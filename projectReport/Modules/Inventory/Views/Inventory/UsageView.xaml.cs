@@ -2,6 +2,8 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using ProjectReport.ViewModels.Inventory;
+using ProjectReport.Services.Inventory;
+using System.IO;
 
 namespace ProjectReport.Views.Inventory
 {
@@ -10,16 +12,24 @@ namespace ProjectReport.Views.Inventory
         public UsageView()
         {
             InitializeComponent();
-            var service = ProjectReport.Services.ServiceLocator.InventoryService;
-            DataContext = new UsageViewModel(service);
-        }
-
-        private void AddButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is UsageViewModel viewModel)
+            
+            var dataPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "ProjectReport"
+            );
+            var service = new InventoryService(new JsonInventoryRepository(dataPath));
+            var viewModel = new UsageViewModel(service);
+            
+            // Subscribe to specification dialog requests
+            viewModel.RequestUsageSpecification = item =>
             {
-                viewModel.AddNewUsageItem();
-            }
+                var specVm = new UsageSpecificationViewModel(service, item);
+                var dialog = new UsageSpecificationDialog(specVm);
+                dialog.Owner = Window.GetWindow(this);
+                dialog.ShowDialog();
+            };
+
+            DataContext = viewModel;
         }
     }
 }

@@ -23,17 +23,8 @@ namespace ProjectReport.Views.Inventory
             var service = ServiceLocator.InventoryService;
             var vm = new TicketReceivedViewModel(service);
             DataContext = vm;
-
-            // Subscribe to RequestSelectProducts event
-            vm.RequestSelectProducts += Vm_RequestSelectProducts;
         }
 
-        private void Vm_RequestSelectProducts()
-        {
-            var dialog = new ProductSelectionDialog(filterOnlySelected: true);
-            dialog.Owner = Window.GetWindow(this);
-            dialog.ShowDialog();
-        }
 
         // Handlers para eventos definidos en XAML
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -169,6 +160,8 @@ namespace ProjectReport.Views.Inventory
             {
                 line.ProductCode = prod.Code;
                 line.ProductName = prod.Name;
+                line.Unit = string.IsNullOrWhiteSpace(prod.Unit) ? "Each" : prod.Unit;
+                line.UnitPrice = prod.CurrentUnitCost;
             }
 
             combo.IsDropDownOpen = false;

@@ -19,9 +19,10 @@ namespace ProjectReport.Models.Inventory
         public string OriginOrUse { get; set; } = "";
         public string Remision { get; set; } = "";     // New from SPEC
         public string SupplierName { get; set; } = "";  // New from SPEC
+        public string ShipmentMethod { get; set; } = ""; // New from SPEC
         public string User { get; set; } = "";
         public string Observations { get; set; } = "";
-
+        public bool IsAddedToFluid { get; set; } = true;
         public double StockBefore { get; set; }
         public double StockAfter { get; set; }
 

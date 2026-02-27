@@ -75,6 +75,33 @@ namespace ProjectReport.Services.Inventory
             }
         }
 
+        public void UpdateProductUnitCosts(IDictionary<string, double> unitCostsByCode)
+        {
+            if (unitCostsByCode == null || unitCostsByCode.Count == 0)
+                return;
+
+            var products = _repo.LoadProducts();
+            bool changed = false;
+
+            foreach (var p in products)
+            {
+                var code = p.Code ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(code)) continue;
+
+                if (!unitCostsByCode.TryGetValue(code, out var newCost)) continue;
+                if (Math.Abs(p.CurrentUnitCost - newCost) <= 0.0001) continue;
+
+                p.CurrentUnitCost = newCost;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                _repo.SaveProducts(products);
+                RaiseInventoryUpdated();
+            }
+        }
+
         public void CreateTicketConsumed(Ticket ticket)
         {
             if (ticket.Type != TicketType.Consumed) throw new InvalidOperationException("Ticket type mismatch.");
@@ -132,6 +159,7 @@ namespace ProjectReport.Services.Inventory
                 Quantity = qty,
                 UnitPrice = p.CurrentUnitCost,
                 OriginOrUse = line.Context,
+                IsAddedToFluid = line.IsAddedToFluid,
                 User = ticket.User,
                 Observations = ticket.Observations,
                 StockBefore = before,
@@ -220,7 +248,8 @@ namespace ProjectReport.Services.Inventory
                 StockAfter = p.StockQty,
                 Requisition = ticket.Requisition ?? "",
                 Remision = ticket.Remision ?? "",
-                SupplierName = ticket.SupplierName ?? ""
+                SupplierName = ticket.SupplierName ?? "",
+                ShipmentMethod = ticket.ShipmentMethod ?? ""
             };
 
             movements.Add(mv);

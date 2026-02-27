@@ -69,6 +69,13 @@ namespace ProjectReport.Models.Inventory
             set { if (_categoria != value) { _categoria = value; OnPropertyChanged(); } }
         }
 
+        private double _unitPrice = 0;
+        public double UnitPrice
+        {
+            get => _unitPrice;
+            set { if (Math.Abs(_unitPrice - value) > 0.0001) { _unitPrice = value; OnPropertyChanged(); } }
+        }
+
         private bool _isSelected = false;
         public bool IsSelected
         {

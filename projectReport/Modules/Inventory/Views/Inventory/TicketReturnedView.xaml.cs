@@ -24,22 +24,9 @@ namespace ProjectReport.Views.Inventory
                 var service = ProjectReport.Services.ServiceLocator.InventoryService;
                 var vm = new TicketReturnedViewModel(service);
                 DataContext = vm;
-                
-                // Subscribe to RequestSelectProducts event
-                vm.RequestSelectProducts += Vm_RequestSelectProducts;
-            }
-            else if (DataContext is TicketReturnedViewModel vm)
-            {
-                vm.RequestSelectProducts += Vm_RequestSelectProducts;
             }
         }
 
-        private void Vm_RequestSelectProducts()
-        {
-            var dialog = new ProductSelectionDialog(filterOnlySelected: true);
-            dialog.Owner = Window.GetWindow(this);
-            dialog.ShowDialog();
-        }
 
         private void ProductCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -49,6 +36,7 @@ namespace ProjectReport.Views.Inventory
                 {
                     line.ProductCode = prod.Code ?? string.Empty;
                     line.ProductName = prod.Name ?? string.Empty;
+                    line.Unit = string.IsNullOrWhiteSpace(prod.Unit) ? "Each" : prod.Unit;
 
                     double priceToUse = 0;
 
@@ -84,7 +72,7 @@ namespace ProjectReport.Views.Inventory
 
                     if (string.IsNullOrWhiteSpace(line.Context) && this.DataContext is TicketReturnedViewModel vm2)
                     {
-                        line.Context = vm2.Origin ?? string.Empty;
+                        line.Context = vm2.Destination ?? string.Empty;
                     }
                 }
             }
@@ -239,6 +227,48 @@ namespace ProjectReport.Views.Inventory
             {
                 vm2.Lines.Remove(line);
             }
+        }
+
+        // Monitor quantity changes to validate return limits
+        private void LinesDataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.Column.Header?.ToString() != "Qty Return") return;
+
+            try
+            {
+                var line = e.Row.Item as TicketLine;
+                if (line != null && DataContext is TicketReturnedViewModel vm)
+                {
+                    if (e.EditingElement is TextBox tb)
+                    {
+                        var raw = (tb.Text ?? string.Empty).Trim();
+                        if (double.TryParse(raw, out var editedQty))
+                        {
+                            if (editedQty < 0)
+                            {
+                                line.Quantity = 0;
+                                vm.Error = "Qty Return cannot be negative.";
+                            }
+                            else if (editedQty > line.QuantityReceived)
+                            {
+                                line.Quantity = line.QuantityReceived;
+                                vm.Error = $"Qty Return cannot be greater than Qty Received ({line.QuantityReceived}).";
+                            }
+                            else
+                            {
+                                line.Quantity = editedQty;
+                                vm.Error = string.Empty;
+                            }
+                        }
+                    }
+
+                    // Call validation through reflection to trigger ValidateReturnQuantity
+                    var method = vm.GetType().GetMethod("ValidateReturnQuantity", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    method?.Invoke(vm, new object[] { line });
+                }
+            }
+            catch { }
         }
     }
 }

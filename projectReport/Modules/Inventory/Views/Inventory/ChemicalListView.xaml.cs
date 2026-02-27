@@ -25,5 +25,32 @@ namespace ProjectReport.Views.Inventory
             var inventoryService = new InventoryService(new JsonInventoryRepository(dataPath));
             DataContext = new ChemicalListViewModel(inventoryService);
         }
+
+        private void SelectedProductsDataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            // Check if we are editing the SG column
+            if (e.Column.Header.ToString() == "SG")
+            {
+                var editedElement = e.EditingElement as TextBox;
+                if (editedElement != null)
+                {
+                    string newValue = editedElement.Text;
+                    
+                    // Show confirmation advice
+                    var result = MessageBox.Show(
+                        $"Are you sure you want to change the Specific Gravity (SG) to {newValue}?\n\nThis will affect volume calculations in other modules.",
+                        "Confirm SG Change",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.No)
+                    {
+                        // Cancel the edit
+                        e.Cancel = true;
+                        editedElement.Undo();
+                    }
+                }
+            }
+        }
     }
 }

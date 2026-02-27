@@ -41,7 +41,15 @@ namespace ProjectReport.Services.Inventory
         }
 
         public List<Product> LoadProducts()
-            => Read<List<Product>>(_productsFile) ?? new List<Product>();
+        {
+            var list = Read<List<Product>>(_productsFile) ?? new List<Product>();
+            if (list.Count == 0)
+            {
+                SeedProductsIfMissing();
+                list = Read<List<Product>>(_productsFile) ?? new List<Product>();
+            }
+            return list;
+        }
 
         public void SaveProducts(List<Product> products)
             => Write(_productsFile, products);
@@ -152,7 +160,18 @@ namespace ProjectReport.Services.Inventory
         private void SeedProductsIfMissing()
         {
             if (File.Exists(_productsFile))
-                return;
+            {
+                try
+                {
+                    var existing = Read<List<Product>>(_productsFile);
+                    if (existing != null && existing.Count > 0)
+                        return;
+                }
+                catch
+                {
+                    // If file is corrupted/unreadable, re-seed below.
+                }
+            }
 
             try
             {
@@ -184,6 +203,31 @@ namespace ProjectReport.Services.Inventory
                     var json = File.ReadAllText(fallbackPath);
                     var products = JsonSerializer.Deserialize<List<Product>>(json);
                     if (products != null)
+                    {
+                        Write(_productsFile, products);
+                        return;
+                    }
+                }
+
+                var resourcesPath = Path.Combine(exeDir, "Resources", "default_products.json");
+                if (File.Exists(resourcesPath))
+                {
+                    var json = File.ReadAllText(resourcesPath);
+                    var products = JsonSerializer.Deserialize<List<Product>>(json);
+                    if (products != null && products.Count > 0)
+                    {
+                        Write(_productsFile, products);
+                        return;
+                    }
+                }
+
+                // Dev fallback: running from source tree
+                var projectPath = Path.GetFullPath(Path.Combine(exeDir, "..", "..", "..", "..", "Resources", "default_products.json"));
+                if (File.Exists(projectPath))
+                {
+                    var json = File.ReadAllText(projectPath);
+                    var products = JsonSerializer.Deserialize<List<Product>>(json);
+                    if (products != null && products.Count > 0)
                     {
                         Write(_productsFile, products);
                         return;

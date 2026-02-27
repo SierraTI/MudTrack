@@ -6,14 +6,23 @@ namespace ProjectReport.Views.Inventory
 {
     public partial class ProductSelectionDialog : Window
     {
-        public ProductSelectionDialog(bool filterOnlySelected = false)
+        public ProductSelectionDialog(bool filterOnlySelected = false, System.Collections.Generic.List<string>? allowedCodes = null)
         {
             InitializeComponent();
-
-            // Apply filter if requested
-            if (filterOnlySelected && SelectionView.DataContext is ProjectReport.ViewModels.Inventory.ChemicalListViewModel vm)
+ 
+            if (SelectionView.DataContext is ProjectReport.ViewModels.Inventory.ChemicalListViewModel vm)
             {
-                vm.IsFilterBySelected = true;
+                // Apply filter if requested
+                if (filterOnlySelected)
+                {
+                    vm.IsFilterBySelected = true;
+                }
+
+                // Apply context-specific filtering if allowed codes provided
+                if (allowedCodes != null)
+                {
+                    vm.AllowedProductCodes = allowedCodes;
+                }
             }
             
             // Close dialog when products are selected and saved in ChemicalListView

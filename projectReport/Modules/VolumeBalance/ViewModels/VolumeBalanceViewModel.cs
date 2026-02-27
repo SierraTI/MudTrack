@@ -158,17 +158,39 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         /// </summary>
         public void SyncFromRigProfile(IList<RigPit> activePits)
         {
-            // Keep existing user entries by name
-            var existing = SurfaceTanks.ToDictionary(t => t.Name, t => t.VolumeBbl);
+            // Keep existing user entries by name + ordinal to avoid duplicate-key crashes
+            // when pits have the same or empty names.
+            var existing = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            var existingNameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var tank in SurfaceTanks)
+            {
+                var displayName = string.IsNullOrWhiteSpace(tank.Name) ? "Unnamed Pit" : tank.Name.Trim();
+                var ordinal = existingNameCounts.TryGetValue(displayName, out var current) ? current + 1 : 1;
+                existingNameCounts[displayName] = ordinal;
+                existing[$"{displayName}#{ordinal}"] = tank.VolumeBbl;
+            }
+
             SurfaceTanks.Clear();
 
+            var incomingNameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var position = 0;
             foreach (var pit in activePits)
             {
+                position++;
+                var displayName = string.IsNullOrWhiteSpace(pit.PitName)
+                    ? $"Pit {((pit.No > 0) ? pit.No : position)}"
+                    : pit.PitName.Trim();
+
+                var ordinal = incomingNameCounts.TryGetValue(displayName, out var current) ? current + 1 : 1;
+                incomingNameCounts[displayName] = ordinal;
+                var lookupKey = $"{displayName}#{ordinal}";
+
                 var tank = new SurfaceTank
                 {
-                    Name = pit.PitName,
+                    Name = displayName,
                     MaxCapacity = pit.MaxCapacity,
-                    VolumeBbl = existing.TryGetValue(pit.PitName, out var vol) ? vol : pit.CurrentVolume
+                    VolumeBbl = existing.TryGetValue(lookupKey, out var vol) ? vol : pit.CurrentVolume
                 };
                 SurfaceTanks.Add(tank);
             }

@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,7 +21,7 @@ namespace ProjectReport.Views.Inventory
     public partial class WholeFluidsView : UserControl
     {
         private ICollectionView? _linesView;
-        private string _movementFilter = "Todos";
+        private string _movementFilter = "All";
         private INotifyCollectionChanged? _linesCollection;
 
         public WholeFluidsView()
@@ -29,7 +29,7 @@ namespace ProjectReport.Views.Inventory
             InitializeComponent();
 
             // Si el DataContext heredado no es un WholeFluidsViewModel, crear uno propio.
-            // Así la vista siempre tendrá acceso a WholeFluids y DailyTotalCost.
+            // AsÃ­ la vista siempre tendrÃ¡ acceso a WholeFluids y DailyTotalCost.
             if (!DesignerProperties.GetIsInDesignMode(this))
             {
                 if (!(this.DataContext is WholeFluidsViewModel))
@@ -149,7 +149,7 @@ namespace ProjectReport.Views.Inventory
                 try
                 {
                     LinesDataGrid.UpdateLayout();
-                    var targetColumn = LinesDataGrid.Columns.FirstOrDefault(c => (c.Header?.ToString() ?? "").Contains("Fluido")) ?? LinesDataGrid.Columns.FirstOrDefault();
+                    var targetColumn = LinesDataGrid.Columns.FirstOrDefault(c => (c.Header?.ToString() ?? "").Contains("Fluid")) ?? LinesDataGrid.Columns.FirstOrDefault();
                     if (targetColumn != null)
                     {
                         LinesDataGrid.CurrentCell = new DataGridCellInfo(last, targetColumn);
@@ -158,7 +158,7 @@ namespace ProjectReport.Views.Inventory
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("[WholeFluidsView] BeginEdit falló: " + ex);
+                    Debug.WriteLine("[WholeFluidsView] BeginEdit fallÃ³: " + ex);
                 }
             }
         }
@@ -182,10 +182,10 @@ namespace ProjectReport.Views.Inventory
             });
         }
 
-        // <-- AÑADIDO: Preparar editor para la columna "Fluido" (pobla ComboBox con Products)
+        // <-- AÃ‘ADIDO: Preparar editor para la columna "Fluid" (pobla ComboBox con Products)
         private void LinesDataGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
         {
-            if ((e.Column?.Header?.ToString() ?? "") != "Fluido") return;
+            if ((e.Column?.Header?.ToString() ?? "") != "Fluid") return;
             if (DataContext is not WholeFluidsViewModel vm) return;
             var line = e.Row.Item as WholeFluidItem;
             if (line == null) return;
@@ -251,7 +251,7 @@ namespace ProjectReport.Views.Inventory
             combo.IsDropDownOpen = true;
         }
 
-        // <-- AÑADIDO: doble clic para comenzar edición de celda
+        // <-- AÃ‘ADIDO: doble clic para comenzar ediciÃ³n de celda
         private void LinesDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             DependencyObject dep = (DependencyObject)e.OriginalSource;
@@ -272,12 +272,12 @@ namespace ProjectReport.Views.Inventory
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("[WholeFluidsView] BeginEdit (double-click) falló: " + ex);
+                    Debug.WriteLine("[WholeFluidsView] BeginEdit (double-click) fallÃ³: " + ex);
                 }
             }
         }
 
-        // <-- AÑADIDO: manejador de SelectionChanged (vacío, evita error de compilación)
+        // <-- AÃ‘ADIDO: manejador de SelectionChanged (vacÃ­o, evita error de compilaciÃ³n)
         private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // placeholder: se puede usar para habilitar botones de contexto
@@ -287,7 +287,7 @@ namespace ProjectReport.Views.Inventory
         {
             if (sender is ComboBox cb)
             {
-                var sel = cb.SelectedValue?.ToString()?.Trim() ?? "Todos";
+                var sel = cb.SelectedValue?.ToString()?.Trim() ?? "All";
                 _movementFilter = sel;
                 try
                 {
@@ -303,7 +303,7 @@ namespace ProjectReport.Views.Inventory
         private bool FilterByMovement(object obj)
         {
             if (obj == null) return false;
-            if (string.IsNullOrWhiteSpace(_movementFilter) || _movementFilter.Equals("Todos", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.IsNullOrWhiteSpace(_movementFilter) || _movementFilter.Equals("All", StringComparison.OrdinalIgnoreCase)) return true;
 
             if (obj is WholeFluidItem line)
             {
@@ -316,7 +316,7 @@ namespace ProjectReport.Views.Inventory
 
         private void RowEdit_Click(object sender, RoutedEventArgs e)
         {
-            // idem al original: abrir edición en columna Fluido
+            // idem al original: abrir ediciÃ³n en columna Fluid
             var btn = sender as Button;
             var line = btn?.Tag as WholeFluidItem ?? btn?.DataContext as WholeFluidItem;
             if (line == null) return;
@@ -332,7 +332,7 @@ namespace ProjectReport.Views.Inventory
                     try
                     {
                         LinesDataGrid.UpdateLayout();
-                        var targetColumn = LinesDataGrid.Columns.FirstOrDefault(c => (c.Header?.ToString() ?? "").Contains("Fluido")) ?? LinesDataGrid.Columns.FirstOrDefault();
+                        var targetColumn = LinesDataGrid.Columns.FirstOrDefault(c => (c.Header?.ToString() ?? "").Contains("Fluid")) ?? LinesDataGrid.Columns.FirstOrDefault();
                         if (targetColumn != null)
                         {
                             LinesDataGrid.CurrentCell = new DataGridCellInfo(line, targetColumn);

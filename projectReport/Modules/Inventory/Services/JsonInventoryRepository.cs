@@ -55,7 +55,55 @@ namespace ProjectReport.Services.Inventory
             => Write(_productsFile, products);
 
         public List<InventoryMovement> LoadMovements()
-            => Read<List<InventoryMovement>>(_movementsFile) ?? new List<InventoryMovement>();
+        {
+            if (!File.Exists(_movementsFile)) return new List<InventoryMovement>();
+
+            var json = File.ReadAllText(_movementsFile);
+            if (string.IsNullOrWhiteSpace(json)) return new List<InventoryMovement>();
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                    return new List<InventoryMovement>();
+
+                var list = new List<InventoryMovement>();
+                foreach (var item in doc.RootElement.EnumerateArray())
+                {
+                    if (item.ValueKind != JsonValueKind.Object) continue;
+
+                    var movement = new InventoryMovement
+                    {
+                        MovementId = GetString(item, "MovementId") ?? Guid.NewGuid().ToString("N"),
+                        TicketId = GetString(item, "TicketId") ?? string.Empty,
+                        Date = GetDate(item, "Date"),
+                        ProductCode = GetString(item, "ProductCode") ?? string.Empty,
+                        ProductName = GetString(item, "ProductName") ?? string.Empty,
+                        Type = GetTicketType(item, "Type"),
+                        Quantity = GetDouble(item, "Quantity"),
+                        UnitPrice = GetDouble(item, "UnitPrice"),
+                        OriginOrUse = GetString(item, "OriginOrUse") ?? string.Empty,
+                        ShipmentReference = GetString(item, "ShipmentReference", "Remision") ?? string.Empty,
+                        SupplierName = GetString(item, "SupplierName") ?? string.Empty,
+                        ShipmentMethod = GetString(item, "ShipmentMethod") ?? string.Empty,
+                        User = GetString(item, "User") ?? string.Empty,
+                        Observations = GetString(item, "Observations", "Observacion") ?? string.Empty,
+                        IsAddedToFluid = GetBool(item, "IsAddedToFluid", defaultValue: true),
+                        StockBefore = GetDouble(item, "StockBefore"),
+                        StockAfter = GetDouble(item, "StockAfter"),
+                        Requisition = GetString(item, "Requisition") ?? string.Empty
+                    };
+
+                    list.Add(movement);
+                }
+
+                return list;
+            }
+            catch
+            {
+                return Read<List<InventoryMovement>>(_movementsFile) ?? new List<InventoryMovement>();
+            }
+        }
 
         public void SaveMovements(List<InventoryMovement> movements)
             => Write(_movementsFile, movements);
@@ -115,7 +163,7 @@ namespace ProjectReport.Services.Inventory
                     return;
                 }
 
-                // Si hay valores no numéricos, ordenamos por fecha; si todos son numéricos, por número
+                // Si hay valores no numéricos, ordenamos por fecha; si All son numéricos, por número
                 bool anyNonNumeric = groups.Any(x => !x.Numeric.HasValue);
 
                 var ordered = anyNonNumeric
@@ -253,6 +301,64 @@ namespace ProjectReport.Services.Inventory
             return JsonSerializer.Deserialize<T>(json);
         }
 
+        private static string? GetString(JsonElement element, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (element.TryGetProperty(name, out var prop))
+                {
+                    if (prop.ValueKind == JsonValueKind.String) return prop.GetString();
+                    return prop.ToString();
+                }
+            }
+            return null;
+        }
+
+        private static double GetDouble(JsonElement element, params string[] names)
+        {
+            foreach (var name in names)
+            {
+                if (!element.TryGetProperty(name, out var prop)) continue;
+                if (prop.ValueKind == JsonValueKind.Number && prop.TryGetDouble(out var n)) return n;
+                if (prop.ValueKind == JsonValueKind.String && double.TryParse(prop.GetString(), out n)) return n;
+            }
+            return 0d;
+        }
+
+        private static bool GetBool(JsonElement element, string name, bool defaultValue)
+        {
+            if (!element.TryGetProperty(name, out var prop)) return defaultValue;
+            if (prop.ValueKind == JsonValueKind.True) return true;
+            if (prop.ValueKind == JsonValueKind.False) return false;
+            if (prop.ValueKind == JsonValueKind.String && bool.TryParse(prop.GetString(), out var b)) return b;
+            return defaultValue;
+        }
+
+        private static DateTime GetDate(JsonElement element, string name)
+        {
+            if (!element.TryGetProperty(name, out var prop)) return DateTime.Now;
+            if (prop.ValueKind == JsonValueKind.String && DateTime.TryParse(prop.GetString(), out var dt)) return dt;
+            return DateTime.Now;
+        }
+
+        private static TicketType GetTicketType(JsonElement element, string name)
+        {
+            if (!element.TryGetProperty(name, out var prop)) return TicketType.Consumed;
+
+            if (prop.ValueKind == JsonValueKind.Number && prop.TryGetInt32(out var enumVal))
+            {
+                if (Enum.IsDefined(typeof(TicketType), enumVal)) return (TicketType)enumVal;
+            }
+
+            if (prop.ValueKind == JsonValueKind.String)
+            {
+                var s = prop.GetString() ?? string.Empty;
+                if (Enum.TryParse<TicketType>(s, true, out var parsed)) return parsed;
+            }
+
+            return TicketType.Consumed;
+        }
+
         private static void Write<T>(string path, T data)
         {
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
@@ -260,3 +366,4 @@ namespace ProjectReport.Services.Inventory
         }
     }
 }
+

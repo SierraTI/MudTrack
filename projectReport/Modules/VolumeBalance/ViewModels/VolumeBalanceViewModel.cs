@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using ProjectReport.Models;
 using ProjectReport.Models.Rig;
 using ProjectReport.Services;
 
@@ -52,7 +55,7 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             set { _sg = value; OnPropertyChanged(); RecalculateVolume(); }
         }
 
-        /// <summary>Volume added in barrels — auto-calculated from Qty, Unit, and SG.</summary>
+        /// <summary>Volume added in barrels. Auto-calculated from Qty, Unit and SG.</summary>
         public double VolumeAdded
         {
             get => _volumeAdded;
@@ -71,17 +74,14 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
     /// <summary>
     /// Main ViewModel for the Volume Balance screen.
-    /// Data sources:
-    ///   - Wellbore (Theoretical): auto-populated via WellContextService.GeometryDataUpdated
-    ///   - Surface tanks: auto-populated via WellContextService.RigProfileUpdated
-    ///   - Chemicals: manually added or linked from Inventory
     /// </summary>
     public class VolumeBalanceViewModel : BaseViewModel
     {
-        #region ── Wellbore Section (auto-populated from Geometry) ───────────────
+        private const string ClassificationActive = "Active";
+
+        #region Wellbore Section (auto-populated from Geometry)
 
         private double _holeCapacity;
-        /// <summary>Total capacity of the empty wellbore (bbl). From Geometry → Wellbore.</summary>
         public double HoleCapacity
         {
             get => _holeCapacity;
@@ -89,7 +89,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private double _stringDisplacement;
-        /// <summary>Steel displacement when drill string is run in hole (bbl). From Geometry → Drill String.</summary>
         public double StringDisplacement
         {
             get => _stringDisplacement;
@@ -97,7 +96,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private double _stringTheoretical;
-        /// <summary>Internal volume of the drill string at bit depth (bbl).</summary>
         public double StringTheoretical
         {
             get => _stringTheoretical;
@@ -105,7 +103,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private double _stringActual;
-        /// <summary>Actual string volume measured at surface (manual input).</summary>
         public double StringActual
         {
             get => _stringActual;
@@ -113,7 +110,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private double _annulusTheoretical;
-        /// <summary>Active annular volume at bit depth (bbl).</summary>
         public double AnnulusTheoretical
         {
             get => _annulusTheoretical;
@@ -121,54 +117,40 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private double _annulusActual;
-        /// <summary>Actual annular volume (manual reading).</summary>
         public double AnnulusActual
         {
             get => _annulusActual;
             set { if (SetField(ref _annulusActual, value)) RefreshSummary(); }
         }
 
-        /// <summary>Theoretical total fluid in the wellbore = HoleCapacity − StringDisplacement (bbl).</summary>
         public double TheoreticalWellbore => Math.Max(0, HoleCapacity - StringDisplacement);
-
-        /// <summary>Theoretical total of wellbore sections (String + Annulus).</summary>
         public double TotalWellTheoretical => StringTheoretical + AnnulusTheoretical;
-
-        /// <summary>Actual total of wellbore sections (String + Annulus).</summary>
         public double TotalWellActual => StringActual + AnnulusActual;
-
-        /// <summary>Wellbore-only variance (Actual − Theoretical).</summary>
         public double WellVariance => TotalWellActual - TotalWellTheoretical;
 
         #endregion
 
-        #region ── Surface Section (auto-populated from Rig Profile) ─────────────
+        #region Surface Section (auto-populated from Rig Profile)
 
         public ObservableCollection<SurfaceTank> SurfaceTanks { get; } = new();
 
-        /// <summary>Sum of current volume across all surface tanks (bbl).</summary>
         public double TotalSurfaceVolume => SurfaceTanks.Sum(t => t.VolumeBbl);
-
-        /// <summary>Sum of max capacity across all surface tanks (bbl).</summary>
+        public double TotalActiveSurfaceVolume => SurfaceTanks.Where(IsActiveTank).Sum(t => t.VolumeBbl);
         public double TotalSurfaceMaxCapacity => SurfaceTanks.Sum(t => t.MaxCapacity);
 
-        /// <summary>
-        /// Sync surface tanks from a live RigProfile pit list.
-        /// Preserves existing user-entered VolumeBbl values where tank name matches.
-        /// </summary>
         public void SyncFromRigProfile(IList<RigPit> activePits)
         {
-            // Keep existing user entries by name + ordinal to avoid duplicate-key crashes
-            // when pits have the same or empty names.
-            var existing = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            var existing = new Dictionary<string, SurfaceTank>(StringComparer.OrdinalIgnoreCase);
             var existingNameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var tank in SurfaceTanks)
             {
+                tank.PropertyChanged -= OnSurfaceTankPropertyChanged;
+
                 var displayName = string.IsNullOrWhiteSpace(tank.Name) ? "Unnamed Pit" : tank.Name.Trim();
                 var ordinal = existingNameCounts.TryGetValue(displayName, out var current) ? current + 1 : 1;
                 existingNameCounts[displayName] = ordinal;
-                existing[$"{displayName}#{ordinal}"] = tank.VolumeBbl;
+                existing[$"{displayName}#{ordinal}"] = tank;
             }
 
             SurfaceTanks.Clear();
@@ -189,25 +171,90 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
                 var tank = new SurfaceTank
                 {
                     Name = displayName,
-                    MaxCapacity = pit.MaxCapacity,
-                    VolumeBbl = existing.TryGetValue(lookupKey, out var vol) ? vol : pit.CurrentVolume
+                    MaxCapacity = pit.MaxCapacity
                 };
+
+                if (existing.TryGetValue(lookupKey, out var oldTank))
+                {
+                    tank.VolumeBbl = oldTank.VolumeBbl;
+                    tank.Classification = oldTank.Classification;
+                    tank.FluidType = oldTank.FluidType;
+                    tank.Density = oldTank.Density;
+                    tank.YesterdayVol = oldTank.YesterdayVol;
+                }
+                else
+                {
+                    tank.VolumeBbl = pit.CurrentVolume;
+                }
+
+                tank.PropertyChanged += OnSurfaceTankPropertyChanged;
                 SurfaceTanks.Add(tank);
             }
 
             RefreshSummary();
             OnPropertyChanged(nameof(SurfaceTanks));
             OnPropertyChanged(nameof(TotalSurfaceVolume));
+            OnPropertyChanged(nameof(TotalActiveSurfaceVolume));
             OnPropertyChanged(nameof(TotalSurfaceMaxCapacity));
         }
 
         #endregion
 
-        #region ── Chemicals Section (from Inventory) ───────────────────────────
+        #region Losses and Gains (Additions and Reductions)
+
+        private double _waterAdded;
+        public double WaterAdded
+        {
+            get => _waterAdded;
+            set { if (SetField(ref _waterAdded, value)) RefreshSummary(); }
+        }
+
+        private double _transfersIn;
+        public double TransfersIn
+        {
+            get => _transfersIn;
+            set { if (SetField(ref _transfersIn, value)) RefreshSummary(); }
+        }
+
+        private double _surfaceLosses;
+        public double SurfaceLosses
+        {
+            get => _surfaceLosses;
+            set { if (SetField(ref _surfaceLosses, value)) RefreshSummary(); }
+        }
+
+        private double _subSurfaceLosses;
+        public double SubSurfaceLosses
+        {
+            get => _subSurfaceLosses;
+            set { if (SetField(ref _subSurfaceLosses, value)) RefreshSummary(); }
+        }
+
+        private double _transfersOut;
+        public double TransfersOut
+        {
+            get => _transfersOut;
+            set { if (SetField(ref _transfersOut, value)) RefreshSummary(); }
+        }
+
+        public double TotalGains => WaterAdded + TransfersIn + TotalChemicalVolumeAdded;
+        public double TotalLosses => SurfaceLosses + SubSurfaceLosses + TransfersOut;
+
+        private double _hoursElapsed;
+        public double HoursElapsed
+        {
+            get => _hoursElapsed;
+            set { if (SetField(ref _hoursElapsed, value)) RefreshSummary(); }
+        }
+
+        public double SeepageRate => VolumeBalanceEngine.CalculateSeepageRate(SubSurfaceLosses, HoursElapsed);
+
+        #endregion
+
+        #region Chemicals Section (from Inventory)
 
         public ObservableCollection<ChemicalUsage> ChemicalUsages { get; } = new();
 
-        /// <summary>Total volume added by all chemical additions (bbl).</summary>
         public double TotalChemicalVolumeAdded => ChemicalUsages.Sum(c => c.VolumeAdded);
 
         private ICommand? _addChemicalCommand;
@@ -229,62 +276,158 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
         #endregion
 
-        #region ── Golden Equation Summary ──────────────────────────────────────
+        #region Theoretical Density and Rollover (Yesterday)
 
-        // The Golden Equation:
-        //   V_variance = (V_initial + V_added) − (V_final + V_lost)
-        // Simplified to:
-        //   Actual Total  = (StringActual + AnnulusActual) + TotalSurface + ChemicalsAdded
-        //   Theoretical Total = TheoreticalWellbore + TotalSurface
-        //   Variance = Actual − Theoretical  (negative = loss, positive = gain/kick)
-
-        /// <summary>Theoretical system total: TheoreticalWellbore + Surface max capacity baseline.</summary>
-        public double SystemTotalTheoretical => TheoreticalWellbore + TotalSurfaceVolume;
-
-        /// <summary>Actual system total: actual wellbore + actual surface + chemicals added.</summary>
-        public double SystemTotalActual => TotalWellActual + TotalSurfaceVolume + TotalChemicalVolumeAdded;
-
-        /// <summary>System variance (bbl). Negative = possible downhole loss. Positive = possible gain/kick.</summary>
-        public double SystemVariance => SystemTotalActual - SystemTotalTheoretical;
-
-        /// <summary>Human-readable status for the variance.</summary>
-        public string VarianceStatus => SystemVariance switch
+        private double _yesterdayWellboreVol;
+        public double YesterdayWellboreVol
         {
-            < -0.5 => "⚠ Possible Loss",
-            > 0.5  => "⚠ Possible Gain / Kick",
-            _      => "✓ Normal"
-        };
+            get => _yesterdayWellboreVol;
+            set { if (SetField(ref _yesterdayWellboreVol, value)) RefreshSummary(); }
+        }
 
-        /// <summary>Variance color: Red for loss, Orange for gain/kick, DarkGreen for normal.</summary>
-        public string VarianceColor => SystemVariance switch
+        public double TotalYesterdaySurfaceVolume => SurfaceTanks.Sum(t => t.YesterdayVol);
+        public double TotalYesterdayActiveSurfaceVolume => SurfaceTanks.Where(IsActiveTank).Sum(t => t.YesterdayVol);
+        public double SystemTotalYesterday => YesterdayWellboreVol + TotalYesterdaySurfaceVolume;
+
+        public double AverageActualSurfaceDensity
         {
-            < -0.5 => "#D32F2F",
-            > 0.5  => "#E65100",
-            _      => "#388E3C"
-        };
+            get
+            {
+                var active = SurfaceTanks.Where(IsActiveTank).ToList();
+                if (!active.Any()) return 0;
+
+                var totalActiveVol = active.Sum(t => t.VolumeBbl);
+                if (totalActiveVol <= 0) return active.Average(t => t.Density);
+
+                var weightedSg = active.Sum(t => t.Density * t.VolumeBbl) / totalActiveVol;
+                return Math.Round(weightedSg, 2);
+            }
+        }
+
+        public double TheoreticalSystemDensity
+        {
+            get
+            {
+                double startVolume = TotalYesterdayActiveSurfaceVolume;
+                if (startVolume <= 0) return AverageActualSurfaceDensity;
+
+                double startSg = AverageActualSurfaceDensity;
+                double chemVol = TotalChemicalVolumeAdded;
+                double chemSg = chemVol > 0
+                    ? ChemicalUsages.Sum(c => c.VolumeAdded * (c.SG > 0 ? c.SG : 1.0)) / chemVol
+                    : 1.0;
+
+                double totalVolume = startVolume + chemVol + WaterAdded;
+                if (totalVolume <= 0) return AverageActualSurfaceDensity;
+
+                return Math.Round(VolumeBalanceEngine.CalculateTheoreticalDensity(
+                    startVolume: startVolume,
+                    startSg: startSg,
+                    addedChemicalVolume: chemVol,
+                    addedChemicalSg: chemSg,
+                    addedWaterVolume: WaterAdded,
+                    addedWaterSg: 1.0), 2);
+            }
+        }
+
+        private ICommand? _rolloverCommand;
+        public ICommand RolloverCommand => _rolloverCommand ??= new RelayCommand(_ =>
+        {
+            foreach (var tank in SurfaceTanks)
+            {
+                tank.YesterdayVol = tank.VolumeBbl;
+            }
+
+            YesterdayWellboreVol = TotalWellActual;
+            RefreshSummary();
+        });
+
+        #endregion
+
+        #region Golden Equation Summary (Accounting vs Physical)
+
+        public double AccountingTotal => SystemTotalYesterday + TotalGains - TotalLosses;
+
+        public double TheoreticalSurfaceEquipmentVolume =>
+            CalculateRigSurfaceEquipmentVolume(WellContextService.Instance.CurrentWell);
+
+        private double _actualSurfaceEquipmentVolume;
+        public double ActualSurfaceEquipmentVolume
+        {
+            get => _actualSurfaceEquipmentVolume;
+            set { if (SetField(ref _actualSurfaceEquipmentVolume, value)) RefreshSummary(); }
+        }
+
+        public double SurfaceEquipmentVolumeUsed =>
+            ActualSurfaceEquipmentVolume > 0 ? ActualSurfaceEquipmentVolume : TheoreticalSurfaceEquipmentVolume;
+
+        public double PhysicalTotal => TotalWellActual + TotalActiveSurfaceVolume + SurfaceEquipmentVolumeUsed;
+
+        public double SystemVariance => PhysicalTotal - AccountingTotal;
+
+        public double BalanceToleranceBbl => Math.Abs(AccountingTotal) * 0.02;
+
+        public string VarianceStatus =>
+            Math.Abs(SystemVariance) <= BalanceToleranceBbl
+                ? "Balanced"
+                : SystemVariance < 0 ? "Possible Loss" : "Possible Gain / Kick";
+
+        public string VarianceColor => Math.Abs(SystemVariance) <= BalanceToleranceBbl ? "#388E3C" : "#D32F2F";
+
+        private double _previousVariance;
+        private double _varianceDelta;
+        public string VarianceTrend
+        {
+            get
+            {
+                if (Math.Abs(_varianceDelta) < 0.5) return "-";
+                return _varianceDelta > 0 ? "Up" : "Down";
+            }
+        }
 
         private void RefreshSummary()
         {
+            var newVariance = SystemVariance;
+            _varianceDelta = newVariance - _previousVariance;
+            _previousVariance = newVariance;
+
             OnPropertyChanged(nameof(TheoreticalWellbore));
             OnPropertyChanged(nameof(TotalWellTheoretical));
             OnPropertyChanged(nameof(TotalWellActual));
             OnPropertyChanged(nameof(WellVariance));
+
             OnPropertyChanged(nameof(TotalSurfaceVolume));
+            OnPropertyChanged(nameof(TotalActiveSurfaceVolume));
             OnPropertyChanged(nameof(TotalSurfaceMaxCapacity));
+
+            OnPropertyChanged(nameof(TotalGains));
+            OnPropertyChanged(nameof(TotalLosses));
+            OnPropertyChanged(nameof(SeepageRate));
             OnPropertyChanged(nameof(TotalChemicalVolumeAdded));
-            OnPropertyChanged(nameof(SystemTotalTheoretical));
-            OnPropertyChanged(nameof(SystemTotalActual));
+
+            OnPropertyChanged(nameof(TotalYesterdaySurfaceVolume));
+            OnPropertyChanged(nameof(TotalYesterdayActiveSurfaceVolume));
+            OnPropertyChanged(nameof(SystemTotalYesterday));
+
+            OnPropertyChanged(nameof(AverageActualSurfaceDensity));
+            OnPropertyChanged(nameof(TheoreticalSystemDensity));
+
+            OnPropertyChanged(nameof(AccountingTotal));
+            OnPropertyChanged(nameof(TheoreticalSurfaceEquipmentVolume));
+            OnPropertyChanged(nameof(SurfaceEquipmentVolumeUsed));
+            OnPropertyChanged(nameof(PhysicalTotal));
             OnPropertyChanged(nameof(SystemVariance));
+            OnPropertyChanged(nameof(BalanceToleranceBbl));
             OnPropertyChanged(nameof(VarianceStatus));
             OnPropertyChanged(nameof(VarianceColor));
+            OnPropertyChanged(nameof(VarianceTrend));
         }
 
         #endregion
 
-        #region ── Sync / Last Updated ──────────────────────────────────────────
+        #region Sync / Last Updated
 
         private string _lastSyncedAt = "Not yet synced";
-        /// <summary>Human-readable timestamp of the last geometry data sync.</summary>
         public string LastSyncedAt
         {
             get => _lastSyncedAt;
@@ -292,7 +435,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private bool _isGeometrySynced;
-        /// <summary>True once geometry data has been received at least once.</summary>
         public bool IsGeometrySynced
         {
             get => _isGeometrySynced;
@@ -300,13 +442,8 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         }
 
         private ICommand? _syncCommand;
-        /// <summary>Manually triggers republishing of geometry data from WellContextService last known values.</summary>
         public ICommand SyncCommand => _syncCommand ??= new RelayCommand(_ => RequestGeometryResync());
 
-        /// <summary>
-        /// Asks the geometry module to re-broadcast its current calculated data.
-        /// This is done by replaying the last event args cached locally.
-        /// </summary>
         private void RequestGeometryResync()
         {
             if (_lastGeometryArgs != null)
@@ -317,57 +454,60 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
         #endregion
 
-        #region ── Constructor & Event Subscriptions ─────────────────────────────
+        #region Constructor and Event Subscriptions
 
         public VolumeBalanceViewModel()
         {
-            // Subscribe to cross-module events
             WellContextService.Instance.GeometryDataUpdated += OnGeometryDataUpdated;
             WellContextService.Instance.RigProfileUpdated += OnRigProfileUpdated;
             WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
 
-            // Wire SurfaceTank collection changes → RefreshSummary
-            SurfaceTanks.CollectionChanged += (_, __) => RefreshSummary();
+            SurfaceTanks.CollectionChanged += OnSurfaceTanksCollectionChanged;
 
-            // Wire ChemicalUsage collection changes → RefreshSummary
             ChemicalUsages.CollectionChanged += (_, e) =>
             {
                 if (e.NewItems != null)
+                {
                     foreach (ChemicalUsage c in e.NewItems)
-                        c.PropertyChanged += (__, ___) => RefreshSummary();
+                        c.PropertyChanged += (_, _) => RefreshSummary();
+                }
+
                 RefreshSummary();
             };
         }
 
-        /// <summary>Unsubscribe to prevent memory leaks (call from View's Unloaded event).</summary>
         public void Detach()
         {
             WellContextService.Instance.GeometryDataUpdated -= OnGeometryDataUpdated;
             WellContextService.Instance.RigProfileUpdated -= OnRigProfileUpdated;
             WellContextService.Instance.ChemicalSelectionUpdated -= OnChemicalSelectionUpdated;
+
+            SurfaceTanks.CollectionChanged -= OnSurfaceTanksCollectionChanged;
+            foreach (var tank in SurfaceTanks)
+                tank.PropertyChanged -= OnSurfaceTankPropertyChanged;
         }
 
         #endregion
 
-        #region ── Event Handlers ────────────────────────────────────────────────
+        #region Event Handlers
 
         private void OnChemicalSelectionUpdated(object? sender, ChemicalSelectionUpdatedEventArgs e)
         {
-            // Add freshly selected chemicals to our local additions list
             foreach (var item in e.SelectedItems)
             {
-                // Simple check to avoid duplicates if user clicks save multiple times with same items
-                if (ChemicalUsages.Any(c => c.ProductCode == item.Code)) continue;
+                if (ChemicalUsages.Any(c => c.ProductCode == item.Code))
+                    continue;
 
                 ChemicalUsages.Add(new ChemicalUsage
                 {
                     ProductCode = item.Code,
-                    Description = item.Nombre,
-                    QtyUsed = 1.0, // Default to 1 unit
-                    Unit = item.Unidad,
+                    Description = item.Name,
+                    QtyUsed = 1.0,
+                    Unit = item.Unit,
                     SG = item.SG
                 });
             }
+
             RefreshSummary();
         }
 
@@ -379,7 +519,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
         private void ApplyGeometryData(GeometryDataUpdatedEventArgs e)
         {
-            // These setters fire RefreshSummary each time, but we batch at the end for clarity
             HoleCapacity = Math.Round(e.HoleCapacity, 2);
             StringDisplacement = Math.Round(e.StringDisplacement, 2);
             StringTheoretical = Math.Round(e.StringInternalVolume, 2);
@@ -395,9 +534,54 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             SyncFromRigProfile(e.ActivePits);
         }
 
+        private void OnSurfaceTanksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (SurfaceTank tank in e.NewItems)
+                    tank.PropertyChanged += OnSurfaceTankPropertyChanged;
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (SurfaceTank tank in e.OldItems)
+                    tank.PropertyChanged -= OnSurfaceTankPropertyChanged;
+            }
+
+            RefreshSummary();
+        }
+
+        private void OnSurfaceTankPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            RefreshSummary();
+        }
+
+        private static bool IsActiveTank(SurfaceTank tank)
+        {
+            return string.Equals(tank.Classification?.Trim(), ClassificationActive, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static double CalculateRigSurfaceEquipmentVolume(Well? well)
+        {
+            var rigProfile = well?.RigProfile;
+            if (rigProfile == null) return 0;
+
+            return CalculateCollectionVolume(rigProfile.SurfaceEquipment) +
+                   CalculateCollectionVolume(rigProfile.ServiceLine);
+        }
+
+        private static double CalculateCollectionVolume(IEnumerable<RigSurfaceEquipment>? equipment)
+        {
+            if (equipment == null) return 0;
+
+            return equipment
+                .Where(e => e.InternalDiameter > 0 && e.Length > 0)
+                .Sum(e => VolumeBalanceEngine.CalculateSurfaceEquipmentVolume(e.InternalDiameter, e.Length));
+        }
+
         #endregion
 
-        #region ── INotifyPropertyChanged helper ─────────────────────────────────
+        #region INotifyPropertyChanged helper
 
         private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
@@ -410,9 +594,6 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         #endregion
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Minimal RelayCommand for commands inside this module
-    // ─────────────────────────────────────────────────────────────────────────────
     internal class RelayCommand : ICommand
     {
         private readonly Action<object?> _execute;

@@ -165,7 +165,7 @@ namespace ProjectReport.Services.Inventory
                 StockBefore = before,
                 StockAfter = p.StockQty,
                 Requisition = ticket.Requisition ?? "",
-                Remision = ticket.Remision ?? "",
+                ShipmentReference = ticket.ShipmentReference ?? "",
                 SupplierName = ticket.SupplierName ?? ""
             };
 
@@ -247,7 +247,7 @@ namespace ProjectReport.Services.Inventory
                 StockBefore = before,
                 StockAfter = p.StockQty,
                 Requisition = ticket.Requisition ?? "",
-                Remision = ticket.Remision ?? "",
+                ShipmentReference = ticket.ShipmentReference ?? "",
                 SupplierName = ticket.SupplierName ?? "",
                 ShipmentMethod = ticket.ShipmentMethod ?? ""
             };
@@ -342,7 +342,7 @@ namespace ProjectReport.Services.Inventory
                 StockBefore = before,
                 StockAfter = p.StockQty,
                 Requisition = ticket is { } ? (ticket.Requisition ?? "") : "",
-                Remision = ticket.Remision ?? "",
+                ShipmentReference = ticket.ShipmentReference ?? "",
                 SupplierName = ticket.SupplierName ?? ""
             };
 
@@ -430,7 +430,7 @@ namespace ProjectReport.Services.Inventory
             RaiseInventoryUpdated();
         }
 
-        // Recalcula StockQty de todos los productos a partir de los movimientos actuales
+        // Recalcula StockQty de All los productos a partir de los movimientos actuales
         public void RecalculateAllProductStock()
         {
             var products = _repo.LoadProducts();
@@ -563,3 +563,4 @@ namespace ProjectReport.Services.Inventory
         }
     }
 }
+

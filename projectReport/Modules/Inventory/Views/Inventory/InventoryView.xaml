@@ -9,7 +9,7 @@
         <TabControl>
             <TabItem Header="Products">
                 <!-- Placeholder: reemplaza por tu control real si existe -->
-                <TextBlock Text="ProductsView no encontrada. Sustituye por el UserControl correcto." 
+                <TextBlock Text="ProductsView not found. Replace it with the correct UserControl." 
                            VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="Gray"/>
             </TabItem>
 

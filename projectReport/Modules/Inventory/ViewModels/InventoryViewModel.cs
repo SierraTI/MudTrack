@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -59,16 +59,16 @@ namespace ProjectReport.Modules.Inventory.ViewModels
 
                 foreach (var p in products)
                 {
-                    if (Items.Any(x => string.Equals(x.ItemCode, p.Codigo, System.StringComparison.OrdinalIgnoreCase)))
+                    if (Items.Any(x => string.Equals(x.ItemCode, p.Code, System.StringComparison.OrdinalIgnoreCase)))
                         continue;
 
                     Items.Add(new InventoryItem
                     {
-                        ItemCode = p.Codigo,
-                        Name = p.Nombre,
-                        Category = p.Categoria,
-                        Packaging = p.Presentacion,
-                        Unit = string.IsNullOrWhiteSpace(p.Unidad) ? "N/A" : p.Unidad,
+                        ItemCode = p.Code,
+                        Name = p.Name,
+                        Category = p.Category,
+                        Packaging = p.Presentation,
+                        Unit = string.IsNullOrWhiteSpace(p.Unit) ? "N/A" : p.Unit,
 
                         QuantityAvailable = 0,
                         MinStock = 0,
@@ -145,7 +145,7 @@ namespace ProjectReport.Modules.Inventory.ViewModels
 
                 File.WriteAllText(saveFileDialog.FileName, sb.ToString(), Encoding.UTF8);
 
-                MessageBox.Show($"Exportado {Items.Count} productos a:\n{saveFileDialog.FileName}", "Exportaci�n completada", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Exportado {Items.Count} productos a:\n{saveFileDialog.FileName}", "Exportación completada", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (System.Exception ex)
             {
@@ -160,3 +160,4 @@ namespace ProjectReport.Modules.Inventory.ViewModels
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }
 }
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -13,7 +13,7 @@ namespace ProjectReport.Models.Inventory
             set { if (_requisition != value) { _requisition = value; OnPropertyChanged(); } }
         }
 
-        private string _movementType = "Ingreso";
+        private string _movementType = "Incoming";
         public string MovementType
         {
             get => _movementType;

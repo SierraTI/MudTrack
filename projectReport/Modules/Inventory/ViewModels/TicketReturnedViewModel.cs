@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -15,11 +15,11 @@ namespace ProjectReport.ViewModels.Inventory
     {
         private readonly InventoryService _service;
 
-        // Lista de productos y líneas (tabla)
+        // Lista de productos y lÃ­neas (tabla)
         public ObservableCollection<Product> Products { get; } = new();
         public ObservableCollection<TicketLine> Lines { get; } = new();
 
-        // Productos disponibles para el Combo al añadir (filtrados por movimientos Received del pozo)
+        // Productos disponibles para el Combo al aÃ±adir (filtrados por movimientos Received del pozo)
         public ObservableCollection<Product> AvailableProductsForAdd { get; } = new();
 
         private string _requisition = "";
@@ -88,7 +88,7 @@ namespace ProjectReport.ViewModels.Inventory
         public event Action? RequestClose;
         public event Action? RequestSelectProducts;
 
-        // Nuevo: Id del ticket que se está editando (si aplica)
+        // Nuevo: Id del ticket que se estÃ¡ editando (si aplica)
         private string? _editingTicketId;
         public string? EditingTicketId
         {
@@ -96,7 +96,7 @@ namespace ProjectReport.ViewModels.Inventory
             private set => SetProperty(ref _editingTicketId, value);
         }
 
-        // Nuevo: Requisition por la que se está editando (si aplica)
+        // Nuevo: Requisition por la que se estÃ¡ editando (si aplica)
         private string? _editingRequisition;
         public string? EditingRequisition
         {
@@ -120,7 +120,7 @@ namespace ProjectReport.ViewModels.Inventory
             // precargar productos disponibles para ADD (basado en pozo actual)
             LoadProductsForAdd();
 
-            // NO cargar automáticamente las líneas al abrir la vista
+            // NO cargar automÃ¡ticamente las lÃ­neas al abrir la vista
             
             // Subscribe to batch selection event
             WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
@@ -149,7 +149,7 @@ namespace ProjectReport.ViewModels.Inventory
                 bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
                 if (alreadyExists) continue;
 
-                var unitFromChemical = item.Unidad ?? string.Empty;
+                var unitFromChemical = item.Unit ?? string.Empty;
                 var unitFromProduct = productUnits.TryGetValue(item.Code ?? string.Empty, out var mappedUnit)
                     ? mappedUnit
                     : string.Empty;
@@ -160,7 +160,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Lines.Add(new TicketLine
                 {
                     ProductCode = item.Code,
-                    ProductName = item.Nombre ?? item.Code,
+                    ProductName = item.Name ?? item.Code,
                     Unit = resolvedUnit,
                     Quantity = 1,
                     Context = Destination
@@ -244,7 +244,7 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch
             {
-                // No propagar excepción al UI
+                // No propagar excepciÃ³n al UI
             }
         }
 
@@ -260,7 +260,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Observations = string.Empty
             });
 
-            Error = $"Línea agregada. Total líneas: {Lines.Count}";
+            Error = $"Line added. Total lines: {Lines.Count}";
         }
 
         private void RemoveLine(TicketLine? line)
@@ -318,7 +318,7 @@ namespace ProjectReport.ViewModels.Inventory
                     addedCount++;
                 }
 
-                Error = $"Cargadas {addedCount} línea(s) desde inventario recibido.";
+                Error = $"Loaded {addedCount} line(s) from received inventory.";
             }
             catch (Exception ex)
             {
@@ -343,7 +343,7 @@ namespace ProjectReport.ViewModels.Inventory
             Destination = first.OriginOrUse ?? string.Empty;
             SupplierName = first.SupplierName ?? string.Empty;
             ShipmentMethod = first.ShipmentMethod ?? string.Empty;
-            ShipmentReference = first.Remision ?? string.Empty;
+            ShipmentReference = first.ShipmentReference ?? string.Empty;
             Observations = first.Observations ?? string.Empty;
             User = first.User ?? Environment.UserName;
 
@@ -397,7 +397,7 @@ namespace ProjectReport.ViewModels.Inventory
             Destination = first.OriginOrUse ?? string.Empty;
             SupplierName = first.SupplierName ?? string.Empty;
             ShipmentMethod = first.ShipmentMethod ?? string.Empty;
-            ShipmentReference = first.Remision ?? string.Empty;
+            ShipmentReference = first.ShipmentReference ?? string.Empty;
             Observations = first.Observations ?? string.Empty;
             User = first.User ?? Environment.UserName;
 
@@ -437,7 +437,7 @@ namespace ProjectReport.ViewModels.Inventory
 
             if (Lines.Count == 0)
             {
-                Error = "No hay líneas para guardar.";
+                Error = "There are no lines to save.";
                 return;
             }
 
@@ -446,19 +446,19 @@ namespace ProjectReport.ViewModels.Inventory
                 var ln = Lines[i];
                 if (string.IsNullOrWhiteSpace(ln.ProductCode) && string.IsNullOrWhiteSpace(ln.ProductName))
                 {
-                    Error = $"Línea {i + 1}: producto requerido.";
+                    Error = $"Line {i + 1}: product is required.";
                     return;
                 }
                 if (ln.Quantity <= 0)
                 {
-                    Error = $"Línea {i + 1}: la cantidad debe ser mayor que 0.";
+                    Error = $"Line {i + 1}: quantity must be greater than 0.";
                     return;
                 }
 
                 // Validate that return quantity doesn't exceed received quantity
                 if (ln.Quantity > ln.QuantityReceived)
                 {
-                    Error = $"Línea {i + 1}: No puede devolver {ln.Quantity} {ln.ProductName}. Solo fue recibido {ln.QuantityReceived}.";
+                    Error = $"Line {i + 1}: Cannot return {ln.Quantity} {ln.ProductName}. Only {ln.QuantityReceived} was received.";
                     return;
                 }
             }
@@ -549,7 +549,7 @@ namespace ProjectReport.ViewModels.Inventory
                     Origin = Destination,
                     SupplierName = SupplierName,
                     ShipmentMethod = ShipmentMethod,
-                    Remision = ShipmentReference,
+                    ShipmentReference = ShipmentReference,
                     Lines = Lines.ToList()
                 };
 
@@ -567,7 +567,7 @@ namespace ProjectReport.ViewModels.Inventory
                 _service.CreateTicketReturned(ticket);
 
                 Lines.Clear();
-                Error = "Ticket de devolución guardado correctamente.";
+                Error = "Return ticket saved successfully.";
                 EditingTicketId = null;
                 EditingRequisition = null;
                 RequestClose?.Invoke();
@@ -600,12 +600,14 @@ namespace ProjectReport.ViewModels.Inventory
 
             if (line.Quantity > 0 && line.QuantityReceived > 0 && line.Quantity > line.QuantityReceived)
             {
-                line.ValidationError = $"⚠️ Cannot return {line.Quantity} - Only {line.QuantityReceived} received";
+                line.ValidationError = $"âš ï¸ Cannot return {line.Quantity} - Only {line.QuantityReceived} received";
             }
             else if (line.Quantity > 0 && line.QuantityReceived == 0)
             {
-                line.ValidationError = "⚠️ No quantity received for this product";
+                line.ValidationError = "âš ï¸ No quantity received for this product";
             }
         }
     }
 }
+
+

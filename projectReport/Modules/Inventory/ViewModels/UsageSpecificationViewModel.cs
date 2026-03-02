@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -67,7 +67,7 @@ namespace ProjectReport.ViewModels.Inventory
             "Lost/Damage", 
             "Other" 
         };
-        public ObservableCollection<string> FluidOptions { get; } = new();
+        public ObservableCollection<string> Fluidptions { get; } = new();
 
         public ICommand AddEntryCommand { get; }
         public ICommand RemoveEntryCommand { get; }
@@ -86,7 +86,7 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void LoadFluids()
         {
-            FluidOptions.Clear();
+            Fluidptions.Clear();
             try
             {
                 var dataFile = Path.Combine(AppContext.BaseDirectory, "Data", "wholefluids.json");
@@ -97,15 +97,15 @@ namespace ProjectReport.ViewModels.Inventory
                     if (fluids != null)
                     {
                         var names = fluids.Select(f => f.ProductName).Distinct().ToList();
-                        foreach (var name in names) FluidOptions.Add(name);
+                        foreach (var name in names) Fluidptions.Add(name);
                     }
                 }
             }
             catch { /* Ignore errors loading fluids */ }
 
-            if (FluidOptions.Count == 0)
+            if (Fluidptions.Count == 0)
             {
-                FluidOptions.Add("Primary Fluid Set");
+                Fluidptions.Add("Primary Fluid Set");
             }
         }
 
@@ -135,7 +135,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Type = TicketType.Consumed,
                 Date = DateTime.Now,
                 Quantity = 0,
-                OriginOrUse = FluidOptions.FirstOrDefault() ?? "",
+                OriginOrUse = Fluidptions.FirstOrDefault() ?? "",
                 UnitPrice = _balanceItem.UnitCost,
                 IsAddedToFluid = true
             };
@@ -200,3 +200,4 @@ namespace ProjectReport.ViewModels.Inventory
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
+

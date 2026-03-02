@@ -19,7 +19,7 @@ namespace ProjectReport.ViewModels.Inventory
         public double TotalValue  { get; set; }
         public string SupplierName  { get; set; } = "";
         public string Observations  { get; set; } = "";
-        public string Remision      { get; set; } = "";
+        public string ShipmentReference      { get; set; } = "";
 
         // Formatted helpers for the UI
         public string TicketLabel   => string.IsNullOrWhiteSpace(Requisition) ? "(no #)" : $"#{Requisition}";
@@ -104,7 +104,7 @@ namespace ProjectReport.ViewModels.Inventory
                         TotalValue   = items.Sum(m => m.Quantity * m.UnitPrice),
                         SupplierName = first.SupplierName,
                         Observations = first.Observations,
-                        Remision     = first.Remision
+                        ShipmentReference     = first.ShipmentReference
                     };
                 })
                 .OrderByDescending(t => t.Date)
@@ -175,4 +175,5 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
+
 

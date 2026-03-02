@@ -36,5 +36,32 @@ namespace ProjectReport.Modules.VolumeBalance
         {
             return stringVol + annulusVol;
         }
+
+        public static double CalculateSurfaceEquipmentVolume(double internalDiameterInches, double lengthFeet)
+        {
+            // Capacity (bbl) = (ID^2 / 1029.4) * length
+            return (Math.Pow(internalDiameterInches, 2) / 1029.4) * lengthFeet;
+        }
+
+        public static double CalculateSeepageRate(double volumeLossBbl, double timeElapsedHours)
+        {
+            if (timeElapsedHours <= 0) return 0;
+            return volumeLossBbl / timeElapsedHours;
+        }
+
+        public static double CalculateTheoreticalDensity(
+            double startVolume, double startSg,
+            double addedChemicalVolume, double addedChemicalSg,
+            double addedWaterVolume, double addedWaterSg = 1.0)
+        {
+            double totalVolume = startVolume + addedChemicalVolume + addedWaterVolume;
+            if (totalVolume <= 0) return startSg; // Avoid division by zero
+
+            double startMass = startVolume * startSg;
+            double addedChemicalMass = addedChemicalVolume * addedChemicalSg;
+            double addedWaterMass = addedWaterVolume * addedWaterSg;
+
+            return (startMass + addedChemicalMass + addedWaterMass) / totalVolume;
+        }
     }
 }

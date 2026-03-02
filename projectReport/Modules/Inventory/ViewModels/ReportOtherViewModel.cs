@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
@@ -90,7 +90,7 @@ namespace ProjectReport.ViewModels.Inventory
             if (validLines.Count == 0)
             {
 #if DEBUG
-                MessageBox.Show("Agrega al menos una línea con cantidad > 0.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Add at least one line with quantity > 0.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
 #endif
                 return;
             }
@@ -121,7 +121,7 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error guardando actividades: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error saving activities: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -151,3 +151,4 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
+

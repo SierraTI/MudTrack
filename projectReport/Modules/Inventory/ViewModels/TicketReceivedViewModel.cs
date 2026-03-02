@@ -204,7 +204,7 @@ namespace ProjectReport.ViewModels.Inventory
                 bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
                 if (alreadyExists) continue;
 
-                var unitFromChemical = item.Unidad ?? string.Empty;
+                var unitFromChemical = item.Unit ?? string.Empty;
                 var unitFromProduct = productCatalog.TryGetValue(item.Code ?? string.Empty, out var mappedProduct)
                     ? (mappedProduct.Unit ?? string.Empty)
                     : string.Empty;
@@ -218,7 +218,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Lines.Add(new TicketLine
                 {
                     ProductCode = item.Code,
-                    ProductName = item.Nombre ?? item.Code,
+                    ProductName = item.Name ?? item.Code,
                     Unit = resolvedUnit,
                     Quantity = 1,
                     UnitPrice = resolvedPrice,
@@ -249,7 +249,7 @@ namespace ProjectReport.ViewModels.Inventory
 
                 // Log + feedback para depuración
                 System.Diagnostics.Debug.WriteLine($"[TicketReceived] AddLine invoked: Lines.Count = {Lines.Count}");
-                Error = $"Línea agregada en borrador. Total líneas: {Lines.Count}";
+                Error = $"Draft line added. Total lines: {Lines.Count}";
 
                 // Limpiar sólo inputs de entrada rápida (mantener Requisition y Origin)
                 Quantity = 0;
@@ -263,7 +263,7 @@ namespace ProjectReport.ViewModels.Inventory
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[TicketReceived] AddLine exception: {ex}");
-                Error = "Error al agregar línea: " + ex.Message;
+                Error = "Error adding line: " + ex.Message;
             }
         }
 
@@ -327,11 +327,11 @@ namespace ProjectReport.ViewModels.Inventory
                     {
                         var p = new Product
                         {
-                            Code = u.Codigo ?? string.Empty,
-                            Name = string.IsNullOrWhiteSpace(u.Nombre) ? (u.Codigo ?? string.Empty) : u.Nombre,
-                            Description = string.IsNullOrWhiteSpace(u.Categoria) ? string.Empty : u.Categoria,
-                            Category = u.Categoria ?? string.Empty,
-                            Unit = string.IsNullOrWhiteSpace(u.Unidad) ? "Each" : u.Unidad,
+                            Code = u.Code ?? string.Empty,
+                            Name = string.IsNullOrWhiteSpace(u.Name) ? (u.Code ?? string.Empty) : u.Name,
+                            Description = string.IsNullOrWhiteSpace(u.Category) ? string.Empty : u.Category,
+                            Category = u.Category ?? string.Empty,
+                            Unit = string.IsNullOrWhiteSpace(u.Unit) ? "Each" : u.Unit,
                             StockQty = 0,
                             CurrentUnitCost = 0,
                             Status = ProductStatus.Active
@@ -509,7 +509,7 @@ namespace ProjectReport.ViewModels.Inventory
 
             if (Lines.Count == 0)
             {
-                Error = "No hay líneas para guardar.";
+                Error = "There are no lines to save.";
                 return;
             }
 
@@ -519,12 +519,12 @@ namespace ProjectReport.ViewModels.Inventory
                 var ln = Lines[i];
                 if (string.IsNullOrWhiteSpace(ln.ProductName) && string.IsNullOrWhiteSpace(ln.ProductCode))
                 {
-                    Error = $"Línea {i + 1}: producto requerido.";
+                    Error = $"Line {i + 1}: product is required.";
                     return;
                 }
                 if (ln.Quantity <= 0)
                 {
-                    Error = $"Línea {i + 1}: la cantidad debe ser mayor que 0.";
+                    Error = $"Line {i + 1}: quantity must be greater than 0.";
                     return;
                 }
             }
@@ -590,7 +590,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Origin = Origin,
                 SupplierName = SupplierName,
                 ShipmentMethod = ShipmentMethod,
-                Remision = ShipmentReference,
+                ShipmentReference = ShipmentReference,
                 Lines = Lines.ToList()
             };
 
@@ -613,7 +613,7 @@ namespace ProjectReport.ViewModels.Inventory
 
                 // Clear draft lines and close
                 Lines.Clear();
-                Error = "Ticket guardado correctamente.";
+                Error = "Ticket saved successfully.";
                 EditingTicketId = null;
                 EditingRequisition = null;
                 RequestClose?.Invoke();
@@ -631,3 +631,5 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
+
+

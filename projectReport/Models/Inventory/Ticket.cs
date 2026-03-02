@@ -19,12 +19,11 @@ namespace ProjectReport.Models.Inventory
 
         // Requisition number/identifier
         public string Requisition { get; set; } = "";
-        public string Remision { get; set; } = "";
+        public string ShipmentReference { get; set; } = "";
         public string Origin { get; set; } = "";
         public string SupplierName { get; set; } = "";
 
         // Shipment metadata (for Ticket Received)
-        public string ShipmentReference { get; set; } = "";
         public string ShipmentMethod { get; set; } = ""; // e.g., "Truck", "Air", "Rail"
         public string ReturnLocation { get; set; } = ""; // Location for empty containers
 
@@ -44,3 +43,4 @@ namespace ProjectReport.Models.Inventory
         Posted = 1
     }
 }
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -115,7 +115,7 @@ namespace ProjectReport.ViewModels.Inventory
             // Category Filter
             bool categoryMatch = string.IsNullOrEmpty(SelectedCategory) || 
                                 SelectedCategory == "All Categories" || 
-                                 string.Equals(item.Categoria, SelectedCategory, StringComparison.OrdinalIgnoreCase);
+                                 string.Equals(item.Category, SelectedCategory, StringComparison.OrdinalIgnoreCase);
 
             if (!categoryMatch) return false;
 
@@ -130,9 +130,9 @@ namespace ProjectReport.ViewModels.Inventory
             if (string.IsNullOrWhiteSpace(SearchText)) return true;
 
             string search = SearchText.Trim().ToLowerInvariant();
-            return (item.Nombre?.ToLowerInvariant().Contains(search) == true) ||
+            return (item.Name?.ToLowerInvariant().Contains(search) == true) ||
                    (item.Code?.ToLowerInvariant().Contains(search) == true) ||
-                   (item.Descripcion?.ToLowerInvariant().Contains(search) == true);
+                   (item.Description?.ToLowerInvariant().Contains(search) == true);
         }
 
         private void LoadChemicals()
@@ -161,14 +161,14 @@ namespace ProjectReport.ViewModels.Inventory
                     var chemical = new ChemicalItem
                     {
                         Code = product.Code,
-                        Nombre = product.Name,
-                        Descripcion = product.Description,
-                        EstadoFisico = product.PhysicalState,
-                        Presentacion = product.Presentation,
-                        Cantidad = product.Quantity > 0 ? product.Quantity : product.StockQty,
-                        Unidad = product.Unit,
+                        Name = product.Name,
+                        Description = product.Description,
+                        PhysicalState = product.PhysicalState,
+                        Presentation = product.Presentation,
+                        Quantity = product.Quantity > 0 ? product.Quantity : product.StockQty,
+                        Unit = product.Unit,
                         SG = product.SG,
-                        Categoria = product.Category,
+                        Category = product.Category,
                         UnitPrice = product.CurrentUnitCost,
                         IsSelected = product.IsSelectedForReport
                     };
@@ -301,3 +301,4 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
+

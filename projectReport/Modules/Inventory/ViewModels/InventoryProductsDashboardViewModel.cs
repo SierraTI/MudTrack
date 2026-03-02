@@ -25,8 +25,8 @@ namespace ProjectReport.ViewModels.Inventory
         public event Action<string>? RequestEditReturnedByRequisition;
         public event Action<string>? RequestEditReturnedByTicketId; // <- Nuevo evento añadido aquí
 
-        // Nuevo: eventos para Used -> Fluido / Otras actividades (pasa la fila)
-        public event Action<ProductSummaryRow>? RequestUsedAsFluido;
+        // Nuevo: eventos para Used -> Fluid / Otras actividades (pasa la fila)
+        public event Action<ProductSummaryRow>? RequestUsedAsFluid;
         public event Action<ProductSummaryRow>? RequestUsedAsOther;
 
         // COMMANDS
@@ -47,7 +47,7 @@ namespace ProjectReport.ViewModels.Inventory
         public RelayCommand EditReturnedByTicketIdCommand { get; }
 
         // New commands for Used menu
-        public RelayCommand UsedAsFluidoCommand { get; }
+        public RelayCommand UsedAsFluidCommand { get; }
         public RelayCommand UsedAsOtherCommand { get; }
 
         // TABLE DATA
@@ -132,7 +132,7 @@ namespace ProjectReport.ViewModels.Inventory
                 requisition = requisition.Trim();
                 if (string.IsNullOrWhiteSpace(requisition))
                 {
-                    MessageBox.Show("No hay remisión asociada a esta fila para editar Received.", "Editar Received", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No shipment reference is associated with this row to edit Received.", "Edit Received", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
                 RequestEditReceivedByRequisition?.Invoke(requisition);
@@ -144,7 +144,7 @@ namespace ProjectReport.ViewModels.Inventory
                 requisition = requisition.Trim();
                 if (string.IsNullOrWhiteSpace(requisition))
                 {
-                    MessageBox.Show("No hay remisión asociada a esta fila para editar Returned.", "Editar Returned", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No shipment reference is associated with this row to edit Returned.", "Edit Returned", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
                 RequestEditReturnedByRequisition?.Invoke(requisition);
@@ -155,7 +155,7 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 if (param is not ProductSummaryRow row)
                 {
-                    MessageBox.Show("No se ha seleccionado una fila válida para editar Returned.", "Editar Returned", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("No valid row was selected to edit Returned.", "Edit Returned", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
                 }
 
@@ -200,22 +200,22 @@ namespace ProjectReport.ViewModels.Inventory
                     return;
                 }
 
-                MessageBox.Show("No se encontró TicketId ni Remisión asociada para esta fila. Edite el ticket desde el historial.", "Editar Returned", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("No TicketId or shipment reference was found for this row. Edit the ticket from history.", "Edit Returned", MessageBoxButton.OK, MessageBoxImage.Information);
             });
 
             // Comandos para Used menu
-            UsedAsFluidoCommand = new RelayCommand(param =>
+            UsedAsFluidCommand = new RelayCommand(param =>
             {
                 if (param is ProductSummaryRow row)
                 {
                     // Si alguien suscribe al evento, delegamos y salimos
-                    if (RequestUsedAsFluido != null)
+                    if (RequestUsedAsFluid != null)
                     {
-                        RequestUsedAsFluido.Invoke(row);
+                        RequestUsedAsFluid.Invoke(row);
                         return;
                     }
 
-                    Debug.WriteLine("InventoryProductsDashboardViewModel: UsedAsFluidoCommand ejecutado. Abriendo ReportConsumedDialog. ProductCode: " + row.ProductCode);
+                    Debug.WriteLine("InventoryProductsDashboardViewModel: UsedAsFluidCommand ejecutado. Abriendo ReportConsumedDialog. ProductCode: " + row.ProductCode);
 
                     try
                     {
@@ -245,8 +245,8 @@ namespace ProjectReport.ViewModels.Inventory
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine("Error al abrir ReportConsumedDialog: " + ex);
-                        MessageBox.Show("ERROR al abrir ReportConsumedDialog: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Debug.WriteLine("Error opening ReportConsumedDialog: " + ex);
+                        MessageBox.Show("Error opening ReportConsumedDialog: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             });
@@ -267,13 +267,13 @@ namespace ProjectReport.ViewModels.Inventory
                 }
             });
 
-            // Eliminar por MovementId / TicketId+ProductCode (solo esa línea)
+            // Delete por MovementId / TicketId+ProductCode (solo esa línea)
             DeleteRowCommand = new RelayCommand(param =>
             {
                 ProductSummaryRow? row = param as ProductSummaryRow;
                 if (row == null) return;
 
-                var confirm = MessageBox.Show("¿Eliminar sólo este registro (producto) del ticket? Esta acción ajustará stocks.", "Confirmar eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var confirm = MessageBox.Show("Delete only this ticket record (product)? This action will adjust stock.", "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (confirm != MessageBoxResult.Yes) return;
 
                 // 1) Preferir eliminación por MovementId si está disponible (más preciso)
@@ -301,8 +301,8 @@ namespace ProjectReport.ViewModels.Inventory
 
                 if (matches.Count > 0)
                 {
-                    var msg = $"Se encontraron {matches.Count} movimiento(s) Returned para este producto en {SelectedDate:yyyy-MM-dd}.\n¿Eliminar todos los movimientos encontrados?";
-                    var c2 = MessageBox.Show(msg, "Eliminar movimientos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    var msg = $"Found {matches.Count} Returned movement(s) for this product on {SelectedDate:yyyy-MM-dd}.\nDelete all found movements?";
+                    var c2 = MessageBox.Show(msg, "Delete Movements", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                     if (c2 == MessageBoxResult.Yes)
                     {
                         foreach (var m in matches)
@@ -315,7 +315,7 @@ namespace ProjectReport.ViewModels.Inventory
                     }
                     else
                     {
-                        // Si el usuario no confirma eliminar todos, intentar eliminar el último si existe MovementId
+                        // Si el usuario no confirma eliminar All, intentar eliminar el último si existe MovementId
                         var last = matches.OrderByDescending(m => m.Date).FirstOrDefault();
                         if (last != null && !string.IsNullOrWhiteSpace(last.MovementId))
                         {
@@ -334,8 +334,8 @@ namespace ProjectReport.ViewModels.Inventory
 
                 if (matches.Count > 0)
                 {
-                    var msg = $"Se encontraron {matches.Count} movimiento(s) para este producto en {SelectedDate:yyyy-MM-dd} (diferentes tipos).\n¿Eliminar todos los movimientos encontrados?";
-                    var c3 = MessageBox.Show(msg, "Eliminar movimientos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    var msg = $"Found {matches.Count} movement(s) for this product on {SelectedDate:yyyy-MM-dd} (different types).\nDelete all found movements?";
+                    var c3 = MessageBox.Show(msg, "Delete Movements", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                     if (c3 == MessageBoxResult.Yes)
                     {
                         foreach (var m in matches)
@@ -356,8 +356,8 @@ namespace ProjectReport.ViewModels.Inventory
 
                 if (matches.Count > 0)
                 {
-                    var msg = $"No se encontraron movimientos únicos en la fecha seleccionada, pero existen {matches.Count} movimiento(s) Returned para este producto en el historial.\n¿Eliminar todos los movimientos Returned encontrados en historial?";
-                    var c4 = MessageBox.Show(msg, "Eliminar movimientos", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    var msg = $"No unique movements were found on the selected date, but there are {matches.Count} Returned movement(s) for this product on el historial.\nDelete all returned movements found in history?";
+                    var c4 = MessageBox.Show(msg, "Delete Movements", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                     if (c4 == MessageBoxResult.Yes)
                     {
                         foreach (var m in matches)
@@ -370,7 +370,7 @@ namespace ProjectReport.ViewModels.Inventory
                     }
                 }
 
-                MessageBox.Show("No se pudo determinar un movimiento único para eliminar. Seleccione la fila exacta del ticket o edite desde el historial.", "Eliminar", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Could not determine a unique movement to delete. Select the exact ticket row or edit from history.", "Delete", MessageBoxButton.OK, MessageBoxImage.Information);
             });
 
             // Subscribe to inventory updates to refresh dashboard in real time
@@ -541,5 +541,7 @@ namespace ProjectReport.ViewModels.Inventory
         }
     }
 }
+
+
 
 

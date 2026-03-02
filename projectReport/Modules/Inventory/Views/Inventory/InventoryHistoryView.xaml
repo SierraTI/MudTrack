@@ -75,7 +75,7 @@
                                 Background="Transparent" BorderThickness="0"
                                 Padding="8,4" Cursor="Hand"
                                 FontSize="11" Foreground="#3B82F6"
-                                Content="ðŸ”„ Refresh"/>
+                                Content="&#x1F504; Refresh"/>
                         <Button Command="{Binding ClearOldCommand}" 
                                 Background="Transparent" BorderThickness="0"
                                 Padding="8,4" Cursor="Hand" Margin="8,0,0,0"
@@ -221,7 +221,7 @@
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock FontWeight="Bold" FontSize="14" Foreground="#1D4ED8"
                                        VerticalAlignment="Center" Margin="0,0,0,0"
-                                       Text="{Binding SelectedTicket.TicketLabel, StringFormat='ðŸ“„ TICKET {0}'}"/>
+                                       Text="{Binding SelectedTicket.TicketLabel, StringFormat='&#x1F4C4; TICKET {0}'}"/>
                             <Border Background="#DBEAFE" CornerRadius="4" Padding="6,3" Margin="12,0,0,0"
                                     VerticalAlignment="Center">
                                 <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#1E40AF"
@@ -269,8 +269,8 @@
                                 <Run Text="{Binding SelectedTicket.User, Mode=OneWay}"/>
                             </TextBlock>
                             <TextBlock FontSize="11" Foreground="#6B7280" Margin="0,0,0,0">
-                                <Run FontWeight="SemiBold" Foreground="#374151">RemisiÃ³n:</Run>
-                                <Run Text="{Binding SelectedTicket.Remision, Mode=OneWay}"/>
+                                <Run FontWeight="SemiBold" Foreground="#374151">Shipment Ref:</Run>
+                                <Run Text="{Binding SelectedTicket.ShipmentReference, Mode=OneWay}"/>
                             </TextBlock>
                         </StackPanel>
 
@@ -319,4 +319,5 @@
 
     </Grid>
 </UserControl>
+
 

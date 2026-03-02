@@ -1,4 +1,4 @@
-<Window x:Class="ProjectReport.Views.Inventory.UsageSpecificationDialog"
+﻿<Window x:Class="ProjectReport.Views.Inventory.UsageSpecificationDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Usage Specification" Height="450" Width="600"
@@ -44,7 +44,7 @@
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Grid Margin="4">
-                                <ComboBox ItemsSource="{Binding DataContext.FluidOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                <ComboBox ItemsSource="{Binding DataContext.Fluidptions, RelativeSource={RelativeSource AncestorType=Window}}"
                                           SelectedItem="{Binding Movement.OriginOrUse, UpdateSourceTrigger=PropertyChanged}"
                                           Visibility="{Binding IsFluidType, Converter={StaticResource BoolToVisibility}}"/>
                                 <ComboBox ItemsSource="{Binding DataContext.ActivityOptions, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -84,3 +84,4 @@
         </StackPanel>
     </Grid>
 </Window>
+

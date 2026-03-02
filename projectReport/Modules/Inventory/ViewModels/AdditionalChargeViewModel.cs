@@ -1,4 +1,4 @@
-using System;
+Ôªøusing System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -32,7 +32,7 @@ namespace ProjectReport.ViewModels.Inventory
 
         // Opciones visibles en la lista desplegable por fila
         public ObservableCollection<string> CurrencyOptions { get; } = new ObservableCollection<string> { "USD", "COP" };
-        // Opciones para la unidad (lista desplegable Unit)
+        // Opciones para la Unit (lista desplegable Unit)
         public ObservableCollection<string> UnitOptions { get; } = new ObservableCollection<string> { "Each", "Day" };
 
         private string _error = "";
@@ -91,13 +91,13 @@ namespace ProjectReport.ViewModels.Inventory
             SaveCommand = new RelayCommand(_ => Save());
             ReloadCommand = new RelayCommand(_ => LoadFromFile());
 
-            // reaccionar a cambios en la colecciÛn para recalcular total
+            // reaccionar a cambios en la colecci√≥n para recalcular total
             Charges.CollectionChanged += Charges_CollectionChanged;
 
             SeedDefaults();
             LoadFromFile();
 
-            // DEBUG: aÒadir fila de ejemplo si no hay cargas (para verificar UI)
+            // DEBUG: a√±adir fila de ejemplo si no hay cargas (para verificar UI)
             if (Charges.Count == 0)
             {
                 Charges.Add(new AdditionalChargeItem
@@ -138,7 +138,7 @@ namespace ProjectReport.ViewModels.Inventory
                 _watcherWhole.Deleted += FileChangedHandler;
                 _watcherWhole.EnableRaisingEvents = true;
             }
-            catch { /* no bloquear si FS watcher no est· disponible */ }
+            catch { /* no bloquear si FS watcher no est√° disponible */ }
 
             try
             {
@@ -159,7 +159,7 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void FileChangedHandler(object sender, FileSystemEventArgs e)
         {
-            // reiniciar temporizador debounce para evitar m˙ltiples rec·lculos seguidos
+            // reiniciar temporizador debounce para evitar m√∫ltiples rec√°lculos seguidos
             try
             {
                 _debounceTimer.Stop();
@@ -202,7 +202,7 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            // si cambia cantidad, precio o total recalcular
+            // si cambia Quantity, precio o total recalcular
             if (e.PropertyName == nameof(AdditionalChargeItem.Quantity) ||
                 e.PropertyName == nameof(AdditionalChargeItem.UnitPrice) ||
                 e.PropertyName == nameof(AdditionalChargeItem.Total))
@@ -223,7 +223,7 @@ namespace ProjectReport.ViewModels.Inventory
                 DailyTotalCost = 0;
             }
 
-            // despuÈs de recalcular el propio total, actualizar combinado
+            // despu√©s de recalcular el propio total, actualizar combinado
             RecalcCombinedTotal();
         }
 
@@ -236,7 +236,7 @@ namespace ProjectReport.ViewModels.Inventory
 
             try
             {
-                // Filtrar por fecha del dÌa (Daily). Adem·s, solo contar movimientos de tipo Consumed para coste diario,
+                // Filtrar por fecha del d√≠a (Daily). Adem√°s, solo contar movimientos de tipo Consumed para coste diario,
                 // para concordar con InventoryProductsDashboardViewModel (DailyCost).
                 if (_inventoryService != null)
                 {
@@ -260,7 +260,7 @@ namespace ProjectReport.ViewModels.Inventory
                     var arr = JsonSerializer.Deserialize<WholeFluidItem[]>(json);
                     if (arr != null)
                     {
-                        // Filtrar por la fecha del dÌa (si la entrada tiene Date) para que sea un "daily total"
+                        // Filtrar por la fecha del d√≠a (si la entrada tiene Date) para que sea un "daily total"
                         var today = DateTime.Today;
                         wholeFluidsTotal = arr
                             .Where(w => w.Date.Date == today)
@@ -287,40 +287,40 @@ namespace ProjectReport.ViewModels.Inventory
                 "COSTO DE EQUIPO MPSA - INCLUYE OPERADOR",
                 "FILTROS",
                 "INGENIERIA",
-                "INGENIERO DE FLUIDOS",
-                "INGENIERO DE FLUIDOS JUNIOR",
-                "INGENIERO DE FLUIDOS OPERATIVO",
-                "INGENIERO DE FLUIDOS SENIOR",
+                "INGENIERO DE FluidS",
+                "INGENIERO DE FluidS JUNIOR",
+                "INGENIERO DE FluidS OPERATIVO",
+                "INGENIERO DE FluidS SENIOR",
                 "MOVILIZACION DE QUIMICOS EN CAMA ALTA",
                 "MOVILIZACION DE QUIMICOS EN TURBO",
-                "MOVILIZACION INGENIERO DE FLUIDOS",
-                "MOVILIZACION UNIDAD DE FILTRADO",
-                "MOVILIZACION UNIDAD DE FLOCULACION",
-                "MOVILIZACION/DESMOVILIZACION UNIDAD DE FILTRADO",
-                "MOVILIZACION/DESMOVILIZACION UNIDAD DE FLOCULACION",
-                "MOVILIZACION/DESMOVILIZACION UNIDAD DE MEZCLA",
+                "MOVILIZACION INGENIERO DE FluidS",
+                "MOVILIZACION Unit DE FILTRADO",
+                "MOVILIZACION Unit DE FLOCULACION",
+                "MOVILIZACION/DESMOVILIZACION Unit DE FILTRADO",
+                "MOVILIZACION/DESMOVILIZACION Unit DE FLOCULACION",
+                "MOVILIZACION/DESMOVILIZACION Unit DE MEZCLA",
                 "SERVICIO DE ALIMENTACION",
                 "SERVICIO DE ALIMENTACION Y HOSPEDAJE",
                 "SERVICIO DE HOSPEDAJE",
-                "STAND BY UNIDAD DE FILTRADO",
-                "TECNICO DE UNIDAD DE FILTRADO OPERATIVO",
-                "TECNICO DE UNIDAD DE FLOCULACION",
-                "TECNICO DE UNIDAD DE FLOCULACION OPERATIVO",
-                "TECNICO UNIDAD DE FILTRADO",
+                "STAND BY Unit DE FILTRADO",
+                "TECNICO DE Unit DE FILTRADO OPERATIVO",
+                "TECNICO DE Unit DE FLOCULACION",
+                "TECNICO DE Unit DE FLOCULACION OPERATIVO",
+                "TECNICO Unit DE FILTRADO",
                 "TRANSPORTE",
-                "TRANSPORTE DE FLUIDO DE COMPLETAMIENTO",
-                "TRANSPORTE DE FLUIDO DE PERFORACION",
-                "UNIDAD DE FILTRADO",
-                "UNIDAD DE FLOCULACION",
-                "UNIDAD DE MEZCLA EN OPERACI?N",
-                "UNIDAD DE MEZCLA OPERATIVA",
+                "TRANSPORTE DE Fluid DE COMPLETAMIENTO",
+                "TRANSPORTE DE Fluid DE PERFORACION",
+                "Unit DE FILTRADO",
+                "Unit DE FLOCULACION",
+                "Unit DE MEZCLA EN OPERACI?N",
+                "Unit DE MEZCLA OPERATIVA",
                 "OPCION ADICIONAL"
             };
 
             DefaultChargeNames.Clear();
             foreach (var d in defaults) DefaultChargeNames.Add(d);
 
-            // Si no hay fichero persistido, aÒadir una lÌnea de ejemplo (opcional)
+            // Si no hay fichero persistido, a√±adir una l√≠nea de ejemplo (opcional)
             if (Charges.Count == 0 && !File.Exists(_dataFile))
             {
                 Charges.Add(new AdditionalChargeItem
@@ -346,7 +346,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Observations = "",
                 Currency = CurrencyOptions.FirstOrDefault() ?? "USD"
             });
-            Error = $"LÌnea agregada. Total cargos: {Charges.Count}";
+            Error = $"Line added. Total charges: {Charges.Count}";
             RecalcDailyTotalCost();
         }
 
@@ -364,11 +364,11 @@ namespace ProjectReport.ViewModels.Inventory
                 var arr = Charges.ToArray();
                 var json = JsonSerializer.Serialize(arr, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(_dataFile, json);
-                Error = "Cargos adicionales guardados correctamente.";
+                Error = "Additional charges saved successfully.";
             }
             catch (Exception ex)
             {
-                Error = "Error guardando: " + ex.Message;
+                Error = "Error saving: " + ex.Message;
             }
         }
 
@@ -382,12 +382,12 @@ namespace ProjectReport.ViewModels.Inventory
                 if (arr == null) return;
                 Charges.Clear();
                 foreach (var c in arr) Charges.Add(c);
-                Error = $"Cargos cargados ({Charges.Count}).";
+                Error = $"Additional charges loaded ({Charges.Count}).";
                 RecalcDailyTotalCost();
             }
             catch (Exception ex)
             {
-                Error = "Error cargando: " + ex.Message;
+                Error = "Error loading: " + ex.Message;
             }
         }
 
@@ -412,3 +412,4 @@ namespace ProjectReport.ViewModels.Inventory
     }
 
 }
+

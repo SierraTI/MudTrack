@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
 using System.Linq;
@@ -8,12 +8,12 @@ namespace ProjectReport.Services.Inventory
 {
     public class UniversalProduct
     {
-        public string Codigo { get; set; } = string.Empty;
-        public string Nombre { get; set; } = string.Empty;
-        public string Categoria { get; set; } = string.Empty;
-        public string Presentacion { get; set; } = string.Empty;
-        public string Unidad { get; set; } = string.Empty;
-        public double Cantidad { get; set; } = 0;
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Presentation { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public double Quantity { get; set; } = 0;
     }
 
     public class InventoryExcelImportService
@@ -60,12 +60,12 @@ namespace ProjectReport.Services.Inventory
             }
 
             // Accept many variants commonly used
-            var colCodigo = GetCol("Codigo", "C�digo", "Codigo SIIGO", "Codigo SIIGO", "Code", "Item Code", "Codigo SIIGO");
-            var colNombre = GetCol("Nombre", "Name", "Descripcion - Otros nombres", "Description", "Producto", "Product");
-            var colCategoria = GetCol("Categoria", "Category", "CATEGORIA");
-            var colPresentacion = GetCol("Presentacion", "Presentation", "Packaging");
-            var colUnidad = GetCol("Unit", "Unidad", "UNIDAD");
-            var colCantidad = GetCol("Cantidad", "Qty", "Quantity", "Cantidad (Stock)", "Stock");
+            var colCode = GetCol("Code", "Item Code", "Codigo", "Codigo SIIGO", "Código", "Codigo SIIGO");
+            var colName = GetCol("Name", "Nombre", "Description - Otros nombres", "Description", "Producto", "Product");
+            var colCategory = GetCol("Category", "Categoria", "CATEGORIA");
+            var colPresentation = GetCol("Presentation", "Presentacion", "Packaging");
+            var colUnit = GetCol("Unit", "Unidad", "UNIDAD");
+            var colQuantity = GetCol("Quantity", "Qty", "Cantidad", "Cantidad (Stock)", "Stock");
 
             // Start reading rows AFTER headerRow
             var startRow = headerRow.RowNumber() + 1;
@@ -78,47 +78,47 @@ namespace ProjectReport.Services.Inventory
 
                 var prod = new UniversalProduct();
 
-                if (colCodigo > 0)
-                    prod.Codigo = row.Cell(colCodigo).GetString().Trim();
+                if (colCode > 0)
+                    prod.Code = row.Cell(colCode).GetString().Trim();
 
-                if (colNombre > 0)
-                    prod.Nombre = row.Cell(colNombre).GetString().Trim();
+                if (colName > 0)
+                    prod.Name = row.Cell(colName).GetString().Trim();
 
-                if (colCategoria > 0)
-                    prod.Categoria = row.Cell(colCategoria).GetString().Trim();
+                if (colCategory > 0)
+                    prod.Category = row.Cell(colCategory).GetString().Trim();
 
-                if (colPresentacion > 0)
-                    prod.Presentacion = row.Cell(colPresentacion).GetString().Trim();
+                if (colPresentation > 0)
+                    prod.Presentation = row.Cell(colPresentation).GetString().Trim();
 
-                if (colUnidad > 0)
-                    prod.Unidad = row.Cell(colUnidad).GetString().Trim();
+                if (colUnit > 0)
+                    prod.Unit = row.Cell(colUnit).GetString().Trim();
 
-                if (colCantidad > 0)
+                if (colQuantity > 0)
                 {
-                    var cellText = row.Cell(colCantidad).GetString().Trim();
+                    var cellText = row.Cell(colQuantity).GetString().Trim();
                     if (!string.IsNullOrWhiteSpace(cellText))
                     {
                         if (double.TryParse(cellText, NumberStyles.Any, CultureInfo.InvariantCulture, out var q) ||
                             double.TryParse(cellText, NumberStyles.Any, CultureInfo.CurrentCulture, out q))
                         {
-                            prod.Cantidad = q;
+                            prod.Quantity = q;
                         }
                         else
                         {
                             // try numeric cell value using ClosedXML TryGetValue
                             try
                             {
-                                if (row.Cell(colCantidad).TryGetValue<double>(out var dv))
+                                if (row.Cell(colQuantity).TryGetValue<double>(out var dv))
                                 {
-                                    prod.Cantidad = dv;
+                                    prod.Quantity = dv;
                                 }
-                                else if (row.Cell(colCantidad).TryGetValue<int>(out var iv))
+                                else if (row.Cell(colQuantity).TryGetValue<int>(out var iv))
                                 {
-                                    prod.Cantidad = iv;
+                                    prod.Quantity = iv;
                                 }
-                                else if (row.Cell(colCantidad).TryGetValue<decimal>(out var decv))
+                                else if (row.Cell(colQuantity).TryGetValue<decimal>(out var decv))
                                 {
-                                    prod.Cantidad = (double)decv;
+                                    prod.Quantity = (double)decv;
                                 }
                             }
                             catch
@@ -130,7 +130,7 @@ namespace ProjectReport.Services.Inventory
                 }
 
                 // Only add if has code or name
-                if (!string.IsNullOrWhiteSpace(prod.Codigo) || !string.IsNullOrWhiteSpace(prod.Nombre))
+                if (!string.IsNullOrWhiteSpace(prod.Code) || !string.IsNullOrWhiteSpace(prod.Name))
                     result.Add(prod);
             }
 
@@ -138,3 +138,4 @@ namespace ProjectReport.Services.Inventory
         }
     }
 }
+

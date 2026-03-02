@@ -299,7 +299,7 @@ namespace ProjectReport.Views
                             dvm.LoadForDate(dvm.SelectedDate);
                     };
 
-                    ContentTitle.Text = "Inventory - Edit Received (Remisión " + requisition + ")";
+                    ContentTitle.Text = "Inventory - Edit Received (Shipment Ref " + requisition + ")";
                     ContentArea.Content = view;
                 };
 
@@ -320,7 +320,7 @@ namespace ProjectReport.Views
                             dvm.LoadForDate(dvm.SelectedDate);
                     };
 
-                    ContentTitle.Text = "Inventory - Edit Returned (Remisión " + requisition + ")";
+                    ContentTitle.Text = "Inventory - Edit Returned (Shipment Ref " + requisition + ")";
                     ContentArea.Content = view;
                 };
 
@@ -343,14 +343,14 @@ namespace ProjectReport.Views
                             dvm.LoadForDate(dvm.SelectedDate);
                     };
 
-                    ContentTitle.Text = "Inventory - Edit Returned (Remisión " + (vmr.Requisition ?? ticketId) + ")";
+                    ContentTitle.Text = "Inventory - Edit Returned (Shipment Ref " + (vmr.Requisition ?? ticketId) + ")";
                     ContentArea.Content = view;
                 };
 
-                // Suscribir Used -> Fluido: abrir diálogo de consumo
-                vm.RequestUsedAsFluido += (row) =>
+                // Subscribe Used -> Fluid: open consumption dialog
+                vm.RequestUsedAsFluid += (row) =>
                 {
-                    Debug.WriteLine("DEBUG: MainWindow RequestUsedAsFluido received. ProductCode: " + (row?.ProductCode ?? "<null>"));
+                    Debug.WriteLine("DEBUG: MainWindow RequestUsedAsFluid received. ProductCode: " + (row?.ProductCode ?? "<null>"));
 
                     if (row == null) return;
 
@@ -398,7 +398,7 @@ namespace ProjectReport.Views
                     catch (System.Exception ex)
                     {
                         Debug.WriteLine("Error opening ReportOtherDialog: " + ex);
-                        MessageBox.Show("ERROR al abrir Otras Actividades:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("Error opening Other Activities:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 };
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -13,46 +13,46 @@ namespace ProjectReport.Models.Inventory
             set { if (_code != value) { _code = value; OnPropertyChanged(); } }
         }
 
-        private string _nombre = "";
-        public string Nombre
+        private string _Name = "";
+        public string Name
         {
-            get => _nombre;
-            set { if (_nombre != value) { _nombre = value; OnPropertyChanged(); } }
+            get => _Name;
+            set { if (_Name != value) { _Name = value; OnPropertyChanged(); } }
         }
 
-        private string _descripcion = "";
-        public string Descripcion
+        private string _Description = "";
+        public string Description
         {
-            get => _descripcion;
-            set { if (_descripcion != value) { _descripcion = value; OnPropertyChanged(); } }
+            get => _Description;
+            set { if (_Description != value) { _Description = value; OnPropertyChanged(); } }
         }
 
-        private string _estadoFisico = "";
-        public string EstadoFisico
+        private string _PhysicalState = "";
+        public string PhysicalState
         {
-            get => _estadoFisico;
-            set { if (_estadoFisico != value) { _estadoFisico = value; OnPropertyChanged(); } }
+            get => _PhysicalState;
+            set { if (_PhysicalState != value) { _PhysicalState = value; OnPropertyChanged(); } }
         }
 
-        private string _presentacion = "";
-        public string Presentacion
+        private string _Presentation = "";
+        public string Presentation
         {
-            get => _presentacion;
-            set { if (_presentacion != value) { _presentacion = value; OnPropertyChanged(); } }
+            get => _Presentation;
+            set { if (_Presentation != value) { _Presentation = value; OnPropertyChanged(); } }
         }
 
-        private double _cantidad = 0;
-        public double Cantidad
+        private double _Quantity = 0;
+        public double Quantity
         {
-            get => _cantidad;
-            set { if (_cantidad != value) { _cantidad = value; OnPropertyChanged(); } }
+            get => _Quantity;
+            set { if (_Quantity != value) { _Quantity = value; OnPropertyChanged(); } }
         }
 
-        private string _unidad = "";
-        public string Unidad
+        private string _Unit = "";
+        public string Unit
         {
-            get => _unidad;
-            set { if (_unidad != value) { _unidad = value; OnPropertyChanged(); } }
+            get => _Unit;
+            set { if (_Unit != value) { _Unit = value; OnPropertyChanged(); } }
         }
 
         private double _sg = 0;
@@ -62,11 +62,11 @@ namespace ProjectReport.Models.Inventory
             set { if (Math.Abs(_sg - value) > 0.0001) { _sg = value; OnPropertyChanged(); } }
         }
 
-        private string _categoria = "";
-        public string Categoria
+        private string _Category = "";
+        public string Category
         {
-            get => _categoria;
-            set { if (_categoria != value) { _categoria = value; OnPropertyChanged(); } }
+            get => _Category;
+            set { if (_Category != value) { _Category = value; OnPropertyChanged(); } }
         }
 
         private double _unitPrice = 0;
@@ -91,3 +91,4 @@ namespace ProjectReport.Models.Inventory
         }
     }
 }
+

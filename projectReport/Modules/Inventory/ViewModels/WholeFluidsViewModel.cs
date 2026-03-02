@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -113,8 +113,8 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void RecalcDailyTotalCost()
         {
-            // Cost = sum(quantity * unitPrice) para todas las l�neas
-            // (si quieres excluir "Ingreso" o "Salida" puedes ajustar aqu�)
+            // Cost = sum(quantity * unitPrice) para todas las lï¿½neas
+            // (si quieres excluir "Incoming" o "Outgoing" puedes ajustar aquï¿½)
             try
             {
                 var total = WholeFluids.Sum(i => (i.Quantity) * (i.UnitPrice));
@@ -132,15 +132,19 @@ namespace ProjectReport.ViewModels.Inventory
 
             try
             {
-                // Buscar fichero de lista de fluidos en Data (prioridad a "listaFluidos.xlsx")
+                // Search fluid list file in Data (accept legacy and English naming variants).
                 var dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
-                var listaPath = Path.Combine(dataDir, "listaFluidos.xlsx");
-                if (!File.Exists(listaPath))
+                var candidates = new[]
                 {
-                    // fallback a nombres comunes
-                    var alt = Path.Combine(dataDir, "Lista.xlsx");
-                    if (File.Exists(alt)) listaPath = alt;
-                }
+                    Path.Combine(dataDir, "listFluids.xlsx"),
+                    Path.Combine(dataDir, "listFluids.xls"),
+                    Path.Combine(dataDir, "listaFluidos.xlsx"),
+                    Path.Combine(dataDir, "listaFluidos.xls"),
+                    Path.Combine(dataDir, "ListaFluidos.xlsx"),
+                    Path.Combine(dataDir, "ListaFluidos.xls"),
+                    Path.Combine(dataDir, "Lista.xlsx")
+                };
+                var listaPath = candidates.FirstOrDefault(File.Exists) ?? string.Empty;
 
                 if (File.Exists(listaPath))
                 {
@@ -151,15 +155,15 @@ namespace ProjectReport.ViewModels.Inventory
                     // Mapear a Product para que el ComboBox (DisplayMemberPath="Name", SelectedValuePath="Code") funcione
                     foreach (var u in uni)
                     {
-                        var code = string.IsNullOrWhiteSpace(u.Codigo) ? (u.Nombre ?? Guid.NewGuid().ToString()) : u.Codigo;
-                        var name = string.IsNullOrWhiteSpace(u.Nombre) ? code : u.Nombre;
+                        var code = string.IsNullOrWhiteSpace(u.Code) ? (u.Name ?? Guid.NewGuid().ToString()) : u.Code;
+                        var name = string.IsNullOrWhiteSpace(u.Name) ? code : u.Name;
                         Products.Add(new Product
                         {
                             Code = code,
                             Name = name,
-                            Description = string.IsNullOrWhiteSpace(u.Categoria) ? string.Empty : u.Categoria,
-                            Category = string.IsNullOrWhiteSpace(u.Categoria) ? string.Empty : u.Categoria,
-                            Unit = string.IsNullOrWhiteSpace(u.Unidad) ? "Each" : u.Unidad,
+                            Description = string.IsNullOrWhiteSpace(u.Category) ? string.Empty : u.Category,
+                            Category = string.IsNullOrWhiteSpace(u.Category) ? string.Empty : u.Category,
+                            Unit = string.IsNullOrWhiteSpace(u.Unit) ? "Each" : u.Unit,
                             StockQty = 0,
                             CurrentUnitCost = 0,
                             Status = ProductStatus.Active
@@ -172,7 +176,7 @@ namespace ProjectReport.ViewModels.Inventory
             catch (Exception ex)
             {
                 // No bloquear: mostrar error y seguir con repositorio si hay fallo de lectura
-                Error = "Error cargando lista de fluidos desde Excel: " + ex.Message;
+                Error = "Error loading fluid list from Excel: " + ex.Message;
             }
 
             // Fallback: cargar productos desde InventoryService (comportamiento anterior)
@@ -185,7 +189,7 @@ namespace ProjectReport.ViewModels.Inventory
             WholeFluids.Add(new WholeFluidItem
             {
                 Requisition = string.Empty,
-                MovementType = "Ingreso",
+                MovementType = "Incoming",
                 ProductCode = string.Empty,
                 ProductName = string.Empty,
                 Quantity = 1,
@@ -195,7 +199,7 @@ namespace ProjectReport.ViewModels.Inventory
                 Observations = string.Empty
             });
 
-            Error = $"L�nea agregada en borrador. Total l�neas: {WholeFluids.Count}";
+            Error = $"Draft line added. Total lines: {WholeFluids.Count}";
             RecalcDailyTotalCost();
         }
 
@@ -213,11 +217,11 @@ namespace ProjectReport.ViewModels.Inventory
                 var list = WholeFluids.ToList();
                 var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(_dataFile, json);
-                Error = "Whole Fluids guardado correctamente.";
+                Error = "Whole Fluids saved successfully.";
             }
             catch (Exception ex)
             {
-                Error = "Error guardando: " + ex.Message;
+                Error = "Error saving: " + ex.Message;
             }
         }
 
@@ -230,13 +234,25 @@ namespace ProjectReport.ViewModels.Inventory
                 var list = JsonSerializer.Deserialize<WholeFluidItem[]>(json);
                 if (list == null) return;
                 WholeFluids.Clear();
-                foreach (var i in list) WholeFluids.Add(i);
+                foreach (var i in list)
+                {
+                    i.MovementType = NormalizeMovementType(i.MovementType);
+                    WholeFluids.Add(i);
+                }
                 RecalcDailyTotalCost();
             }
             catch (Exception ex)
             {
-                Error = "Error cargando datos: " + ex.Message;
+                Error = "Error loading data: " + ex.Message;
             }
+        }
+
+        private static string NormalizeMovementType(string? value)
+        {
+            var normalized = (value ?? string.Empty).Trim();
+            if (normalized.Equals("Ingreso", StringComparison.OrdinalIgnoreCase)) return "Incoming";
+            if (normalized.Equals("Salida", StringComparison.OrdinalIgnoreCase)) return "Outgoing";
+            return string.IsNullOrWhiteSpace(normalized) ? "Incoming" : normalized;
         }
 
         /// <summary>

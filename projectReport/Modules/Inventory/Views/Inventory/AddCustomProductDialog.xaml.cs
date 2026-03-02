@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using ProjectReport.Models.Inventory;
 
 namespace ProjectReport.Views.Inventory
@@ -48,10 +48,10 @@ namespace ProjectReport.Views.Inventory
             Result = new ChemicalItem
             {
                 Code       = code,
-                Nombre     = name,
-                Unidad     = UnitTextBox.Text.Trim(),
+                Name     = name,
+                Unit     = UnitTextBox.Text.Trim(),
                 SG         = sg,
-                Categoria  = CategoryTextBox.Text.Trim(),
+                Category  = CategoryTextBox.Text.Trim(),
                 IsSelected = true
             };
 
@@ -70,3 +70,4 @@ namespace ProjectReport.Views.Inventory
         }
     }
 }
+

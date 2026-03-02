@@ -75,10 +75,10 @@ namespace ProjectReport.Views.Inventory
 
                     if (vm != null)
                     {
-                        Debug.WriteLine($"VM Hash: {vm.GetHashCode()} - trying to execute UsedAsFluidoCommand");
-                        if (vm.UsedAsFluidoCommand != null && vm.UsedAsFluidoCommand.CanExecute(row))
+                        Debug.WriteLine($"VM Hash: {vm.GetHashCode()} - trying to execute UsedAsFluidCommand");
+                        if (vm.UsedAsFluidCommand != null && vm.UsedAsFluidCommand.CanExecute(row))
                         {
-                            vm.UsedAsFluidoCommand.Execute(row);
+                            vm.UsedAsFluidCommand.Execute(row);
                             return;
                         }
                     }
@@ -133,4 +133,5 @@ namespace ProjectReport.Views.Inventory
         }
     }
 }
+
 

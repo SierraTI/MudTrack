@@ -19,7 +19,7 @@ namespace ProjectReport.ViewModels.Inventory
     {
         private readonly InventoryService _service;
 
-        // Lista de fluidos leídos desde Excel (ListaFluidos) o repositorio
+        // Fluid list loaded from Excel (legacy or English file names) or repository fallback
         public ObservableCollection<FluidItem> Fluids { get; } = new();
         public ICollectionView FluidsView { get; private set; }
 
@@ -79,7 +79,7 @@ namespace ProjectReport.ViewModels.Inventory
             LoadProductsAndFluids();
         }
 
-        // Modelo simple para cada fila del Excel ListaFluidos
+        // Simple model for each fluid row in Excel
         public class FluidItem
         {
             public string FluidSetName { get; set; } = string.Empty;
@@ -106,7 +106,7 @@ namespace ProjectReport.ViewModels.Inventory
                    (fi.BrineType?.ToLowerInvariant().Contains(q) ?? false);
         }
 
-        // Carga prioritaria de ListaFluidos.xlsx/.xls y fallback al repositorio (Products)
+        // Try fluid list files first; then fallback to repository products.
         private void LoadProductsAndFluids()
         {
             Fluids.Clear();
@@ -114,6 +114,10 @@ namespace ProjectReport.ViewModels.Inventory
 
             var candidates = new[]
             {
+                Path.Combine(AppContext.BaseDirectory, "Data", "ListFluids.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "Data", "ListFluids.xls"),
+                Path.Combine(AppContext.BaseDirectory, "ListFluids.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "ListFluids.xls"),
                 Path.Combine(AppContext.BaseDirectory, "Data", "ListaFluidos.xlsx"),
                 Path.Combine(AppContext.BaseDirectory, "Data", "ListaFluidos.xls"),
                 Path.Combine(AppContext.BaseDirectory, "ListaFluidos.xlsx"),
@@ -134,14 +138,14 @@ namespace ProjectReport.ViewModels.Inventory
 
                     if (uni != null && uni.Count > 0)
                     {
-                        // Si LoadUniversalProducts provee Nombre/Categoria/Unidad, mapear a FluidItem donde posible
+                        // Si LoadUniversalProducts provee Name/Category/Unit, mapear a FluidItem donde posible
                         foreach (var u in uni)
                         {
                             var fi = new FluidItem
                             {
-                                FluidSetName = string.IsNullOrWhiteSpace(u.Nombre) ? (u.Codigo ?? string.Empty) : u.Nombre,
-                                BaseFluidType = u.Unidad ?? string.Empty, // si el excel "Unidad" no coincide, se sobreescribe en TryLoadExcelDirect
-                                FluidCategory = u.Categoria ?? string.Empty,
+                                FluidSetName = string.IsNullOrWhiteSpace(u.Name) ? (u.Code ?? string.Empty) : u.Name,
+                                BaseFluidType = u.Unit ?? string.Empty, // si el excel "Unit" no coincide, se sobreescribe en TryLoadExcelDirect
+                                FluidCategory = u.Category ?? string.Empty,
                                 FluidSystem = string.Empty,
                                 BrineType = string.Empty
                             };
@@ -150,10 +154,10 @@ namespace ProjectReport.ViewModels.Inventory
                             // También mantener Products fallback mínimo (para compatibilidad de guardado)
                             var p = new Product
                             {
-                                Code = u.Codigo ?? fi.FluidSetName.ToUpperInvariant().Replace(' ', '_'),
+                                Code = u.Code ?? fi.FluidSetName.ToUpperInvariant().Replace(' ', '_'),
                                 Name = fi.FluidSetName,
                                 Category = fi.FluidCategory,
-                                Unit = u.Unidad ?? "Each",
+                                Unit = u.Unit ?? "Each",
                                 StockQty = 0,
                                 CurrentUnitCost = 0,
                                 Status = ProductStatus.Active
@@ -169,14 +173,14 @@ namespace ProjectReport.ViewModels.Inventory
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine("Error loading ListaFluidos via importer: " + ex);
+                    Debug.WriteLine("Error loading fluid list via importer: " + ex);
                     try
                     {
                         TryLoadExcelDirectToFluids(excelPath);
                     }
                     catch (Exception ex2)
                     {
-                        Debug.WriteLine("Error loading ListaFluidos via ClosedXML: " + ex2);
+                        Debug.WriteLine("Error loading fluid list via ClosedXML: " + ex2);
                         // Fallback al repositorio
                         var repoList = _service.GetProducts()
                                                .Where(p => p.IsSelectedForReport)
@@ -191,7 +195,7 @@ namespace ProjectReport.ViewModels.Inventory
             }
             else
             {
-                // No hay fichero Excel, usar repositorio
+                // No Excel file found, use repository
                 var list = _service.GetProducts()
                                    .Where(p => p.IsSelectedForReport)
                                    .OrderBy(p => p.Name);
@@ -211,22 +215,22 @@ namespace ProjectReport.ViewModels.Inventory
             if (Products.Count > 0 && SelectedProduct == null) SelectedProduct = Products.First();
         }
 
-        // Lectura directa más tolerante al formato - mapea columnas por nombres parecidos
+        // Tolerant direct reader: maps similar header names
         private void TryLoadExcelDirectToFluids(string path)
         {
             using var wb = new XLWorkbook(path);
             var ws = wb.Worksheets.FirstOrDefault();
             if (ws == null) throw new InvalidOperationException("No worksheets found");
 
-            // Mapear cabeceras (fila 1)
+            // Map headers (row 1)
             var headerCells = ws.Row(1).CellsUsed().ToList();
             if (headerCells.Count == 0) throw new InvalidOperationException("No header row found");
 
             var headers = headerCells.Select(c => c.GetString().Trim().ToLowerInvariant()).ToList();
 
-            int idxFluidSet = headers.FindIndex(h => h.Contains("fluid set") || h.Contains("fluidset") || h.Contains("fluid set name") || h.Contains("fluidsetname") || h.Contains("fluid set name") || h.Contains("fluido") || h.Contains("fluid set name".ToLower()));
+            int idxFluidSet = headers.FindIndex(h => h.Contains("fluid set") || h.Contains("fluidset") || h.Contains("fluid set name") || h.Contains("fluidsetname") || h.Contains("fluido"));
             int idxBaseType = headers.FindIndex(h => h.Contains("base") || h.Contains("base fluid") || h.Contains("base fluid type") || h.Contains("basefluidtype"));
-            int idxCategory = headers.FindIndex(h => h.Contains("category") || h.Contains("fluid category") || h.Contains("categoria") || h.Contains("fluido"));
+            int idxCategory = headers.FindIndex(h => h.Contains("category") || h.Contains("fluid category") || h.Contains("categoria"));
             int idxSystem = headers.FindIndex(h => h.Contains("system") || h.Contains("fluid system"));
             int idxBrine = headers.FindIndex(h => h.Contains("brine") || h.Contains("brine type") || h.Contains("brine_type"));
 
@@ -244,14 +248,14 @@ namespace ProjectReport.ViewModels.Inventory
                 string system = string.Empty;
                 string brine = string.Empty;
 
-                // Usar índices mapeados (si existen) o caer en heurística por columnas
+                // Use mapped indexes if present, otherwise fallback heuristics
                 if (idxFluidSet >= 0) fluidSet = row.Cell(idxFluidSet + 1).GetString().Trim();
                 if (idxBaseType >= 0) baseType = row.Cell(idxBaseType + 1).GetString().Trim();
                 if (idxCategory >= 0) category = row.Cell(idxCategory + 1).GetString().Trim();
                 if (idxSystem >= 0) system = row.Cell(idxSystem + 1).GetString().Trim();
                 if (idxBrine >= 0) brine = row.Cell(idxBrine + 1).GetString().Trim();
 
-                // Heurística: si fluidSet está vacío, tomar primera celda
+                // Heuristic: if fluidSet is empty, use first cell
                 if (string.IsNullOrWhiteSpace(fluidSet))
                     fluidSet = row.Cell(1).GetString().Trim();
 
@@ -268,7 +272,7 @@ namespace ProjectReport.ViewModels.Inventory
 
                 Fluids.Add(fi);
 
-                // Mantener también Products para compatibilidad al guardar (código simple generado)
+                // Also populate Products for save compatibility.
                 Products.Add(new Product
                 {
                     Code = fluidSet.ToUpperInvariant().Replace(' ', '_'),
@@ -300,7 +304,7 @@ namespace ProjectReport.ViewModels.Inventory
             if (SelectedFluid == null && SelectedProduct == null)
             {
 #if DEBUG
-                MessageBox.Show("Seleccione un fluido.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Please select a fluid.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
 #endif
                 return;
             }
@@ -308,14 +312,14 @@ namespace ProjectReport.ViewModels.Inventory
             if (Quantity <= 0)
             {
 #if DEBUG
-                MessageBox.Show("La cantidad debe ser mayor que cero.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Quantity must be greater than zero.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
 #endif
                 return;
             }
 
             try
             {
-                // Priorizar SelectedFluid (ListaFluidos). Si no, usar SelectedProduct (repositorio).
+                // Prioritize SelectedFluid (fluid list). Otherwise use SelectedProduct (repository).
                 string code;
                 string name;
                 double unitPrice;
@@ -359,9 +363,10 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error guardando consumo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error saving consumption: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
 }
+
 

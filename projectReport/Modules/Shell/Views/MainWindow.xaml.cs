@@ -1,19 +1,24 @@
-using System;
-using System.Linq;
-using System.Windows;
-using System.Windows.Threading;
-using System.Windows.Input;
-using ProjectReport.Services;
 using ProjectReport.Models;
+using ProjectReport.Models.Inventory;
+using ProjectReport.Modules.ReportDetail.ViewModels;
+using ProjectReport.Modules.ReportDetails.Views;
+using ProjectReport.Modules.RigProfile.Views;
+using ProjectReport.Services;
+using ProjectReport.Services.Inventory;
+using ProjectReport.ViewModels;
+using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Views.Geometry;
 using ProjectReport.Views.Inventory;
 using ProjectReport.Views.ReportWizard; 
-using ProjectReport.ViewModels;
-using ProjectReport.Services.Inventory;
-using ProjectReport.ViewModels.Inventory;
-using ProjectReport.Modules.RigProfile.Views;
-using ProjectReport.Models.Inventory;
+using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Threading;
+
+
+
 
 namespace ProjectReport.Views
 {
@@ -24,6 +29,10 @@ namespace ProjectReport.Views
         private ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView? _volumeBalanceView;
         private ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel? _volumeBalanceViewModel;
         private int? _currentWellId;
+        private Well _currentWell;
+
+
+
 
         private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
         {
@@ -35,7 +44,7 @@ namespace ProjectReport.Views
                     DataContext = _volumeBalanceViewModel
                 };
             }
-            ContentTitle.Text = "Volume Balance";
+            ContentTitle.Text = $"Volume Balance - {_currentWell.WellName}";
             ContentArea.Content = _volumeBalanceView;
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;
@@ -87,6 +96,7 @@ namespace ProjectReport.Views
             HomeButton.Visibility = visibility;
             GeometryButton.Visibility = visibility;
             InventoryButton.Visibility = visibility;
+            ReportDetailButton.Visibility = visibility;
             VolumeBalanceButton.Visibility = visibility;
             ContentTitle.Visibility = visibility;
 
@@ -168,6 +178,7 @@ namespace ProjectReport.Views
             if (well == null) return;
 
             _currentWellId = wellId; // <-- guardamos el pozo actual
+            _currentWell = well;
 
             _wellDataView = new WellDataView();
             var vm = new ProjectReport.ViewModels.WellDataViewModel(CurrentProject);
@@ -206,11 +217,20 @@ namespace ProjectReport.Views
             if (well == null) return;
 
             _currentWellId = wellId;
+            _currentWell = well;
 
             _wellDashboardView = new Views.WellDashboardView();
             var vm = new ProjectReport.ViewModels.WellDashboardViewModel(CurrentProject);
             vm.LoadWell(well);
             _wellDashboardView.DataContext = vm;
+
+            // Suscribirse al evento para abrir ReportDetails
+            vm.OpenReportDetailsRequested += (selectedWell) =>
+            {
+                var view = new ReportDetailsView(selectedWell);
+                ContentArea.Content = view;
+                ContentTitle.Text = $"Report Detail - {selectedWell.WellName}";
+            };
 
             ContentTitle.Text = $"Dashboard - {well.WellName}";
             ContentArea.Content = _wellDashboardView;
@@ -218,8 +238,8 @@ namespace ProjectReport.Views
             GeometrySubmenu.Visibility = Visibility.Collapsed;
             GeometrySubmenu.Height = 0;
             SetTopMenuButtonsVisibility(Visibility.Visible);
-
         }
+
 
 
         private void NavigateToRigProfile(int wellId)
@@ -270,7 +290,7 @@ namespace ProjectReport.Views
                     // Cuando cierren (después de guardar) volvemos al dashboard y refrescamos
                     vmr.RequestClose += () =>
                     {
-                        ContentTitle.Text = "Inventory";
+                        ContentTitle.Text = $"Inventory - {_currentWell.WellName}";
                         ContentArea.Content = _inventoryDashboardView;
 
                         if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
@@ -298,7 +318,7 @@ namespace ProjectReport.Views
 
                     vmr.RequestClose += () =>
                     {
-                        ContentTitle.Text = "Inventory";
+                        ContentTitle.Text = $"Inventory - {_currentWell.WellName}";
                         ContentArea.Content = _inventoryDashboardView;
 
                         if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
@@ -321,7 +341,7 @@ namespace ProjectReport.Views
 
                     vmr.RequestClose += () =>
                     {
-                        ContentTitle.Text = "Inventory";
+                        ContentTitle.Text = $"Inventory - {_currentWell.WellName}";
                         ContentArea.Content = _inventoryDashboardView;
                         if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
                             dvm.LoadForDate(dvm.SelectedDate);
@@ -342,7 +362,7 @@ namespace ProjectReport.Views
 
                     vmr.RequestClose += () =>
                     {
-                        ContentTitle.Text = "Inventory";
+                        ContentTitle.Text = $"Inventory - {_currentWell.WellName}";
                         ContentArea.Content = _inventoryDashboardView;
                         if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
                             dvm.LoadForDate(dvm.SelectedDate);
@@ -364,7 +384,7 @@ namespace ProjectReport.Views
 
                     vmr.RequestClose += () =>
                     {
-                        ContentTitle.Text = "Inventory";
+                        ContentTitle.Text = $"Inventory - {_currentWell.WellName}";
                         ContentArea.Content = _inventoryDashboardView;
 
                         if (_inventoryDashboardView?.DataContext is InventoryProductsDashboardViewModel dvm)
@@ -433,7 +453,8 @@ namespace ProjectReport.Views
                 _inventoryDashboardView.DataContext = vm;
             }
 
-            ContentTitle.Text = "Inventory";
+            ContentTitle.Text = $"Inventory - {_currentWell.WellName}"
+            ;
             ContentArea.Content = _inventoryDashboardView;
 
             GeometrySubmenu.Visibility = Visibility.Collapsed;
@@ -470,6 +491,23 @@ namespace ProjectReport.Views
             _geometryView ??= new GeometryView();
             return _geometryView;
         }
+
+        private void ReportDetailButton_Click(object sender, RoutedEventArgs e)
+        {
+         
+            var reportVM = new ProjectReport.Modules.ReportDetail.ViewModels.ReportDViewModel(_currentWell);
+
+            reportVM.OnReportSaved += (s, newReport) =>
+            {
+                NavigateToWellDashboard(_currentWell.Id);
+            };
+            var view = new ReportDetailsView(_currentWell); 
+            view.DataContext = reportVM;
+            ContentArea.Content = view;
+            ContentTitle.Text = $"Report Detail - {_currentWell.WellName}";
+        }
+
+
 
         private void WellboreGeometryButton_Click(object sender, RoutedEventArgs e)
         {
@@ -557,7 +595,7 @@ namespace ProjectReport.Views
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
-            ContentTitle.Text = "Geometry";
+            ContentTitle.Text = $"Geometry - {_currentWell.WellName}";
             ContentArea.Content = GetOrCreateGeometryView();
         }
 

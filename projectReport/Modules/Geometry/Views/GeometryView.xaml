@@ -23,7 +23,7 @@
         <converters:BoolToGreenRedConverter x:Key="BoolToGreenRedConverter"/>
         <converters:BitStatusConverter x:Key="BitStatusConverter"/>
         <converters:InvertedValueConverter x:Key="InvertedValueConverter"/>
-        
+
         <CollectionViewSource x:Key="AnnularDetailsView" Source="{Binding AnnularVolumeDetails}">
             <CollectionViewSource.GroupDescriptions>
                 <PropertyGroupDescription PropertyName="Stage"/>
@@ -229,7 +229,7 @@
         <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
 
             <!-- Wellbore Geometry -->
-          
+
             <TabItem Header="Wellbore Geometry">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="18">
@@ -288,7 +288,7 @@
                         </Border>
 
                         <!-- DataGrid with Zebra Striping -->
-                        <DataGrid Grid.Row="2"
+                        <DataGrid Grid.Row="3"
                                   x:Name="WellboreDataGrid"
                                   Style="{StaticResource ModernDataGrid}"
                                   ItemsSource="{Binding WellboreComponents}"
@@ -296,7 +296,7 @@
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="True"
                                   SelectionMode="Single"
-                                  AlternationCount="2">
+                                  AlternationCount="2" Margin="-19,175,19,387">
 
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
@@ -536,10 +536,10 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- 5. Top MD -->
-                                <DataGridTextColumn Header="Top MD (ft)" Binding="{Binding TopMD, StringFormat=F2, TargetNullValue=''}" Width="100"/>
+                                <DataGridTextColumn Header="Top MD (ft)" Binding="{Binding TopMD, StringFormat=0.##, TargetNullValue=''}" Width="100"/>
 
                                 <!-- 6. Bottom MD -->
-                                <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=F2, TargetNullValue=''}" Width="110"/>
+                                <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=0.##, TargetNullValue=''}" Width="110"/>
 
                                 <!-- 7. Washout -->
                                 <DataGridTemplateColumn Width="95">
@@ -556,7 +556,7 @@
                                                         <Setter Property="FontStyle" Value="Italic"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
-                                                                <Setter Property="Text" Value="{Binding Washout, StringFormat=F2}"/>
+                                                                <Setter Property="Text" Value="{Binding Washout, StringFormat=0.##}"/>
                                                                 <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
                                                                 <Setter Property="FontStyle" Value="Normal"/>
                                                             </DataTrigger>
@@ -576,7 +576,7 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding Washout, StringFormat=F2, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}">
+                                            <TextBox Text="{Binding Washout, StringFormat=0.##, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}">
                                                 <TextBox.Style>
                                                     <Style TargetType="TextBox">
                                                         <Setter Property="IsEnabled" Value="False"/>
@@ -598,7 +598,7 @@
                                 </DataGridTemplateColumn>
 
                                 <!-- 8. Volume -->
-                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="100" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding Volume, StringFormat=0.##}" Width="100" IsReadOnly="True"/>
 
                                 <!-- 9. Actions -->
                                 <DataGridTemplateColumn Header="Actions" Width="140">
@@ -734,201 +734,201 @@
                                           PreviewMouseMove="DrillStringDataGrid_PreviewMouseMove"
                                           AlternationCount="2">
 
-                            <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
-                                    <!-- Zebra Striping: Alternating row colors -->
-                                    <Setter Property="Background" Value="White"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="AlternationIndex" Value="1">
-                                            <Setter Property="Background" Value="#FFF9FAFB"/>
-                                        </Trigger>
-                                        <DataTrigger Binding="{Binding HasValidationError}" Value="True">
-                                            <Setter Property="Background" Value="#FFFFF1F2"/>
-                                            <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
-                                            <Setter Property="Background" Value="#FFEAFBF0"/>
-                                            <Setter Property="BorderBrush" Value="{StaticResource Success}"/>
-                                            <Setter Property="BorderThickness" Value="2"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <!-- Zebra Striping: Alternating row colors -->
+                                            <Setter Property="Background" Value="White"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="AlternationIndex" Value="1">
+                                                    <Setter Property="Background" Value="#FFF9FAFB"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding HasValidationError}" Value="True">
+                                                    <Setter Property="Background" Value="#FFFFF1F2"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                                    <Setter Property="Background" Value="#FFEAFBF0"/>
+                                                    <Setter Property="BorderBrush" Value="{StaticResource Success}"/>
+                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
 
-                            <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="" Width="30">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="❌"
+                                    <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="" Width="30">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="❌"
                                                        Foreground="{StaticResource Danger}"
                                                        FontWeight="Bold"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"
                                                        ToolTip="{Binding ValidationMessage}"
                                                        Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
+                                        <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="40" IsReadOnly="True"
                                                     Foreground="{StaticResource TextMuted}"/>
 
-                                <!-- Component Name with Placeholder -->
-                                <DataGridTemplateColumn Header="Component Name" Width="140">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="🔗" Margin="5,0,0,0" VerticalAlignment="Center"
+                                        <!-- Component Name with Placeholder -->
+                                        <DataGridTemplateColumn Header="Component Name" Width="140">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="🔗" Margin="5,0,0,0" VerticalAlignment="Center"
                                                            ToolTip="Tool Joint Configured" 
                                                            Visibility="{Binding IsToolJointConfigured, Converter={StaticResource BoolToVis}}"/>
-                                                
-                                                <Grid Margin="5,0,0,0">
-                                                    <TextBlock Text="Ej: DC"
+
+                                                        <Grid Margin="5,0,0,0">
+                                                            <TextBlock Text="Ej: DC"
                                                                Foreground="{StaticResource DisabledText}"
                                                                FontStyle="Italic"
                                                                VerticalAlignment="Center"
                                                                IsHitTestVisible="False">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Name}" Value="">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="0,6"/>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <!-- Component Type Column (Placeholder added) -->
+                                        <DataGridTemplateColumn Header="Type" Width="110">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock VerticalAlignment="Center" Padding="10,6">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Setter Property="Text" Value="{Binding ComponentTypeString}"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
                                                                 <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ComponentTypeString}" Value="Drill Pipe">
+                                                                        <!-- We only want placeholder if it's "New" or null logic -->
+                                                                    </DataTrigger>
                                                                     <DataTrigger Binding="{Binding Name}" Value="">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                        <Setter Property="Text" Value="-- Select --"/>
+                                                                        <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                                        <Setter Property="FontStyle" Value="Italic"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                        <Setter Property="Text" Value="-- Select --"/>
+                                                                        <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                                        <Setter Property="FontStyle" Value="Italic"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </TextBlock.Style>
                                                     </TextBlock>
-                                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="0,6"/>
-                                                </Grid>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
-
-                                <!-- Component Type Column (Placeholder added) -->
-                                <DataGridTemplateColumn Header="Type" Width="110">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock VerticalAlignment="Center" Padding="10,6">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="{Binding ComponentTypeString}"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding ComponentTypeString}" Value="Drill Pipe">
-                                                                <!-- We only want placeholder if it's "New" or null logic -->
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Name}" Value="">
-                                                                <Setter Property="Text" Value="-- Select --"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
-                                                                <Setter Property="FontStyle" Value="Italic"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
-                                                                <Setter Property="Text" Value="-- Select --"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
-                                                                <Setter Property="FontStyle" Value="Italic"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.DrillStringComponentTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                            <DataGridTemplateColumn.CellEditingTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding DataContext.DrillStringComponentTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                       SelectedItem="{Binding ComponentTypeString, UpdateSourceTrigger=PropertyChanged}"
                                                       DisplayMemberPath="."/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellEditingTemplate>
+                                        </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="Properties" Width="70">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Content="⚙️" Style="{StaticResource IconMiniButton}" 
+                                        <DataGridTemplateColumn Header="Properties" Width="70">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="⚙️" Style="{StaticResource IconMiniButton}" 
                                                     Visibility="{Binding IsConfigurable, Converter={StaticResource BoolToVis}}"
                                                     Click="ConfigureComponent_Click" Tag="{Binding}"
                                                     ToolTip="Configure Component Properties"
                                                     HorizontalAlignment="Center"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
 
-                                <DataGridTextColumn Header="Length (ft)" Binding="{Binding Length, StringFormat=F2}" Width="100"/>
-                                <DataGridTextColumn Header="OD (in)" Binding="{Binding OD, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
-                                <DataGridTextColumn Header="ID (in)" Binding="{Binding ID, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
-                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding InternalVolume, StringFormat=F2}" Width="100" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Length (ft)" Binding="{Binding Length, StringFormat=0.##}" Width="100"/>
+                                        <DataGridTextColumn Header="OD (in)" Binding="{Binding OD, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+                                        <DataGridTextColumn Header="ID (in)" Binding="{Binding ID, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+                                        <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding InternalVolume, StringFormat=0.##}" Width="100" IsReadOnly="True"/>
 
-                                <DataGridTemplateColumn Header="Actions" Width="140">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Move Up"
+                                        <DataGridTemplateColumn Header="Actions" Width="140">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Move Up"
                                                         Command="{Binding DataContext.MoveDrillStringUpCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
                                                         CommandParameter="{Binding}"/>
-                                                <Button Content="↓" Style="{StaticResource IconMiniButton}" ToolTip="Move Down"
+                                                        <Button Content="↓" Style="{StaticResource IconMiniButton}" ToolTip="Move Down"
                                                         Command="{Binding DataContext.MoveDrillStringDownCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
                                                         CommandParameter="{Binding}"/>
-                                                <Button Content="×" Style="{StaticResource IconMiniButton}" ToolTip="Delete"
+                                                        <Button Content="×" Style="{StaticResource IconMiniButton}" ToolTip="Delete"
                                                         Command="{Binding DataContext.DeleteDrillStringComponentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
                                                         CommandParameter="{Binding}" Foreground="{StaticResource Danger}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </DockPanel>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
 
-                    <!-- Visualizador Gráfico Proporcional -->
-                    <Border Grid.Column="1" 
+                            <!-- Visualizador Gráfico Proporcional -->
+                            <Border Grid.Column="1" 
                             Width="300"
                             Margin="12,0,0,0"
                             Style="{StaticResource CardBorder}"
                             Background="White">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            
-                            <Border Background="#FFF3F4F6" CornerRadius="8,8,0,0" Padding="10">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="BHA SCHEMATIC" FontWeight="Bold" Foreground="{StaticResource BrandBlue}"/>
-                                    <Border Margin="10,0,0,0" 
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Background="#FFF3F4F6" CornerRadius="8,8,0,0" Padding="10">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="BHA SCHEMATIC" FontWeight="Bold" Foreground="{StaticResource BrandBlue}"/>
+                                            <Border Margin="10,0,0,0" 
                                             Padding="6,2" 
                                             CornerRadius="4"
                                             Background="{Binding IsOnBottom, Converter={StaticResource BoolToGreenRedConverter}}"
                                             Visibility="{Binding IsOnBottom, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="ON BOTTOM" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock Text="ON BOTTOM" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                            </Border>
+                                        </StackPanel>
                                     </Border>
-                                </StackPanel>
-                            </Border>
 
-                            <geometry:BhaSchematicView x:Name="BhaVisualizer" 
+                                    <geometry:BhaSchematicView x:Name="BhaVisualizer" 
                                                             Grid.Row="1"
                                                             Margin="10"/>
 
-                            <!-- No Data Overlay -->
-                            <TextBlock Grid.Row="1" 
+                                    <!-- No Data Overlay -->
+                                    <TextBlock Grid.Row="1" 
                                        Text="No BHA components defined" 
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{StaticResource TextMuted}"
                                        Visibility="{Binding DrillStringComponents.Count, Converter={StaticResource CollectionToVis}, ConverterParameter=Inverse}"/>
+                                </Grid>
+                            </Border>
                         </Grid>
-                    </Border>
-                </Grid>
 
 
                     </Grid>
@@ -943,10 +943,14 @@
                     <Grid Margin="18">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto" MinHeight="250"/> <!-- DataGrid Area -->
-                            <RowDefinition Height="Auto"/> <!-- Gap/Controls -->
-                            <RowDefinition Height="Auto" MinHeight="350"/> <!-- Chart Area -->
-                            <RowDefinition Height="Auto"/> <!-- Bottom Bar -->
+                            <RowDefinition Height="Auto" MinHeight="250"/>
+                            <!-- DataGrid Area -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Gap/Controls -->
+                            <RowDefinition Height="Auto" MinHeight="350"/>
+                            <!-- Chart Area -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Bottom Bar -->
                         </Grid.RowDefinitions>
 
                         <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,12">
@@ -1014,7 +1018,7 @@
 
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60" IsReadOnly="True"/>
 
-                                <DataGridTextColumn Header="MD (ft)" Binding="{Binding MD, StringFormat=F2, TargetNullValue=''}" Width="130">
+                                <DataGridTextColumn Header="MD (ft)" Binding="{Binding MD, StringFormat=0.##, TargetNullValue=''}" Width="130">
                                     <DataGridTextColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="ToolTip" Value="Measured Depth along wellbore (INPUT)"/>
@@ -1023,7 +1027,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- TVD - READ-ONLY CALCULATED -->
-                                <DataGridTextColumn Header="TVD (ft)" Binding="{Binding TVD, StringFormat=F2}" Width="130" IsReadOnly="True">
+                                <DataGridTextColumn Header="TVD (ft)" Binding="{Binding TVD, StringFormat=0.##}" Width="130" IsReadOnly="True">
                                     <DataGridTextColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="ToolTip" Value="True Vertical Depth (AUTO-CALCULATED)"/>
@@ -1056,7 +1060,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Northing - READ-ONLY CALCULATED -->
-                                <DataGridTextColumn Header="Northing (ft)" Binding="{Binding Northing, StringFormat=F2}" Width="140" IsReadOnly="True">
+                                <DataGridTextColumn Header="Northing (ft)" Binding="{Binding Northing, StringFormat=0.##}" Width="140" IsReadOnly="True">
                                     <DataGridTextColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="ToolTip" Value="North coordinate (AUTO-CALCULATED)"/>
@@ -1073,7 +1077,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Easting - READ-ONLY CALCULATED -->
-                                <DataGridTextColumn Header="Easting (ft)" Binding="{Binding Easting, StringFormat=F2}" Width="140" IsReadOnly="True">
+                                <DataGridTextColumn Header="Easting (ft)" Binding="{Binding Easting, StringFormat=0.##}" Width="140" IsReadOnly="True">
                                     <DataGridTextColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="ToolTip" Value="East coordinate (AUTO-CALCULATED)"/>
@@ -1090,7 +1094,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- Vertical Section - READ-ONLY CALCULATED -->
-                                <DataGridTextColumn Header="Horiz. Disp. (ft)" Binding="{Binding VerticalSection, StringFormat=F2}" Width="160" IsReadOnly="True">
+                                <DataGridTextColumn Header="Horiz. Disp. (ft)" Binding="{Binding VerticalSection, StringFormat=0.##}" Width="160" IsReadOnly="True">
                                     <DataGridTextColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="ToolTip" Value="Horizontal Displacement from origin (AUTO-CALCULATED)"/>
@@ -1107,7 +1111,7 @@
                                 </DataGridTextColumn>
 
                                 <!-- DLS (Dogleg Severity) - READ-ONLY CALCULATED with color coding -->
-                                <DataGridTextColumn Header="DLS (°/100ft)" Binding="{Binding DoglegSeverity, StringFormat=F2}" Width="120" IsReadOnly="True">
+                                <DataGridTextColumn Header="DLS (°/100ft)" Binding="{Binding DoglegSeverity, StringFormat=0.##}" Width="120" IsReadOnly="True">
                                     <DataGridTextColumn.HeaderStyle>
                                         <Style TargetType="DataGridColumnHeader">
                                             <Setter Property="ToolTip" Value="Dogleg Severity - Warning if &gt; 3°/100ft, Critical if &gt; 10°/100ft"/>
@@ -1157,7 +1161,7 @@
                                 <RowDefinition Height="*"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            
+
                             <!-- Row 1: Vertical Section (Profile View) and Plan View -->
                             <Grid Grid.Row="0" Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
@@ -1165,7 +1169,7 @@
                                     <ColumnDefinition Width="20"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <!-- Vertical Section Chart (Profile View) -->
                                 <Border Grid.Column="0" 
                                         Style="{StaticResource CardBorder}" 
@@ -1177,7 +1181,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
-                                        
+
                                         <TextBlock Grid.Row="0"
                                                    Text="Profile View (Vertical Section vs TVD)" 
                                                    FontSize="12" 
@@ -1185,7 +1189,7 @@
                                                    Foreground="{StaticResource TextMuted}"
                                                    Margin="0,0,0,5"
                                                    HorizontalAlignment="Left"/>
-                                                   
+
                                         <lvc:CartesianChart Grid.Row="1"
                                                             Series="{Binding SurveySeriesCollection}" 
                                                             LegendLocation="None" 
@@ -1231,7 +1235,7 @@
                                         </lvc:CartesianChart>
                                     </Grid>
                                 </Border>
-                                
+
                                 <!-- Plan View Chart (North vs East) -->
                                 <Border Grid.Column="2" 
                                         Style="{StaticResource CardBorder}" 
@@ -1243,7 +1247,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
-                                        
+
                                         <TextBlock Grid.Row="0"
                                                    Text="Plan View (North vs East)" 
                                                    FontSize="12" 
@@ -1251,7 +1255,7 @@
                                                    Foreground="{StaticResource TextMuted}"
                                                    Margin="0,0,0,5"
                                                    HorizontalAlignment="Left"/>
-                                                   
+
                                         <lvc:CartesianChart Grid.Row="1"
                                                             Series="{Binding PlanViewSeriesCollection}" 
                                                             LegendLocation="None" 
@@ -1286,7 +1290,7 @@
                                     </Grid>
                                 </Border>
                             </Grid>
-                            
+
                             <!-- Row 2: 3D View Info (Text-based for now, can be enhanced with 3D chart later) -->
                             <Border Grid.Row="1" 
                                     Style="{StaticResource CardBorder}" 
@@ -1343,7 +1347,7 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    
+
                     <Border Grid.Row="0" Style="{StaticResource CardBorder}">
                         <geometry:ThermalGradientView DataContext="{Binding ThermalGradientViewModel}"/>
                     </Border>
@@ -1359,9 +1363,12 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="18">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>  <!-- Header & Button -->
-                            <RowDefinition Height="Auto"/>  <!-- Spacer -->
-                            <RowDefinition Height="*"/>     <!-- DataGrid -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Header & Button -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Spacer -->
+                            <RowDefinition Height="*"/>
+                            <!-- DataGrid -->
                         </Grid.RowDefinitions>
 
                         <!-- Header & Button -->
@@ -1398,7 +1405,7 @@
                                   CanUserDeleteRows="True"
                                   SelectionMode="Single"
                                   AlternationCount="2">
-                            
+
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="Background" Value="White"/>
@@ -1407,7 +1414,8 @@
                                             <Setter Property="Background" Value="#FFF9FAFB"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#FFE0F2FE"/> <!-- Light Blue Selection -->
+                                            <Setter Property="Background" Value="#FFE0F2FE"/>
+                                            <!-- Light Blue Selection -->
                                             <Setter Property="BorderBrush" Value="{StaticResource BrandBlue}"/>
                                         </Trigger>
                                     </Style.Triggers>
@@ -1455,12 +1463,12 @@
                                 <DataGridTemplateColumn Header="Test Value (ppb)" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding TestValue, StringFormat=F2}" VerticalAlignment="Center" Padding="8,4" Foreground="{StaticResource TextStrong}"/>
+                                            <TextBlock Text="{Binding TestValue, StringFormat=0.##}" VerticalAlignment="Center" Padding="8,4" Foreground="{StaticResource TextStrong}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                     <DataGridTemplateColumn.CellEditingTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding TestValue, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" Padding="5"/>
+                                            <TextBox Text="{Binding TestValue, UpdateSourceTrigger=PropertyChanged, StringFormat=0.##}" Padding="5"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellEditingTemplate>
                                 </DataGridTemplateColumn>
@@ -1511,7 +1519,7 @@
                                     <TextBlock Text="Wellbore &amp; Drill String" Foreground="{StaticResource TextMuted}" FontSize="12"/>
                                 </StackPanel>
                             </Border>
-                            
+
                             <!-- Dynamic Schematic Canvas con scroll -->
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="10">
                                 <geometry:BhaSchematicView x:Name="MasterSchematic" MinWidth="200" MinHeight="600"/>
@@ -1519,10 +1527,10 @@
 
                             <Border Grid.Row="2" Padding="20" Background="White" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0">
                                 <StackPanel>
-                                    
+
                                     <Separator Margin="0,15"/>
-                                    
-                                    
+
+
                                     <Button Content="[Edit Geometry]" Command="{Binding EditGeometryCommand}" Style="{StaticResource BrandPrimaryButton}" Margin="0,0,0,8"/>
                                     <Button Content="[Edit Drill String]" Command="{Binding EditStringCommand}" Style="{StaticResource BrandPrimaryButton}"/>
                                 </StackPanel>
@@ -1534,19 +1542,26 @@
                     <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
                         <Grid Margin="25">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/> <!-- Hero: Total System Volume -->
-                                 <RowDefinition Height="Auto"/> <!-- Volumes Blocks -->
-                                 <RowDefinition Height="Auto"/> <!-- Safety Metrics -->
-                                 <RowDefinition Height="Auto"/> <!-- Annular Details Table -->
-                                 <RowDefinition Height="Auto"/> <!-- Action Bar -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Hero: Total System Volume -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Volumes Blocks -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Safety Metrics -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Annular Details Table -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Action Bar -->
                             </Grid.RowDefinitions>
 
 
                             <!-- Volume Blocks Row -->
                             <Grid Grid.Row="1" Margin="0,0,0,20">
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/> <!-- Circulation Card -->
-                                    <RowDefinition Height="Auto"/> <!-- Breakdown Cards -->
+                                    <RowDefinition Height="Auto"/>
+                                    <!-- Circulation Card -->
+                                    <RowDefinition Height="Auto"/>
+                                    <!-- Breakdown Cards -->
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1558,12 +1573,16 @@
                                 <GroupBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Header="Circulation &amp; Trip Volume" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
                                     <Grid Margin="10">
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/> <!-- Inputs -->
-                                            <RowDefinition Height="Auto"/> <!-- Table Header -->
-                                            <RowDefinition Height="Auto"/> <!-- Rows -->
-                                            <RowDefinition Height="Auto"/> <!-- Total -->
+                                            <RowDefinition Height="Auto"/>
+                                            <!-- Inputs -->
+                                            <RowDefinition Height="Auto"/>
+                                            <!-- Table Header -->
+                                            <RowDefinition Height="Auto"/>
+                                            <!-- Rows -->
+                                            <RowDefinition Height="Auto"/>
+                                            <!-- Total -->
                                         </Grid.RowDefinitions>
-                                        
+
                                         <!-- Table Structure (Headers) -->
                                         <Grid Grid.Row="1" Background="#F3F4F6" Margin="0,0,0,5">
                                             <Grid.ColumnDefinitions>
@@ -1578,8 +1597,8 @@
 
                                         <!-- Rows -->
                                         <StackPanel Grid.Row="2">
-                                             <!-- Internal String -->
-                                             <Grid Margin="0,2">
+                                            <!-- Internal String -->
+                                            <Grid Margin="0,2">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="2.5*"/>
@@ -1587,13 +1606,13 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Internal String" Padding="8,4" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Capacity to Bit Depth" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedInternalStringVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
-                                             </Grid>
+                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedInternalStringVolume, StringFormat=0.##}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                            </Grid>
 
-                                             <Separator Margin="0,2" Background="#F3F4F6"/>
+                                            <Separator Margin="0,2" Background="#F3F4F6"/>
 
-                                             <!-- Annular -->
-                                             <Grid Margin="0,2">
+                                            <!-- Annular -->
+                                            <Grid Margin="0,2">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="2.5*"/>
@@ -1601,13 +1620,13 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Annular (Active)" Padding="8,4" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Annulus to Bit Depth" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedAnnularActiveVolume, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
-                                             </Grid>
+                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedAnnularActiveVolume, StringFormat=0.##}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                            </Grid>
 
-                                             <Separator Margin="0,2" Background="#F3F4F6"/>
+                                            <Separator Margin="0,2" Background="#F3F4F6"/>
 
-                                             <!-- Open Hole -->
-                                             <Grid Margin="0,2">
+                                            <!-- Open Hole -->
+                                            <Grid Margin="0,2">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="1.5*"/>
                                                     <ColumnDefinition Width="2.5*"/>
@@ -1615,10 +1634,10 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="Open Hole (Below Bit)" Padding="8,4" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="Hole Capacity (Bit to TD)" Padding="8,4" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedOpenHoleVolumeBelowBit, StringFormat=F2}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource BrandOrange}"/>
-                                             </Grid>
+                                                <TextBlock Grid.Column="2" Text="{Binding CalculatedOpenHoleVolumeBelowBit, StringFormat=0.##}" Padding="8,4" HorizontalAlignment="Right" FontWeight="SemiBold" Foreground="{StaticResource BrandOrange}"/>
+                                            </Grid>
                                         </StackPanel>
-                                        
+
                                         <!-- Total -->
                                         <Border Grid.Row="3" Background="#ECFDF5" Margin="0,15,0,0" CornerRadius="6">
                                             <Grid>
@@ -1628,7 +1647,7 @@
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="TOTAL WELL VOLUME" FontWeight="Bold" Padding="12" Foreground="#065F46" VerticalAlignment="Center"/>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12">
-                                                    <TextBlock Text="{Binding CalculatedTotalMudInSystem, StringFormat=F2}" FontWeight="Bold" FontSize="18" Foreground="#065F46"/>
+                                                    <TextBlock Text="{Binding CalculatedTotalMudInSystem, StringFormat=0.##}" FontWeight="Bold" FontSize="18" Foreground="#065F46"/>
                                                     <TextBlock Text=" bbl" VerticalAlignment="Bottom" Margin="4,0,0,3" Foreground="#065F46"/>
                                                 </StackPanel>
                                             </Grid>
@@ -1639,46 +1658,46 @@
 
 
 
-                                 <!-- System Volume Percentages -->
-                                 <GroupBox Grid.Row="1" Grid.Column="2" Header="Distribution" Style="{StaticResource StandardGroupBox}">
-                                     <StackPanel Margin="15" VerticalAlignment="Center">
-                                         <Grid Margin="0,5">
-                                             <TextBlock Text="Annular" Foreground="#4B5563"/>
-                                             <TextBlock Text="{Binding AnnularVolumePercent, Mode=OneWay, StringFormat='{}{0:F1} %'}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                                         </Grid>
-                                         <Grid Margin="0,5">
-                                             <TextBlock Text="Drill String" Foreground="#4B5563"/>
-                                             <TextBlock Text="{Binding StringVolumePercent, Mode=OneWay, StringFormat='{}{0:F1} %'}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                                         </Grid>
-                                         <ProgressBar Value="{Binding AnnularVolumePercent, Mode=OneWay}" Height="10" Margin="0,10,0,0" Foreground="{StaticResource BrandBlue}"/>
-                                     </StackPanel>
-                                 </GroupBox>
-                             </Grid>
+                                <!-- System Volume Percentages -->
+                                <GroupBox Grid.Row="1" Grid.Column="2" Header="Distribution" Style="{StaticResource StandardGroupBox}">
+                                    <StackPanel Margin="15" VerticalAlignment="Center">
+                                        <Grid Margin="0,5">
+                                            <TextBlock Text="Annular" Foreground="#4B5563"/>
+                                            <TextBlock Text="{Binding AnnularVolumePercent, Mode=OneWay, StringFormat='{}{0:F1} %'}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                        </Grid>
+                                        <Grid Margin="0,5">
+                                            <TextBlock Text="Drill String" Foreground="#4B5563"/>
+                                            <TextBlock Text="{Binding StringVolumePercent, Mode=OneWay, StringFormat='{}{0:F1} %'}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                        </Grid>
+                                        <ProgressBar Value="{Binding AnnularVolumePercent, Mode=OneWay}" Height="10" Margin="0,10,0,0" Foreground="{StaticResource BrandBlue}"/>
+                                    </StackPanel>
+                                </GroupBox>
+                            </Grid>
 
-                             <!-- Safety Metrics Row -->
-                             <Grid Grid.Row="2" Margin="0,0,0,20">
-                                 <GroupBox Header="Drill String Status" Style="{StaticResource StandardGroupBox}">
-                                     <StackPanel Margin="15">
-                                         <Grid Margin="0,5">
-                                             <TextBlock Text="Bottom Status" Foreground="#4B5563"/>
-                                             <TextBlock Text="{Binding DepthDifferentialStatus}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{Binding DepthDifferentialColor}"/>
-                                         </Grid>
-                                         <Grid Margin="0,5">
-                                             <TextBlock Text="Bit Depth" Foreground="#4B5563"/>
-                                             <TextBlock Text="{Binding TotalDrillStringLength, StringFormat='{}{0:F2} ft'}" HorizontalAlignment="Right" FontWeight="Bold"/>
-                                         </Grid>
-                                     </StackPanel>
-                                 </GroupBox>
-                             </Grid>
+                            <!-- Safety Metrics Row -->
+                            <Grid Grid.Row="2" Margin="0,0,0,20">
+                                <GroupBox Header="Drill String Status" Style="{StaticResource StandardGroupBox}">
+                                    <StackPanel Margin="15">
+                                        <Grid Margin="0,5">
+                                            <TextBlock Text="Bottom Status" Foreground="#4B5563"/>
+                                            <TextBlock Text="{Binding DepthDifferentialStatus}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{Binding DepthDifferentialColor}"/>
+                                        </Grid>
+                                        <Grid Margin="0,5">
+                                            <TextBlock Text="Bit Depth" Foreground="#4B5563"/>
+                                            <TextBlock Text="{Binding TotalDrillStringLength, StringFormat='{}{0:F2} ft'}" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </GroupBox>
+                            </Grid>
 
-                             <!-- Annular Volume Breakdown Table -->
-                             <GroupBox Grid.Row="3" Header="Annular Volume Details" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
+                            <!-- Annular Volume Breakdown Table -->
+                            <GroupBox Grid.Row="3" Header="Annular Volume Details" Style="{StaticResource StandardGroupBox}" Margin="0,0,0,20">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                 <DataGrid ItemsSource="{Binding Source={StaticResource AnnularDetailsView}}"
+                                    <DataGrid ItemsSource="{Binding Source={StaticResource AnnularDetailsView}}"
                                             Style="{StaticResource ModernDataGrid}"
                                             AutoGenerateColumns="False"
                                             IsReadOnly="True"
@@ -1690,89 +1709,89 @@
                                             GridLinesVisibility="Horizontal"
                                             VerticalScrollBarVisibility="Auto"
                                             HorizontalScrollBarVisibility="Auto">
-                                     <DataGrid.GroupStyle>
-                                         <GroupStyle>
-                                             <GroupStyle.HeaderTemplate>
-                                                 <DataTemplate>
-                                                     <Border Background="#F3F4F6" Padding="8,4" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
-                                                         <StackPanel Orientation="Horizontal">
-                                                             <TextBlock Text="Stage: " FontWeight="Bold" Foreground="#374151"/>
-                                                             <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#374151"/>
-                                                             <TextBlock Text="{Binding ItemCount, StringFormat=' ({0} segments)'}" Foreground="#6B7280" Margin="10,0,0,0" FontSize="11" VerticalAlignment="Center"/>
-                                                         </StackPanel>
-                                                     </Border>
-                                                 </DataTemplate>
-                                             </GroupStyle.HeaderTemplate>
-                                         </GroupStyle>
-                                     </DataGrid.GroupStyle>
-                                     <DataGrid.Columns>
-                                         <DataGridTextColumn Header="Segment" Binding="{Binding Name}" Width="1.2*" MinWidth="100"/>
-                                         <DataGridTextColumn Header="From" Binding="{Binding TopMD, StringFormat=F0}" Width="0.7*" MinWidth="70">
-                                             <DataGridTextColumn.ElementStyle>
-                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="8,4"/>
-                                                 </Style>
-                                             </DataGridTextColumn.ElementStyle>
-                                         </DataGridTextColumn>
-                                         <DataGridTextColumn Header="To" Binding="{Binding BottomMD, StringFormat=F0}" Width="0.7*" MinWidth="70">
-                                             <DataGridTextColumn.ElementStyle>
-                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="8,4"/>
-                                                 </Style>
-                                             </DataGridTextColumn.ElementStyle>
-                                         </DataGridTextColumn>
-                                         <DataGridTextColumn Header="ID (in)" Binding="{Binding WellboreID, StringFormat=F3}" Width="0.8*" MinWidth="80">
-                                             <DataGridTextColumn.ElementStyle>
-                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="8,4"/>
-                                                 </Style>
-                                             </DataGridTextColumn.ElementStyle>
-                                         </DataGridTextColumn>
-                                         <DataGridTextColumn Header="OD (in)" Binding="{Binding DrillStringOD, StringFormat=F3}" Width="0.8*" MinWidth="80">
-                                             <DataGridTextColumn.ElementStyle>
-                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="8,4"/>
-                                                 </Style>
-                                             </DataGridTextColumn.ElementStyle>
-                                         </DataGridTextColumn>
-                                         <DataGridTextColumn Header="Cap. (bbl/ft)" Binding="{Binding Capacity, StringFormat=F5}" Width="1*" MinWidth="100">
-                                             <DataGridTextColumn.ElementStyle>
-                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Padding" Value="8,4"/>
-                                                 </Style>
-                                             </DataGridTextColumn.ElementStyle>
-                                         </DataGridTextColumn>
-                                         <DataGridTextColumn Header="Elements" Binding="{Binding ElementDescription}" Width="2*" MinWidth="150"/>
-                                         <DataGridTextColumn Header="Vol. (bbl)" Binding="{Binding Volume, StringFormat=F2}" Width="0.9*" MinWidth="90">
-                                             <DataGridTextColumn.ElementStyle>
-                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                                     <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                     <Setter Property="Foreground" Value="#059669"/>
-                                                     <Setter Property="Padding" Value="8,4"/>
-                                                 </Style>
-                                             </DataGridTextColumn.ElementStyle>
-                                         </DataGridTextColumn>
-                                     </DataGrid.Columns>
+                                        <DataGrid.GroupStyle>
+                                            <GroupStyle>
+                                                <GroupStyle.HeaderTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#F3F4F6" Padding="8,4" BorderBrush="#E5E7EB" BorderThickness="0,0,0,1">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="Stage: " FontWeight="Bold" Foreground="#374151"/>
+                                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#374151"/>
+                                                                <TextBlock Text="{Binding ItemCount, StringFormat=' ({0} segments)'}" Foreground="#6B7280" Margin="10,0,0,0" FontSize="11" VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </GroupStyle.HeaderTemplate>
+                                            </GroupStyle>
+                                        </DataGrid.GroupStyle>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Segment" Binding="{Binding Name}" Width="1.2*" MinWidth="100"/>
+                                            <DataGridTextColumn Header="From" Binding="{Binding TopMD, StringFormat=F0}" Width="0.7*" MinWidth="70">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Padding" Value="8,4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="To" Binding="{Binding BottomMD, StringFormat=F0}" Width="0.7*" MinWidth="70">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Padding" Value="8,4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="ID (in)" Binding="{Binding WellboreID, StringFormat=F3}" Width="0.8*" MinWidth="80">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Padding" Value="8,4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="OD (in)" Binding="{Binding DrillStringOD, StringFormat=F3}" Width="0.8*" MinWidth="80">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Padding" Value="8,4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="Cap. (bbl/ft)" Binding="{Binding Capacity, StringFormat=F5}" Width="1*" MinWidth="100">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Padding" Value="8,4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="Elements" Binding="{Binding ElementDescription}" Width="2*" MinWidth="150"/>
+                                            <DataGridTextColumn Header="Vol. (bbl)" Binding="{Binding Volume, StringFormat=0.##}" Width="0.9*" MinWidth="90">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                        <Setter Property="Foreground" Value="#059669"/>
+                                                        <Setter Property="Padding" Value="8,4"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
 
-                                </DataGrid>
-                                
-                                <!-- Total Row -->
-                                <Border Grid.Row="1" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Margin="10,0,10,10" Padding="10,8">
-                                    <Grid>
-                                        <TextBlock Text="TOTAL" FontWeight="Bold" FontSize="13" Foreground="#1F2937"/>
-                                        <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F2} bbl'}" 
+                                    </DataGrid>
+
+                                    <!-- Total Row -->
+                                    <Border Grid.Row="1" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Margin="10,0,10,10" Padding="10,8">
+                                        <Grid>
+                                            <TextBlock Text="TOTAL" FontWeight="Bold" FontSize="13" Foreground="#1F2937"/>
+                                            <TextBlock Text="{Binding TotalAnnularVolume, StringFormat='{}{0:F2} bbl'}" 
                                                    HorizontalAlignment="Right" 
                                                    FontWeight="Bold" 
                                                    FontSize="13"
                                                    Foreground="#059669"/>
-                                    </Grid>
-                                </Border>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
                             </GroupBox>
                         </Grid>

@@ -9,11 +9,8 @@
         MinWidth="860"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource {x:Type Window}}">
-       
 
     <Window.Resources>
-
-      
 
         <!-- botones superiores -->
         <Style x:Key="TopMenuButtonStyle" TargetType="Button">
@@ -102,7 +99,7 @@
                    Cursor="Hand"/>
                 </StackPanel>
 
-                <!-- Menú -->
+                <!-- Menu -->
                 <WrapPanel Grid.Column="1"
                    VerticalAlignment="Center"
                    HorizontalAlignment="Left">
@@ -111,6 +108,12 @@
                     Content="Home"
                     Style="{StaticResource TopMenuButtonStyle}"
                     Click="HomeButton_Click"/>
+
+                    <Button x:Name="ReportDetailButton"
+                     Content="Reports Details"
+                     Style="{StaticResource TopMenuButtonStyle}"
+                     Click="ReportDetailButton_Click"
+                     />
 
                     <Button x:Name="GeometryButton"
                     Content="Geometry"

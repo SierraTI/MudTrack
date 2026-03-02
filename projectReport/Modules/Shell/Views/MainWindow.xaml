@@ -9,11 +9,8 @@
         MinWidth="860"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource {x:Type Window}}">
-       
 
     <Window.Resources>
-
-      
 
         <!-- botones superiores -->
         <Style x:Key="TopMenuButtonStyle" TargetType="Button">
@@ -23,6 +20,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Margin" Value="4,2"/>
             <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -71,58 +69,70 @@
         </Grid.RowDefinitions>
 
         <!-- barra -->
+        <!-- Barra superior -->
         <Border Grid.Row="0"
-                Background="{StaticResource OrangeBrush}"
-                MouseLeftButtonDown="Header_MouseLeftButtonDown"
-                Padding="12,8">
+        Background="{StaticResource OrangeBrush}"
+        MouseLeftButtonDown="Header_MouseLeftButtonDown"
+        Padding="24,14">
 
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>  <!-- Logo -->
-                    <ColumnDefinition Width="*"/>     <!-- Menu -->
-                    <ColumnDefinition Width="Auto"/>  <!-- espacio -->
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Logo -->
                 <StackPanel Grid.Column="0"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="4,0,18,0">
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center"
+                    Margin="6,0,24,0">
+
                     <Image Source="pack://application:,,,/Assets/Logo.png"
-                           Height="44"
-                           Stretch="Uniform"
-                           Margin="0,0,8,0"/>
+                   Height="55"
+                   Stretch="Uniform"
+                   Margin="0,0,12,0"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   SnapsToDevicePixels="True"
+                   UseLayoutRounding="True"
+                   MouseLeftButtonDown="Logo_MouseLeftButtonDown"
+                   Cursor="Hand"/>
                 </StackPanel>
 
-                <!-- menu responsive -->
+                <!-- Menu -->
                 <WrapPanel Grid.Column="1"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Left">
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Left">
 
                     <Button x:Name="HomeButton"
-                            Content="Home"
-                            Style="{StaticResource TopMenuButtonStyle}"
-                            Click="HomeButton_Click"/>
+                    Content="Home"
+                    Style="{StaticResource TopMenuButtonStyle}"
+                    Click="HomeButton_Click"/>
+
+                    <Button x:Name="ReportDetailButton"
+                     Content="Reports Details"
+                     Style="{StaticResource TopMenuButtonStyle}"
+                     Click="ReportDetailButton_Click"
+                     />
 
                     <Button x:Name="GeometryButton"
-                            Content="Geometry"
-                            Style="{StaticResource TopMenuButtonStyle}"
-                            Click="GeometryButton_Click"/>
+                    Content="Geometry"
+                    Style="{StaticResource TopMenuButtonStyle}"
+                    Click="GeometryButton_Click"/>
 
+                    <Button x:Name="InventoryButton"
+                    Content="Inventory"
+                    Style="{StaticResource TopMenuButtonStyle}"
+                    Click="InventoryButton_Click"/>
 
-                        <Button x:Name="InventoryButton"
-                            Content="Inventory"
-                            Style="{StaticResource TopMenuButtonStyle}"
-                            Click="InventoryButton_Click"/>
-
-                        <Button x:Name="VolumeBalanceButton"
-                            Content="Volume Balance"
-                            Style="{StaticResource TopMenuButtonStyle}"
-                            Click="VolumeBalanceButton_Click"/>
+                    <Button x:Name="VolumeBalanceButton"
+                    Content="Volume Balance"
+                    Style="{StaticResource TopMenuButtonStyle}"
+                    Click="VolumeBalanceButton_Click"/>
 
                 </WrapPanel>
 
-                <Grid Grid.Column="2" Width="8"/>
+                <Grid Grid.Column="2" Width="12"/>
             </Grid>
         </Border>
 
@@ -149,7 +159,7 @@
                                   ShadowDepth="2"/>
             </Border.Effect>
 
-            <Grid>
+            <Grid Margin="10,10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -162,12 +172,13 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0"
-                            Background="{StaticResource OrangeBrush}"
-                            Width="4"
-                            Height="24"
-                            Margin="0,0,10,0"
-                            CornerRadius="2"/>
+                    <Border x:Name="ContentIndicator"
+                         Grid.Column="0"
+                         Background="{StaticResource OrangeBrush}"
+                         Width="4"
+                         Height="24"
+                         Margin="0,0,10,0"
+                         CornerRadius="2"/>
 
                     <TextBlock Grid.Column="1"
                                x:Name="ContentTitle"
@@ -217,6 +228,6 @@
 
         <!-- Toast Notification Overlay -->
         <controls:ToastNotificationControl Grid.RowSpan="4"
-                                           Panel.ZIndex="1000"/>
+                                           Panel.ZIndex="1000" Loaded="ToastNotificationControl_Loaded" Margin="0,10,0,-10"/>
     </Grid>
 </Window>

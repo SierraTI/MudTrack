@@ -1,9 +1,11 @@
-using System;
-using System.Collections.Generic;
 using ProjectReport.Models;
 using ProjectReport.Models.Geometry;
 using ProjectReport.Models.Geometry.BitAndJets;
 using ProjectReport.Models.Geometry.FluidsAndPressure;
+using ProjectReport.Models.Geometry.Wellbore;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using BitJetsConfigModel = ProjectReport.Models.Geometry.BitJetsConfig;
 using PressureDropConfigModel = ProjectReport.Models.Geometry.PressureDropConfig;
 
@@ -38,6 +40,9 @@ namespace ProjectReport.Models.Geometry.DrillString
         public ToolJointConfig? ToolJoint { get; set; }
         public PressureDropConfigModel? PressureDropConfig { get; set; }
         public BitJetsConfigModel? BitJetsConfig { get; set; }
+        public ObservableCollection<WellboreComponent> WellboreComponents { get; set; }
+
+
 
         public string Name
         {
@@ -232,19 +237,20 @@ namespace ProjectReport.Models.Geometry.DrillString
             }
         }
 
+
         public double? OD
         {
             get => _od;
-            set 
-            { 
+            set
+            {
                 if (SetProperty(ref _od, value))
                 {
+                    ValidateODDrill();  // Se valida inmediatamente al escribir
                     OnPropertyChanged(nameof(DisplacementVolume));
-                    ValidateOD();
-                    ValidateID(); // Re-validate ID as it depends on OD
                 }
             }
         }
+
 
         private void ValidateOD()
         {
@@ -266,16 +272,17 @@ namespace ProjectReport.Models.Geometry.DrillString
         public double? ID
         {
             get => _id;
-            set 
-            { 
+            set
+            {
                 if (SetProperty(ref _id, value))
                 {
-                    OnPropertyChanged(nameof(InternalVolume)); 
+                    ValidateODDrill();  // Validamos OD vs ID también
+                    OnPropertyChanged(nameof(InternalVolume));
                     OnPropertyChanged(nameof(DisplacementVolume));
-                    ValidateID();
                 }
             }
         }
+
 
         private void ValidateID()
         {
@@ -473,5 +480,53 @@ namespace ProjectReport.Models.Geometry.DrillString
             _pressureDropPoints = new List<PressureDropPoint>();
             _componentType = ComponentType.DrillPipe;
         }
+
+        public void ValidateODDrill()
+        {
+            ClearErrors(nameof(OD));
+            ClearErrors(nameof(ID));
+
+            if (OD == null || OD <= 0)
+            {
+                AddError(nameof(OD), "OD is required and must be > 0");
+            }
+
+            if (ID != null && ID <= 0)
+            {
+                AddError(nameof(ID), "ID must be > 0");
+            }
+
+            if (OD != null && ID != null && ID >= OD)
+            {
+                AddError(nameof(OD), "OD must be greater than ID");
+                AddError(nameof(ID), "ID must be smaller than OD");
+            }
+
+            // Validar OD del DrillString contra secciones de Wellbore
+            if (WellboreComponents != null && WellboreComponents.Count > 0 && OD.HasValue)
+            {
+                var activeSection = WellboreComponents
+                    .Where(c => c.OD.HasValue && c.OD.Value > 0)
+                    .OrderByDescending(c => c.BottomMD ?? 0)
+                    .FirstOrDefault();
+
+                if (activeSection != null)
+                {
+                    if (activeSection.SectionType == ComponentType.OpenHole)
+                    {
+                        double holeOD = activeSection.OD ?? 0;
+                        if (OD.Value >= holeOD && holeOD > 0)
+                            AddError(nameof(OD), $"Drill OD ({OD.Value}) must be smaller than Open Hole ({holeOD})");
+                    }
+                    else if (activeSection.SectionType == ComponentType.Casing || activeSection.SectionType == ComponentType.Liner)
+                    {
+                        double casingID = activeSection.ID ?? 0;
+                        if (OD.Value >= casingID && casingID > 0)
+                            AddError(nameof(OD), $"Drill OD ({OD.Value}) must be smaller than ID ({casingID}) of {activeSection.SectionType}");
+                    }
+                }
+            }
+        }
+
     }
 }

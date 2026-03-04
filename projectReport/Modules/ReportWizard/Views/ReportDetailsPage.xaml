@@ -246,13 +246,20 @@
 
                                 <!-- Interval Size -->
                                 <StackPanel Grid.Column="2" Margin="0,0,14,0">
-                                    <TextBlock Text="Interval Size (in)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Text="{Binding Report.IntervalSizeIn,
-                                                    UpdateSourceTrigger=LostFocus,
-                                                    Converter={StaticResource NumberFormatConverter}}"
-                                             Margin="0,6,0,0"/>
+                                    <TextBlock 
+Text="Interval Size (in)" 
+Style="{StaticResource FieldLabel}"/>
+
+                                    <ComboBox
+ItemsSource="{Binding HoleSizeOptions}"
+SelectedItem="{Binding Report.IntervalSizeIn, Mode=TwoWay}"
+Height="35"
+FontSize="14"
+Margin="0,5,0,0"/>
+
                                 </StackPanel>
 
+                                
                                 <!-- Date -->
                                 <StackPanel Grid.Column="3">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">

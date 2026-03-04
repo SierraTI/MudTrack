@@ -207,7 +207,7 @@ namespace ProjectReport.ViewModels
         private string _rigName = string.Empty;
         private string _contractor = string.Empty;
         private string _rigType = string.Empty;
-        private double? _intervalSizeIn;
+        private string _intervalSizeIn;
 
         private string _maxBhtSource = "MWD"; // MWD or PWD
         public string MaxBHTSource
@@ -331,7 +331,7 @@ namespace ProjectReport.ViewModels
             set { _rigType = value; OnPropertyChanged(); }
         }
 
-        public double? IntervalSizeIn
+        public string IntervalSizeIn
         {
             get => _intervalSizeIn;
             set { _intervalSizeIn = value; OnPropertyChanged(); }
@@ -358,9 +358,12 @@ namespace ProjectReport.ViewModels
                         return string.Empty;
 
                     case nameof(IntervalSizeIn):
-                        if (IntervalSizeIn.HasValue && IntervalSizeIn <= 0)
-                            return "Interval Size must be positive.";
+
+                        if (string.IsNullOrWhiteSpace(IntervalSizeIn))
+                            return "You must select an Interval Size.";
+
                         return string.Empty;
+
 
                     case nameof(WellSection):
                         return string.IsNullOrWhiteSpace(WellSection) ? "Well Section is required." : string.Empty;

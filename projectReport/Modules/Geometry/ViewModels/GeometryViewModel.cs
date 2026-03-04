@@ -158,6 +158,11 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 point.PropertyChanged += OnSurveyPointChanged;
             }
+            foreach (var component in DrillStringComponents)
+            {
+                ValidateDrillStringComponent(component);   // Reglas S1-S5
+                ValidateDrillVsWellbore(component);        // Validación OD vs Wellbore
+            }
 
             InitializeSurveyChart();
             
@@ -555,17 +560,20 @@ namespace ProjectReport.ViewModels.Geometry
         {
             if (component == null) return;
 
-            // Usar el servicio de validación con TotalWellboreMD para regla S3
-            var validationService = new Services.DrillString.DrillStringValidationService();
-            var errors = validationService.ValidateDrillString(DrillStringComponents, TotalWellboreMD);
+            // 1. Limpiar errores solo de las propiedades que vamos a validar
+            component.ClearErrors(nameof(component.OD));
+            component.ClearErrors(nameof(component.ID));
+            component.ClearErrors(nameof(component.Length));
 
-            // Aplicar errores al componente específico
-            var componentErrors = errors.Where(e => e.ComponentId == component.Id).ToList();
-            
-            // Los errores de validación se manejan automáticamente por las propiedades del componente
-            // Las validaciones S1 y S2 ya están implementadas en las propiedades OD, ID y Length
-            // Las validaciones S3 y S4 se muestran como mensajes de validación generales
+         
+
+            // 3. Validación contra Wellbore
+            ValidateDrillVsWellbore(component);
         }
+
+
+
+
 
         private void OnSurveyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
@@ -1159,32 +1167,63 @@ namespace ProjectReport.ViewModels.Geometry
 
         private void AddDrillStringComponent(object? parameter)
         {
+            // 1️⃣ Validate that at least one Wellbore section exists
+            if (WellboreComponents == null || WellboreComponents.Count == 0)
+            {
+                MessageBox.Show(
+                    "Cannot add a Drill String because there are no Wellbore sections.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return; // Exit without adding
+            }
+
+            // 2️⃣ Check if there are any Drill Strings with errors
+            if (DrillStringComponents.Any(c => !c.IsValid))
+            {
+                MessageBox.Show(
+                    "Please fix OD/ID errors in the existing Drill String components before adding a new one.",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return; // Do not add while errors exist
+            }
+
+            // 3️⃣ Create a new DrillStringComponent
             var newComponent = new DrillStringComponent
             {
                 Id = GetNextDrillStringId(),
                 Name = "Drill Pipe",
                 ComponentType = ComponentType.DrillPipe,
-                Length = 1000.0,
-                OD = 5.0,
-                ID = 4.276
+                Length = 100.0,
+                OD = 5.0,   // Initial value
+                ID = 4.276, // Initial value
+                WellboreComponents = WellboreComponents // Associate Wellbore collection
             };
 
-            // Rule S4: Add before Bit if exists, or at bottom
-            var bitComponent = DrillStringComponents.FirstOrDefault(c => c.ComponentType == ComponentType.Bit);
-            if (bitComponent != null)
+            // 4️⃣ Immediate validation upon creation
+            newComponent.ValidateODDrill();
+
+            // 5️⃣ Check if the new component is valid
+            if (!newComponent.IsValid)
             {
-                int bitIndex = DrillStringComponents.IndexOf(bitComponent);
-                DrillStringComponents.Insert(bitIndex, newComponent);
-            }
-            else
-            {
-                DrillStringComponents.Add(newComponent);
+                MessageBox.Show(
+                    $"Cannot add Drill String component:\n{newComponent.ValidationMessage}",
+                    "Validation Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return; // Do not add until corrected
             }
 
-            // Sync MDs for Top-to-Bottom
+            // 6️⃣ Add to Drill String
+            DrillStringComponents.Add(newComponent);
+
+            // 7️⃣ Recalculate MD and totals
             RenumberDrillStringSections();
             RecalculateTotals();
         }
+
+
 
         private void DeleteDrillStringComponent(object? parameter)
         {
@@ -3343,6 +3382,57 @@ namespace ProjectReport.ViewModels.Geometry
                 ToastNotificationService.Instance.ShowWarning("No target depth found for synchronization.");
             }
         }
+
+        private void ValidateDrillVsWellbore(DrillStringComponent component)
+        {
+            if (component == null) return;
+
+            if (component.OD == null || component.OD <= 0) return;
+
+            if (WellboreComponents == null || WellboreComponents.Count == 0) return;
+
+            // Tomar sección activa (última)
+            var section = WellboreComponents
+    .Where(c => c.OD.HasValue && c.OD.Value > 0) // solo secciones válidas
+    .OrderByDescending(c => c.BottomMD ?? 0)
+    .FirstOrDefault();
+
+            if (section == null) return;
+
+            double drillOD = component.OD.Value;
+
+            // =========================
+            // OPEN HOLE
+            // =========================
+            if (section.SectionType == ComponentType.OpenHole)
+            {
+                double holeOD = section.OD ?? 0;
+
+                if (holeOD > 0 && drillOD >= holeOD)
+                {
+                    component.AddError(nameof(component.OD), $"OD ({drillOD}) must be smaller than Open Hole ({holeOD}).");
+                }
+
+                return;
+            }
+
+            // =========================
+            // CASING / LINER
+            // =========================
+            if (section.SectionType == ComponentType.Casing ||
+                section.SectionType == ComponentType.Liner)
+            {
+                double casingID = section.ID ?? 0;
+
+                if (casingID > 0 && drillOD >= casingID)
+                {
+                    component.AddError(
+                        nameof(component.OD),
+                        $"OD ({drillOD}) must be smaller than ID ({casingID}) of {section.SectionType}.");
+                }
+            }
+        }
+
 
         #endregion
     }

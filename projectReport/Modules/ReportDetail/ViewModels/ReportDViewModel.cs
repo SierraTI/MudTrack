@@ -4,6 +4,13 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ProjectReport.Models;
+using ClosedXML.Excel;
+using System.IO;
+using System.Windows;
+using System.Linq;
+
+
+
 
 namespace ProjectReport.Modules.ReportDetail.ViewModels
 {
@@ -21,6 +28,52 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         public ObservableCollection<Report> Reports { get; set; }
 
         public ICommand SaveNewReportCommand { get; }
+
+        private void LoadHoleSizeList()
+        {
+            try
+            {
+                string filePath = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Data",
+                    "HoleSizeList.xlsx"
+                );
+
+                if (!File.Exists(filePath))
+                {
+                    MessageBox.Show("No se encontró el archivo:\n" + filePath);
+                    return;
+                }
+
+                HoleSizeOptions.Clear();
+
+                using (var workbook = new XLWorkbook(filePath))
+                {
+                    var sheet = workbook.Worksheet(1);
+
+                    var rows = sheet.RowsUsed().Skip(1); // Saltar encabezado
+
+                    foreach (var row in rows)
+                    {
+                        // Leer EXACTO como texto
+                        var value = row.Cell(1).GetFormattedString().Trim();
+
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            HoleSizeOptions.Add(value);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error leyendo Excel:\n" + ex.Message);
+            }
+        }
+
+
+        public ObservableCollection<string> HoleSizeOptions { get; }
+      = new ObservableCollection<string>();
 
         public ObservableCollection<string> WellSectionOptions { get; }
             = new ObservableCollection<string>
@@ -40,7 +93,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             Reports = well.Reports != null
                 ? new ObservableCollection<Report>(well.Reports)
                 : new ObservableCollection<Report>();
-
+            LoadHoleSizeList();
             // Mostrar el último reporte si existe, sino uno vacío
             if (Reports.Count > 0)
             {
@@ -50,6 +103,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 {
                     IntervalNumber = last.IntervalNumber,
                     ReportNumber = last.ReportNumber + 1, // Incrementar en 1 para el nuevo
+                    IntervalSizeIn = last.IntervalSizeIn,
                     ReportDateTime = last.ReportDateTime,
                     MD = last.MD,
                     TVD = last.TVD,
@@ -70,13 +124,16 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 };
             }
 
+            
             // Comando para guardar un nuevo reporte
             SaveNewReportCommand = new RelayCommand(SaveNewReport);
+           
         }
 
         private void SaveNewReport()
         {
-            if (_report == null) return;
+            if (!ValidateReport())
+                return;
 
             // Inicializar la lista interna del pozo si es null
             if (_currentWell.Reports == null)
@@ -93,6 +150,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 IntervalNumber = _report.IntervalNumber,
                 ReportNumber = nextReportNumber, // Asignar número incrementado
                 ReportDateTime = _report.ReportDateTime,
+                IntervalSizeIn = _report.IntervalSizeIn,
                 MD = _report.MD,
                 TVD = _report.TVD,
                 WellSection = _report.WellSection,
@@ -148,5 +206,63 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 remove => CommandManager.RequerySuggested -= value;
             }
         }
+
+        private bool ValidateReport()
+        {
+            if (Report == null)
+                return false;
+
+            // Interval Number
+            if (string.IsNullOrWhiteSpace(Report.IntervalNumber))
+            {
+                MessageBox.Show("Interval Number is required.");
+                return false;
+            }
+
+            // Interval Size
+            if (string.IsNullOrWhiteSpace(Report.IntervalSizeIn))
+            {
+                MessageBox.Show("Interval Size is required.");
+                return false;
+            }
+
+            // Fecha
+            if (Report.ReportDateTime == default)
+            {
+                MessageBox.Show("Report Date is required.");
+                return false;
+            }
+
+            // MD
+            if (Report.MD < 0)
+            {
+                MessageBox.Show("MD must be greater than 0.");
+                return false;
+            }
+
+            // TVD
+            if (Report.TVD < 0)
+            {
+                MessageBox.Show("TVD must be greater than 0.");
+                return false;
+            }
+
+            // Well Section
+            if (string.IsNullOrWhiteSpace(Report.WellSection))
+            {
+                MessageBox.Show("Well Section is required.");
+                return false;
+            }
+
+            // Present Activity
+            if (string.IsNullOrWhiteSpace(Report.PresentActivity))
+            {
+                MessageBox.Show("Present Activity is required.");
+                return false;
+            }
+
+            return true; // TODO OK
+        }
+
     }
 }

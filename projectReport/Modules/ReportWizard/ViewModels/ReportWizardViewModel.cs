@@ -1,16 +1,19 @@
+using ClosedXML.Excel;
+using ProjectReport.Models;
+using ProjectReport.Models.Geometry;
+using ProjectReport.Models.Inventory;
+using ProjectReport.Models.Rig;
+using ProjectReport.Services;
+using ProjectReport.Services.Inventory;
+using ProjectReport.ViewModels.Geometry;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using ProjectReport.Models;
-using ProjectReport.Models.Geometry;
-using ProjectReport.Services;
-using ProjectReport.ViewModels.Geometry;
-using ProjectReport.Services.Inventory;
-using ProjectReport.Models.Inventory;
-using ProjectReport.Models.Rig;
+using System.IO;
+
 
 namespace ProjectReport.ViewModels
 {
@@ -41,6 +44,8 @@ namespace ProjectReport.ViewModels
 
             // Initialize Report
             InitializeReport();
+            LoadHoleSizeList();
+
 
             // Commands
             NextCommand = new RelayCommand(GoNext, CanGoNext);
@@ -445,6 +450,52 @@ namespace ProjectReport.ViewModels
                   "Sidetrack",
                   "Original"
              };
+
+        private void LoadHoleSizeList()
+        {
+            try
+            {
+                string filePath = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Data",
+                    "HoleSizeList.xlsx"
+                );
+
+                if (!File.Exists(filePath))
+                {
+                    MessageBox.Show("No se encontró el archivo:\n" + filePath);
+                    return;
+                }
+
+                HoleSizeOptions.Clear();
+
+                using (var workbook = new XLWorkbook(filePath))
+                {
+                    var sheet = workbook.Worksheet(1);
+
+                    var rows = sheet.RowsUsed().Skip(1); // Saltar encabezado
+
+                    foreach (var row in rows)
+                    {
+                        // Leer EXACTO como texto
+                        var value = row.Cell(1).GetFormattedString().Trim();
+
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            HoleSizeOptions.Add(value);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error leyendo Excel:\n" + ex.Message);
+            }
+        }
+
+
+        public ObservableCollection<string> HoleSizeOptions { get; }
+      = new ObservableCollection<string>();
 
         #endregion
 

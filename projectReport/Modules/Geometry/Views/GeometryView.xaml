@@ -319,7 +319,7 @@
                  Margin="0"
 
                  VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto" SelectionChanged="WellboreDataGrid_SelectionChanged">
+                 HorizontalScrollBarVisibility="Auto">
 
 
                         <!-- ================= ROW STYLE ================= -->

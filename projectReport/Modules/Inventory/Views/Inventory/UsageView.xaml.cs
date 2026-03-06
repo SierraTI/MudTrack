@@ -1,9 +1,7 @@
-using System;
 using System.Windows;
 using System.Windows.Controls;
 using ProjectReport.ViewModels.Inventory;
-using ProjectReport.Services.Inventory;
-using System.IO;
+using ProjectReport.Services;
 
 namespace ProjectReport.Views.Inventory
 {
@@ -12,12 +10,8 @@ namespace ProjectReport.Views.Inventory
         public UsageView()
         {
             InitializeComponent();
-            
-            var dataPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "ProjectReport"
-            );
-            var service = new InventoryService(new JsonInventoryRepository(dataPath));
+
+            var service = ServiceLocator.InventoryService;
             var viewModel = new UsageViewModel(service);
             
             // Subscribe to specification dialog requests

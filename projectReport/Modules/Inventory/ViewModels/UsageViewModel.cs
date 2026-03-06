@@ -41,6 +41,13 @@ namespace ProjectReport.ViewModels.Inventory
             _saveCommand = new RelayCommand(_ => SaveUsage());
             OpenUseSpecificationCommand = new RelayCommand(param => OpenUseSpecification(param as UsageBalanceItem));
 
+            _service.InventoryUpdated += OnInventoryUpdated;
+
+            LoadUsage();
+        }
+
+        private void OnInventoryUpdated()
+        {
             LoadUsage();
         }
 
@@ -94,6 +101,7 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void SaveUsage()
         {
+            LoadUsage();
             UpdateTotalCost();
         }
 

@@ -24,6 +24,7 @@ namespace ProjectReport.Services
         private double _currentDepth;
         private double _currentFlowRate;
         private readonly Dictionary<string, bool> _stepCompletionStatus = new();
+        private List<ChemicalItem> _currentSelectedChemicals = new();
 
         public event EventHandler<Well>? WellChanged;
         public event EventHandler<double>? DepthUpdated;
@@ -52,6 +53,11 @@ namespace ProjectReport.Services
         /// VolumeBalance subscribes to add these to its additions table.
         /// </summary>
         public event EventHandler<ChemicalSelectionUpdatedEventArgs>? ChemicalSelectionUpdated;
+
+        /// <summary>
+        /// Last live selection from Chemical List (includes custom/session products).
+        /// </summary>
+        public IReadOnlyList<ChemicalItem> CurrentSelectedChemicals => _currentSelectedChemicals;
 
         public Project? CurrentProject
         {
@@ -203,7 +209,25 @@ namespace ProjectReport.Services
         /// </summary>
         public void PublishChemicalSelection(IList<ChemicalItem> selectedItems)
         {
-            ChemicalSelectionUpdated?.Invoke(this, new ChemicalSelectionUpdatedEventArgs(selectedItems));
+            _currentSelectedChemicals = (selectedItems ?? new List<ChemicalItem>())
+                .Where(i => i != null)
+                .Select(i => new ChemicalItem
+                {
+                    Code = i.Code ?? string.Empty,
+                    Name = i.Name ?? string.Empty,
+                    Description = i.Description ?? string.Empty,
+                    PhysicalState = i.PhysicalState ?? string.Empty,
+                    Presentation = i.Presentation ?? string.Empty,
+                    Quantity = i.Quantity,
+                    Unit = i.Unit ?? string.Empty,
+                    SG = i.SG,
+                    Category = i.Category ?? string.Empty,
+                    UnitPrice = i.UnitPrice,
+                    IsSelected = i.IsSelected
+                })
+                .ToList();
+
+            ChemicalSelectionUpdated?.Invoke(this, new ChemicalSelectionUpdatedEventArgs(_currentSelectedChemicals));
         }
     }
 

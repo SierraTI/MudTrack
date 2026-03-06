@@ -5,7 +5,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/> <!-- DataGrid ocupa espacio flexible -->
             <RowDefinition Height="14"/>
             <RowDefinition Height="Auto"/>
@@ -95,6 +95,13 @@
                 </Grid>
             </StackPanel>
         </Border>
+
+        <TextBlock Grid.Row="2"
+                   Text="{Binding Error}"
+                   Foreground="DarkRed"
+                   FontWeight="SemiBold"
+                   TextWrapping="Wrap"
+                   Margin="0,6,0,6"/>
 
         <Border Grid.Row="3"
                 BorderBrush="#E5E7EB"

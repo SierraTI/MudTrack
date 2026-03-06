@@ -8,6 +8,7 @@ using System.IO;
 using System.Text.Json;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
+using ProjectReport.Services;
 
 namespace ProjectReport.ViewModels.Inventory
 {
@@ -96,12 +97,42 @@ namespace ProjectReport.ViewModels.Inventory
                     var fluids = JsonSerializer.Deserialize<WholeFluidItem[]>(json);
                     if (fluids != null)
                     {
-                        var names = fluids.Select(f => f.ProductName).Distinct().ToList();
-                        foreach (var name in names) Fluidptions.Add(name);
+                        var currentWellName = WellContextService.Instance.CurrentWell?.WellName?.Trim();
+
+                        var byWell = fluids
+                            .Where(f => !string.IsNullOrWhiteSpace(f.ProductName))
+                            .Where(f => string.IsNullOrWhiteSpace(currentWellName) ||
+                                        (!string.IsNullOrWhiteSpace(f.Context) &&
+                                         f.Context.IndexOf(currentWellName, StringComparison.OrdinalIgnoreCase) >= 0))
+                            .Select(f => f.ProductName.Trim())
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .OrderBy(n => n)
+                            .ToList();
+
+                        // If whole fluids do not include well context, fall back to all distinct fluids.
+                        if (byWell.Count == 0)
+                        {
+                            byWell = fluids
+                                .Where(f => !string.IsNullOrWhiteSpace(f.ProductName))
+                                .Select(f => f.ProductName.Trim())
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .OrderBy(n => n)
+                                .ToList();
+                        }
+
+                        foreach (var name in byWell)
+                            Fluidptions.Add(name);
                     }
                 }
             }
             catch { /* Ignore errors loading fluids */ }
+
+            var primaryFluid = WellContextService.Instance.CurrentWell?.LoadFluid?.Trim();
+            if (!string.IsNullOrWhiteSpace(primaryFluid) &&
+                !Fluidptions.Contains(primaryFluid, StringComparer.OrdinalIgnoreCase))
+            {
+                Fluidptions.Insert(0, primaryFluid);
+            }
 
             if (Fluidptions.Count == 0)
             {

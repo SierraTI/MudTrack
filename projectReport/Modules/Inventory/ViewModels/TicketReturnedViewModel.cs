@@ -177,6 +177,16 @@ namespace ProjectReport.ViewModels.Inventory
                                .Where(p => p.Status == ProductStatus.Active && p.IsSelectedForReport)
                                .OrderBy(p => p.Name)
                                .ToList();
+
+            // If no products were marked in Chemical List yet, do not block ticket creation.
+            if (list.Count == 0)
+            {
+                list = _service.GetProducts()
+                               .Where(p => p.Status == ProductStatus.Active)
+                               .OrderBy(p => p.Name)
+                               .ToList();
+            }
+
             foreach (var p in list) Products.Add(p);
         }
 
@@ -194,10 +204,16 @@ namespace ProjectReport.ViewModels.Inventory
                 if (currentWell != null && !string.IsNullOrWhiteSpace(currentWell.WellName))
                 {
                     var wellName = currentWell.WellName.Trim();
-                    movements = movements
+                    var wellFiltered = movements
                         .Where(m => !string.IsNullOrWhiteSpace(m.OriginOrUse) &&
                                     m.OriginOrUse.IndexOf(wellName, StringComparison.OrdinalIgnoreCase) >= 0)
                         .ToList();
+
+                    // Apply well filter only when it actually matches rows.
+                    if (wellFiltered.Count > 0)
+                    {
+                        movements = wellFiltered;
+                    }
                 }
 
                 var catalog = _service.GetProducts()
@@ -282,10 +298,62 @@ namespace ProjectReport.ViewModels.Inventory
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
 
-                var products = _service.GetProducts()
-                    .Where(p => receivedProductCodes.Contains(p.Code ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                // Primary source for returned ticket: products with stock and selected in Chemical List.
+                var selectedWithStock = _service.GetSelectedProducts()
+                    .Where(p => p.Status == ProductStatus.Active && p.StockQty > 0)
                     .OrderBy(p => p.Name)
                     .ToList();
+
+                var products = selectedWithStock;
+
+                // Real-time selection fallback (covers session/custom picks not yet persisted).
+                if (products.Count == 0)
+                {
+                    var liveCodes = WellContextService.Instance.CurrentSelectedChemicals
+                        .Where(c => c != null && c.IsSelected && !string.IsNullOrWhiteSpace(c.Code))
+                        .Select(c => c.Code ?? string.Empty)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    if (liveCodes.Count > 0)
+                    {
+                        products = _service.GetProducts()
+                            .Where(p => p.Status == ProductStatus.Active
+                                        && p.StockQty > 0
+                                        && liveCodes.Contains(p.Code ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                            .OrderBy(p => p.Name)
+                            .ToList();
+                    }
+                }
+
+                // Fallback #1: received products with current stock > 0
+                if (products.Count == 0)
+                {
+                    products = _service.GetProducts()
+                        .Where(p => p.Status == ProductStatus.Active &&
+                                    p.StockQty > 0 &&
+                                    receivedProductCodes.Contains(p.Code ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                        .OrderBy(p => p.Name)
+                        .ToList();
+                }
+
+                // Fallback #2: selected products from Chemical List
+                if (products.Count == 0)
+                {
+                    products = _service.GetSelectedProducts()
+                        .Where(p => p.Status == ProductStatus.Active)
+                        .OrderBy(p => p.Name)
+                        .ToList();
+                }
+
+                // Fallback #3: all active products
+                if (products.Count == 0)
+                {
+                    products = _service.GetProducts()
+                        .Where(p => p.Status == ProductStatus.Active)
+                        .OrderBy(p => p.Name)
+                        .ToList();
+                }
 
                 int addedCount = 0;
                 foreach (var p in products)
@@ -318,11 +386,14 @@ namespace ProjectReport.ViewModels.Inventory
                     addedCount++;
                 }
 
-                Error = $"Loaded {addedCount} line(s) from received inventory.";
+                Error = addedCount > 0
+                    ? $"Loaded {addedCount} line(s)."
+                    : "No products available to add.";
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                Error = "Error loading products: " + ex.Message;
+                MessageBox.Show(Error, "Add Products", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -369,6 +440,9 @@ namespace ProjectReport.ViewModels.Inventory
                     .Sum(m => m.Quantity);
 
                 line.QuantityReceived = quantityReceived;
+                var prod = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, mv.ProductCode, StringComparison.OrdinalIgnoreCase));
+                // Editing mode: include this line quantity back as available for replacement.
+                line.CurrentStock = (prod?.StockQty ?? 0) + mv.Quantity;
                 ValidateReturnQuantity(line);
 
                 Lines.Add(line);
@@ -423,6 +497,9 @@ namespace ProjectReport.ViewModels.Inventory
                     .Sum(m => m.Quantity);
 
                 line.QuantityReceived = quantityReceived;
+                var prod = _service.GetProducts().FirstOrDefault(p => string.Equals(p.Code, mv.ProductCode, StringComparison.OrdinalIgnoreCase));
+                // Editing mode: include this line quantity back as available for replacement.
+                line.CurrentStock = (prod?.StockQty ?? 0) + mv.Quantity;
                 ValidateReturnQuantity(line);
 
                 Lines.Add(line);
@@ -455,10 +532,10 @@ namespace ProjectReport.ViewModels.Inventory
                     return;
                 }
 
-                // Validate that return quantity doesn't exceed received quantity
-                if (ln.Quantity > ln.QuantityReceived)
+                // Validate that return quantity doesn't exceed current stock
+                if (ln.Quantity > ln.CurrentStock)
                 {
-                    Error = $"Line {i + 1}: Cannot return {ln.Quantity} {ln.ProductName}. Only {ln.QuantityReceived} was received.";
+                    Error = $"Line {i + 1}: Cannot return {ln.Quantity} {ln.ProductName}. Only {ln.CurrentStock} is available in stock.";
                     return;
                 }
             }
@@ -574,7 +651,8 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                Error = "Error saving return ticket: " + ex.Message;
+                MessageBox.Show(Error, "Save Ticket", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -598,13 +676,13 @@ namespace ProjectReport.ViewModels.Inventory
 
             line.ValidationError = "";
 
-            if (line.Quantity > 0 && line.QuantityReceived > 0 && line.Quantity > line.QuantityReceived)
+            if (line.Quantity > 0 && line.CurrentStock > 0 && line.Quantity > line.CurrentStock)
             {
-                line.ValidationError = $"âš ï¸ Cannot return {line.Quantity} - Only {line.QuantityReceived} received";
+                line.ValidationError = $"Cannot return {line.Quantity} - Only {line.CurrentStock} available in stock";
             }
-            else if (line.Quantity > 0 && line.QuantityReceived == 0)
+            else if (line.Quantity > 0 && line.CurrentStock <= 0)
             {
-                line.ValidationError = "âš ï¸ No quantity received for this product";
+                line.ValidationError = "No stock available for this product";
             }
         }
     }

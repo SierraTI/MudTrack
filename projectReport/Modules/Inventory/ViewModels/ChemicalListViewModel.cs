@@ -46,6 +46,7 @@ namespace ProjectReport.ViewModels.Inventory
         private ICollectionView _selectedChemicalItemsView;
         private readonly ObservableCollection<ChemicalItem> _customSelectedItems = new();
         private readonly ObservableCollection<ChemicalItem> _selectedItems = new();
+        private bool _isBatchSelectionChange;
 
         public ObservableCollection<ChemicalItem> ChemicalItems { get; } = new ObservableCollection<ChemicalItem>();
         public ObservableCollection<string> Categories { get; } = new ObservableCollection<string> { "All Categories" };
@@ -232,46 +233,30 @@ namespace ProjectReport.ViewModels.Inventory
 
         public void ClearSelection()
         {
+            _isBatchSelectionChange = true;
             foreach (var item in ChemicalItems)
                 item.IsSelected = false;
             foreach (var item in _customSelectedItems)
                 item.IsSelected = false;
+            _isBatchSelectionChange = false;
             UpdateSelectedCount();
+            PersistAndPublishSelection();
         }
 
         public void SelectAll()
         {
             // Only select visible items? Usually better for user experience
+            _isBatchSelectionChange = true;
             foreach (var item in ChemicalItemsView.Cast<ChemicalItem>())
                 item.IsSelected = true;
+            _isBatchSelectionChange = false;
+            UpdateSelectedCount();
+            PersistAndPublishSelection();
         }
 
         private void SaveSelection()
         {
-            var selectedChemicals = ChemicalItems
-                .Where(c => c.IsSelected)
-                .Concat(_customSelectedItems.Where(c => c.IsSelected))
-                .ToList();
-            System.Diagnostics.Debug.WriteLine($"Saved {selectedChemicals.Count} selected chemicals");
-             
-            // Persist selection only for static catalog products
-            var staticCodes = ChemicalItems.Select(c => c.Code ?? string.Empty)
-                .Where(c => !string.IsNullOrWhiteSpace(c))
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var codes = selectedChemicals
-                .Select(c => c.Code ?? string.Empty)
-                .Where(c => !string.IsNullOrWhiteSpace(c) && staticCodes.Contains(c))
-                .ToList();
-            _inventoryService.UpdateProductSelection(codes);
-
-            // Persist unit price set in Selected Products for static catalog items.
-            var unitCostsByCode = ChemicalItems
-                .Where(c => !string.IsNullOrWhiteSpace(c.Code))
-                .ToDictionary(c => c.Code!, c => c.UnitPrice, StringComparer.OrdinalIgnoreCase);
-            _inventoryService.UpdateProductUnitCosts(unitCostsByCode);
-
-            // Broadcast selection to other modules (like Volume Balance)
-            WellContextService.Instance.PublishChemicalSelection(selectedChemicals);
+            PersistAndPublishSelection();
         }
 
         private void UpdateTotalItems()
@@ -297,7 +282,41 @@ namespace ProjectReport.ViewModels.Inventory
         private void OnChemicalItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ChemicalItem.IsSelected))
+            {
                 UpdateSelectedCount();
+                if (!_isBatchSelectionChange)
+                {
+                    PersistAndPublishSelection();
+                }
+            }
+        }
+
+        private void PersistAndPublishSelection()
+        {
+            var selectedChemicals = ChemicalItems
+                .Where(c => c.IsSelected)
+                .Concat(_customSelectedItems.Where(c => c.IsSelected))
+                .ToList();
+            System.Diagnostics.Debug.WriteLine($"Saved {selectedChemicals.Count} selected chemicals");
+
+            // Persist selection only for static catalog products
+            var staticCodes = ChemicalItems.Select(c => c.Code ?? string.Empty)
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var codes = selectedChemicals
+                .Select(c => c.Code ?? string.Empty)
+                .Where(c => !string.IsNullOrWhiteSpace(c) && staticCodes.Contains(c))
+                .ToList();
+            _inventoryService.UpdateProductSelection(codes);
+
+            // Persist unit price set in Selected Products for static catalog items.
+            var unitCostsByCode = ChemicalItems
+                .Where(c => !string.IsNullOrWhiteSpace(c.Code))
+                .ToDictionary(c => c.Code!, c => c.UnitPrice, StringComparer.OrdinalIgnoreCase);
+            _inventoryService.UpdateProductUnitCosts(unitCostsByCode);
+
+            // Broadcast selection to other modules (like Volume Balance)
+            WellContextService.Instance.PublishChemicalSelection(selectedChemicals);
         }
     }
 }

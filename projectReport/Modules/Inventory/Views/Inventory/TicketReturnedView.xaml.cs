@@ -249,10 +249,11 @@ namespace ProjectReport.Views.Inventory
                                 line.Quantity = 0;
                                 vm.Error = "Qty Return cannot be negative.";
                             }
-                            else if (editedQty > line.QuantityReceived)
+                            else if (editedQty > line.CurrentStock)
                             {
-                                line.Quantity = line.QuantityReceived;
-                                vm.Error = $"Qty Return cannot be greater than Qty Received ({line.QuantityReceived}).";
+                                // Do not auto-correct silently; keep user value and force save validation to block.
+                                line.Quantity = editedQty;
+                                vm.Error = $"Qty Return ({editedQty}) cannot be greater than Current Stock ({line.CurrentStock}).";
                             }
                             else
                             {

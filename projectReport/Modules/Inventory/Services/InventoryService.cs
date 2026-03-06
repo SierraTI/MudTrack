@@ -29,7 +29,8 @@ namespace ProjectReport.Services.Inventory
         {
             var products = _repo.LoadProducts();
 
-            var existing = products.FirstOrDefault(p => p.Code.Equals(product.Code, StringComparison.OrdinalIgnoreCase));
+            var existing = products.FirstOrDefault(p =>
+                string.Equals(p.Code, product.Code, StringComparison.OrdinalIgnoreCase));
             if (existing == null)
             {
                 products.Add(product);
@@ -130,7 +131,8 @@ namespace ProjectReport.Services.Inventory
 
         private void ProcessConsumedLine(Ticket ticket, TicketLine line, List<Product> products, List<InventoryMovement> movements)
         {
-            var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
+            var p = products.FirstOrDefault(x =>
+                string.Equals(x.Code, line.ProductCode, StringComparison.OrdinalIgnoreCase));
             if (p == null)
             {
                 p = new Product
@@ -146,6 +148,12 @@ namespace ProjectReport.Services.Inventory
             var before = p.StockQty;
             var qty = line.Quantity;
             if (qty <= 0) throw new InvalidOperationException("Quantity must be > 0.");
+            if (qty > before + 0.0001)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot consume {qty:N2} {(string.IsNullOrWhiteSpace(line.Unit) ? "units" : line.Unit)} of {p.Name}. " +
+                    $"Current stock is {before:N2}.");
+            }
 
             p.StockQty -= qty; // Deduction
 
@@ -210,7 +218,8 @@ namespace ProjectReport.Services.Inventory
 
         private void ProcessReceivedLine(Ticket ticket, TicketLine line, List<Product> products, List<InventoryMovement> movements)
         {
-            var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
+            var p = products.FirstOrDefault(x =>
+                string.Equals(x.Code, line.ProductCode, StringComparison.OrdinalIgnoreCase));
             if (p == null)
             {
                 p = new Product
@@ -228,6 +237,7 @@ namespace ProjectReport.Services.Inventory
             var qty = line.Quantity;
             if (qty <= 0) throw new InvalidOperationException("Quantity must be > 0.");
 
+            // Received tickets increase inventory.
             p.StockQty += qty;
 
             if (line.UnitPrice > 0) p.CurrentUnitCost = line.UnitPrice;
@@ -284,7 +294,8 @@ namespace ProjectReport.Services.Inventory
 
         private void ProcessReturnedLine(Ticket ticket, TicketLine line, List<Product> products, List<InventoryMovement> movements)
         {
-            var p = products.FirstOrDefault(x => x.Code.Equals(line.ProductCode, StringComparison.OrdinalIgnoreCase));
+            var p = products.FirstOrDefault(x =>
+                string.Equals(x.Code, line.ProductCode, StringComparison.OrdinalIgnoreCase));
             if (p == null)
             {
                 p = new Product
@@ -301,8 +312,15 @@ namespace ProjectReport.Services.Inventory
             var before = p.StockQty;
             var qty = line.Quantity;
             if (qty <= 0) throw new InvalidOperationException("Quantity must be > 0.");
+            if (qty > before + 0.0001)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot return {qty:N2} {(string.IsNullOrWhiteSpace(line.Unit) ? "units" : line.Unit)} of {p.Name}. " +
+                    $"Current stock is {before:N2}.");
+            }
 
-            p.StockQty += qty;
+            // Returned tickets decrease inventory.
+            p.StockQty -= qty;
 
             if (line.UnitPrice > 0) p.CurrentUnitCost = line.UnitPrice;
 
@@ -436,7 +454,7 @@ namespace ProjectReport.Services.Inventory
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
-            // Para cada producto, calcular net = sum(Received,Returned) - sum(otros)
+            // Para cada producto, calcular net = sum(Received) - sum(Returned) - sum(otros)
             foreach (var p in products)
             {
                 var mvFor = movements.Where(m => string.Equals(m.ProductCode, p.Code, StringComparison.OrdinalIgnoreCase));
@@ -444,8 +462,7 @@ namespace ProjectReport.Services.Inventory
                 double returned = mvFor.Where(m => m.Type == TicketType.Returned).Sum(m => m.Quantity);
                 double others = mvFor.Where(m => m.Type != TicketType.Received && m.Type != TicketType.Returned).Sum(m => m.Quantity);
 
-                // Interpretación: Received + Returned incrementan stock; "others" decrementan
-                p.StockQty = received + returned - others;
+                p.StockQty = received - returned - others;
             }
 
             _repo.SaveProducts(products);

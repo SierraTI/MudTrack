@@ -9,7 +9,7 @@
             <!-- Title -->
             <RowDefinition Height="Auto"/>
             <!-- Top fields -->
-            <RowDefinition Height="12"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <!-- Lines table -->
             <RowDefinition Height="14"/>
@@ -222,7 +222,12 @@
         </Grid>
 
         <!-- Mensajes de estado (solo para depuracion) -->
-        <TextBlock Grid.Row="2" Text="{Binding Error}" Foreground="DarkRed" Margin="0,6,0,6"/>
+        <TextBlock Grid.Row="2"
+                   Text="{Binding Error}"
+                   Foreground="DarkRed"
+                   FontWeight="SemiBold"
+                   TextWrapping="Wrap"
+                   Margin="0,6,0,6"/>
     </Grid>
 </UserControl>
 

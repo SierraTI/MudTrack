@@ -1,7 +1,6 @@
-﻿using System.ComponentModel;
-using System.Windows;
+using System.ComponentModel;
 using System.Windows.Controls;
-using ProjectReport.Services.Inventory;
+using ProjectReport.Services;
 using ProjectReport.ViewModels.Inventory;
 
 namespace ProjectReport.Views.Inventory
@@ -14,9 +13,7 @@ namespace ProjectReport.Views.Inventory
 
             if (!DesignerProperties.GetIsInDesignMode(this) && DataContext == null)
             {
-                var repo = new JsonInventoryRepository();
-                var svc  = new InventoryService(repo);
-                DataContext = new InventoryHistoryViewModel(svc);
+                DataContext = new InventoryHistoryViewModel(ServiceLocator.InventoryService);
             }
         }
     }

@@ -186,7 +186,13 @@ namespace ProjectReport.ViewModels.Inventory
             SelectProductsCommand = new RelayCommand(_ => LoadSelectedChemicals());
 
             WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
+            _service.InventoryUpdated += OnInventoryUpdated;
 
+            LoadProductsFromExcelOrRepo();
+        }
+
+        private void OnInventoryUpdated()
+        {
             LoadProductsFromExcelOrRepo();
         }
 
@@ -269,32 +275,75 @@ namespace ProjectReport.ViewModels.Inventory
 
         private void LoadSelectedChemicals()
         {
+            var catalogByCode = _service.GetProducts()
+                .Where(p => !string.IsNullOrWhiteSpace(p.Code))
+                .ToDictionary(p => p.Code ?? string.Empty, p => p, StringComparer.OrdinalIgnoreCase);
+
+            var liveSelected = WellContextService.Instance.CurrentSelectedChemicals
+                .Where(c => c != null && c.IsSelected && !string.IsNullOrWhiteSpace(c.Code))
+                .ToList();
+
             var selected = _service.GetSelectedProducts();
-            if (!selected.Any())
+            var source = selected.Any()
+                ? selected
+                : Products.Where(p => p.Status == ProductStatus.Active).ToList();
+
+            if (!liveSelected.Any() && !source.Any())
             {
-                Error = "No products are currently selected in the Chemical List.";
+                Error = "No products available to add.";
                 return;
             }
 
             int addedCount = 0;
-            foreach (var item in selected)
+            if (liveSelected.Any())
             {
-                bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
-                if (alreadyExists) continue;
-
-                Lines.Add(new TicketLine
+                foreach (var item in liveSelected)
                 {
-                    ProductCode = item.Code ?? string.Empty,
-                    ProductName = item.Name ?? item.Code ?? string.Empty,
-                    Unit = string.IsNullOrWhiteSpace(item.Unit) ? "Each" : item.Unit,
-                    Quantity = 1,
-                    UnitPrice = item.CurrentUnitCost,
-                    Context = Origin
-                });
-                addedCount++;
+                    bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
+                    if (alreadyExists) continue;
+
+                    var hasCatalog = catalogByCode.TryGetValue(item.Code ?? string.Empty, out var fromCatalog);
+                    Lines.Add(new TicketLine
+                    {
+                        ProductCode = item.Code ?? string.Empty,
+                        ProductName = !string.IsNullOrWhiteSpace(item.Name)
+                            ? item.Name
+                            : (hasCatalog ? (fromCatalog?.Name ?? item.Code ?? string.Empty) : (item.Code ?? string.Empty)),
+                        Unit = !string.IsNullOrWhiteSpace(item.Unit)
+                            ? item.Unit
+                            : (hasCatalog ? (string.IsNullOrWhiteSpace(fromCatalog?.Unit) ? "Each" : fromCatalog!.Unit) : "Each"),
+                        Quantity = 1,
+                        UnitPrice = hasCatalog
+                            ? (fromCatalog?.CurrentUnitCost ?? item.UnitPrice)
+                            : item.UnitPrice,
+                        Context = Origin
+                    });
+                    addedCount++;
+                }
+            }
+            else
+            {
+                foreach (var item in source)
+                {
+                    bool alreadyExists = Lines.Any(l => string.Equals(l.ProductCode, item.Code, StringComparison.OrdinalIgnoreCase));
+                    if (alreadyExists) continue;
+
+                    Lines.Add(new TicketLine
+                    {
+                        ProductCode = item.Code ?? string.Empty,
+                        ProductName = item.Name ?? item.Code ?? string.Empty,
+                        Unit = string.IsNullOrWhiteSpace(item.Unit) ? "Each" : item.Unit,
+                        Quantity = 1,
+                        UnitPrice = item.CurrentUnitCost,
+                        Context = Origin
+                    });
+                    addedCount++;
+                }
             }
 
-            Error = $"{addedCount} products added from Chemical List.";
+            Error = (liveSelected.Any() || selected.Any())
+                ? $"{addedCount} products added from Chemical List."
+                : $"{addedCount} products added from available catalog.";
         }
 
         private void RemoveLine(TicketLine? line)
@@ -309,45 +358,57 @@ namespace ProjectReport.ViewModels.Inventory
             {
                 Products.Clear();
 
-                var excelPath = Path.Combine(AppContext.BaseDirectory, "Data", "Lista.xlsx");
-                if (!File.Exists(excelPath))
-                {
-                    var alt = Path.Combine(AppContext.BaseDirectory, "Lista.xlsx");
-                    if (File.Exists(alt)) excelPath = alt;
-                }
-
                 var loaded = new List<Product>();
+                var selectedProducts = _service.GetSelectedProducts()
+                    .Where(p => p.Status == ProductStatus.Active)
+                    .OrderBy(p => p.Name)
+                    .ToList();
 
-                if (File.Exists(excelPath))
+                // Main source of truth: products selected in Chemical List.
+                if (selectedProducts.Count > 0)
                 {
-                    var importer = new InventoryExcelImportService();
-                    var uni = importer.LoadUniversalProducts(excelPath);
-
-                    foreach (var u in uni)
-                    {
-                        var p = new Product
-                        {
-                            Code = u.Code ?? string.Empty,
-                            Name = string.IsNullOrWhiteSpace(u.Name) ? (u.Code ?? string.Empty) : u.Name,
-                            Description = string.IsNullOrWhiteSpace(u.Category) ? string.Empty : u.Category,
-                            Category = u.Category ?? string.Empty,
-                            Unit = string.IsNullOrWhiteSpace(u.Unit) ? "Each" : u.Unit,
-                            StockQty = 0,
-                            CurrentUnitCost = 0,
-                            Status = ProductStatus.Active
-                        };
-                        loaded.Add(p);
-                    }
+                    loaded = selectedProducts;
                 }
-
-                // Filtering by project selection is MANDATORY as per SPEC
-                var selectedCodes = _service.GetSelectedProducts().Select(p => p.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
-                loaded = loaded.Where(p => selectedCodes.Contains(p.Code)).OrderBy(p => p.Name).ToList();
-
-                // If fallback to repository is needed
-                if (loaded.Count == 0 && !File.Exists(excelPath))
+                else
                 {
-                    loaded = _service.GetSelectedProducts();
+                    // Legacy fallback when no selection exists yet.
+                    var excelPath = Path.Combine(AppContext.BaseDirectory, "Data", "Lista.xlsx");
+                    if (!File.Exists(excelPath))
+                    {
+                        var alt = Path.Combine(AppContext.BaseDirectory, "Lista.xlsx");
+                        if (File.Exists(alt)) excelPath = alt;
+                    }
+
+                    if (File.Exists(excelPath))
+                    {
+                        var importer = new InventoryExcelImportService();
+                        var uni = importer.LoadUniversalProducts(excelPath);
+
+                        foreach (var u in uni)
+                        {
+                            var p = new Product
+                            {
+                                Code = u.Code ?? string.Empty,
+                                Name = string.IsNullOrWhiteSpace(u.Name) ? (u.Code ?? string.Empty) : u.Name,
+                                Description = string.IsNullOrWhiteSpace(u.Category) ? string.Empty : u.Category,
+                                Category = u.Category ?? string.Empty,
+                                Unit = string.IsNullOrWhiteSpace(u.Unit) ? "Each" : u.Unit,
+                                StockQty = 0,
+                                CurrentUnitCost = 0,
+                                Status = ProductStatus.Active
+                            };
+                            loaded.Add(p);
+                        }
+                    }
+
+                    // Fallback to repository active catalog.
+                    if (loaded.Count == 0)
+                    {
+                        loaded = _service.GetProducts()
+                            .Where(p => p.Status == ProductStatus.Active)
+                            .OrderBy(p => p.Name)
+                            .ToList();
+                    }
                 }
 
                 var app = Application.Current;
@@ -369,7 +430,7 @@ namespace ProjectReport.ViewModels.Inventory
 
                 if (loaded.Count == 0)
                 {
-                    MessageBox.Show("No products found in Data\\Lista.xlsx or repository.", "No products", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("No products found in inventory repository.", "No products", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
@@ -620,7 +681,8 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                Error = "Error saving ticket: " + ex.Message;
+                MessageBox.Show(Error, "Save Ticket", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 

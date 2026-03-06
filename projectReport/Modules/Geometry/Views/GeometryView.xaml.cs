@@ -1,23 +1,24 @@
+using ProjectReport.Models;
+using ProjectReport.Models.Geometry;
+using ProjectReport.Models.Geometry.DrillString;
+using ProjectReport.Models.Geometry.Survey;
+using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.WellTest;
+using ProjectReport.Services;
+using ProjectReport.Services.Survey;
+using ProjectReport.ViewModels.Geometry;
+using ProjectReport.ViewModels.Geometry.BitAndJets;
+using ProjectReport.ViewModels.Geometry.DrillString;
+using ProjectReport.ViewModels.Geometry.FluidsAndPressure;
+using ProjectReport.ViewModels.Geometry.ThermalGradient;
+using ProjectReport.Views.Geometry;
+using ProjectReport.Views.Geometry.BitAndJets;
 using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using ProjectReport.Models.Geometry.DrillString;
-using ProjectReport.Models.Geometry.Wellbore;
-using ProjectReport.Models.Geometry.Survey;
-using ProjectReport.Models.Geometry.WellTest;
-using ProjectReport.Models.Geometry;
-using ProjectReport.Services;
-using ProjectReport.Services.Survey;
-using ProjectReport.ViewModels.Geometry;
-using ProjectReport.Views.Geometry.BitAndJets;
-using ProjectReport.Views.Geometry;
-using ProjectReport.ViewModels.Geometry.BitAndJets;
-using ProjectReport.ViewModels.Geometry.FluidsAndPressure;
-using ProjectReport.ViewModels.Geometry.ThermalGradient;
-using ProjectReport.ViewModels.Geometry.DrillString;
 
 namespace ProjectReport.Views
 {
@@ -33,39 +34,23 @@ namespace ProjectReport.Views
             {
                 InitializeComponent();
 
-                // Initialize default ViewModel if not set (will be checked/updated in OnDataContextChanged)
-                if (DataContext == null)
-                {
-                    // Initialize services
-                    var geometryService = new GeometryCalculationService();
-                    var dataService = new DataPersistenceService();
-                    var thermalService = new ThermalGradientService();
-
-                    // Initialize ViewModel with required services
-                    _viewModel = new GeometryViewModel(geometryService, dataService, thermalService);
-                    DataContext = _viewModel;
-                }
-                else if (DataContext is GeometryViewModel vm)
-                {
-                    _viewModel = vm;
-                }
-
-                // Note: Visual rendering is handled by WellboreSchematicView. We'll invoke its draw when needed.
-
-                // Subscribe to events
                 Loaded += GeometryView_Loaded;
                 DataContextChanged += GeometryView_DataContextChanged;
-                KeyDown += GeometryView_KeyDown; // Add keyboard shortcuts
-
-                SubscribeToViewModelEvents();
+                KeyDown += GeometryView_KeyDown;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error initializing GeometryView: {ex.Message}\n\n{ex.StackTrace}",
-                    "Initialization Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    $"Error initializing GeometryView: {ex.Message}\n\n{ex.StackTrace}",
+                    "Initialization Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
                 throw;
             }
         }
+
+
 
         private void GeometryView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -659,6 +644,6 @@ namespace ProjectReport.Views
             }
         }
 
-
+   
     }
 }

@@ -1,58 +1,61 @@
+using ClosedXML.Excel;
+using ProjectReport.Models;
+using ProjectReport.Models.Geometry;
+using ProjectReport.Models.Inventory;
+using ProjectReport.Models.Rig;
+using ProjectReport.Services;
+using ProjectReport.Services.Inventory;
+using ProjectReport.ViewModels.Geometry;
+
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using ProjectReport.Models;
-using ProjectReport.Models.Geometry;
-using ProjectReport.Services;
-using ProjectReport.ViewModels.Geometry;
-using ProjectReport.Services.Inventory;
-using ProjectReport.Models.Inventory;
-using ProjectReport.Models.Rig;
+using System.IO;
 
 namespace ProjectReport.ViewModels
 {
     public class ReportWizardViewModel : BaseViewModel
     {
         private readonly Well _well;
-        private readonly DataPersistenceService _dataService;
+        private readonly Project _project;
         private readonly string _projectFilePath;
-        private Project _project;
-        private readonly Report? _originalReport; // For edit mode tracking
-        private bool _isEditMode;
+
         private readonly InventoryService _inventoryService;
         private readonly HydraulicsCalculationService _hydraulicsService;
 
-        public ReportWizardViewModel(Well well, Project project, Report? reportToEdit = null)
+        public ReportWizardViewModel(Well well, Project project, Report reportToEdit)
         {
             _well = well ?? throw new ArgumentNullException(nameof(well));
             _project = project ?? throw new ArgumentNullException(nameof(project));
-            _projectFilePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
-            _dataService = new DataPersistenceService();
 
-            _originalReport = reportToEdit;
-            _isEditMode = reportToEdit != null;
+            if (reportToEdit == null)
+                throw new ArgumentNullException(nameof(reportToEdit));
 
-            // Initialize Services
+            _projectFilePath = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "project_data.json"
+            );
+
             _inventoryService = new InventoryService(new JsonInventoryRepository());
             _hydraulicsService = new HydraulicsCalculationService();
 
-            // Initialize Report
-            InitializeReport();
+            // ⚡ IMPORTANTE: editar el mismo objeto
+            Report = reportToEdit;
 
-            // Commands
-            NextCommand = new RelayCommand(GoNext, CanGoNext);
-            BackCommand = new RelayCommand(GoBack, CanGoBack);
+            HookEvents();
+
+            LoadHoleSizeList();
+
+            NextCommand = new RelayCommand(GoNext);
+            BackCommand = new RelayCommand(GoBack);
             CancelCommand = new RelayCommand(Cancel);
             SaveDraftCommand = new RelayCommand(SaveDraft);
-            FinishCommand = new RelayCommand(Finish, CanFinish);
+            FinishCommand = new RelayCommand(Finish);
 
-            // Inherited Fields visibility: Only relevant for NEW reports using Jalar
-            InheritedFields = !_isEditMode && _well.Reports != null && _well.Reports.Count > 0;
-
-            // Initial calculation
             UpdateHydraulics();
         }
 
@@ -75,16 +78,12 @@ namespace ProjectReport.ViewModels
                 {
                     OnPropertyChanged(nameof(IsStep1Active));
                     OnPropertyChanged(nameof(IsStep2Active));
-                    CommandManager.InvalidateRequerySuggested();
                 }
             }
         }
 
         public bool IsStep1Active => CurrentStep == 1;
         public bool IsStep2Active => CurrentStep == 2;
-
-        public bool InheritedFields { get; private set; }
-        public bool IsEditMode => _isEditMode;
 
         #endregion
 
@@ -100,120 +99,30 @@ namespace ProjectReport.ViewModels
 
         #endregion
 
-        #region Methods
+        #region Hydraulics
 
-        private void InitializeReport()
+        private void HookEvents()
         {
-            if (_isEditMode && _originalReport != null)
-            {
-                // EDIT MODE: Create a deep copy to work on
-                Report = _originalReport.Duplicate();
-                Report.Id = _originalReport.Id; // Preserve ID (Duplicate might treat it as new)
-            }
-            else
-            {
-                // NEW MODE
-                var nextNumber = (_well.Reports?.Count ?? 0) + 1;
-                string interval = "1";
-                var newReport = new Report
-                {
-                    ReportNumber = nextNumber,
-                    ReportDateTime = DateTime.Now,
-                    CreatedDate = DateTime.Now,
-                    IsDraft = true,
-                };
+            if (Report == null)
+                return;
 
-
-                if (_well.Reports != null && _well.Reports.Count > 0)
-                {
-                    var previousReport = _well.Reports
-                          .OrderByDescending(r => r.ReportDateTime)
-                          .FirstOrDefault();
-
-                    if (previousReport != null &&
-                        !string.IsNullOrWhiteSpace(previousReport.IntervalNumber))
-                    {
-                        interval = previousReport.IntervalNumber;
-                    }
-                }
-
-                newReport.IntervalNumber = interval;
-
-
-                // Jalar (Inheritance) Logic
-                var lastReport = _well.Reports?.OrderByDescending(r => r.ReportDateTime).FirstOrDefault();
-                if (lastReport != null)
-                {
-                    newReport.PresentActivity = lastReport.PresentActivity;
-                    newReport.PrimaryFluidSet = lastReport.PrimaryFluidSet;
-                    newReport.OtherActiveFluids = lastReport.OtherActiveFluids;
-                    newReport.WellSection = lastReport.WellSection;
-                    newReport.MudDensity = lastReport.MudDensity; // Inherit density
-                    
-                    foreach(var op in lastReport.OperatorReps) newReport.OperatorReps.Add(op);
-                    foreach(var c in lastReport.ContractorReps) newReport.ContractorReps.Add(c);
-                    foreach(var b in lastReport.BaroidReps) newReport.BaroidReps.Add(b);
-
-                    // Inherit Equipment if possible, or fresh from Rig Profile
-                    if (lastReport.Pumps.Count > 0)
-                    {
-                        foreach(var p in lastReport.Pumps) newReport.Pumps.Add(new ReportPumpOperation 
-                        { 
-                            No = p.No, PumpName = p.PumpName, LinerSize = p.LinerSize, 
-                            StrokeLength = p.StrokeLength, Efficiency = p.Efficiency,
-                            Pressure = p.Pressure // Maybe SPM too? Usually it changes daily, but keep for convenience
-                        });
-                    }
-                    if (lastReport.Screens.Count > 0)
-                    {
-                        foreach(var s in lastReport.Screens) newReport.Screens.Add(new ReportScreenUsage 
-                        { 
-                            ShakerName = s.ShakerName, ScreenType = s.ScreenType 
-                        });
-                    }
-                }
-
-                // Populate from Rig Profile
-                if (_well.RigProfile != null)
-                {
-                    newReport.RigName = _well.RigProfile.RigName;
-                    newReport.Contractor = _well.RigProfile.Contractor;
-                    newReport.RigType = _well.RigProfile.RigType;
-                }
-
-                // If still empty, pull from Rig Profile equipment
-                if (newReport.Pumps.Count == 0 && _well.RigProfile?.Pumps != null)
-                {
-                    foreach (var rp in _well.RigProfile.Pumps)
-                    {
-                        var op = new ReportPumpOperation { No = rp.No };
-                        op.UpdateFromRigPump(rp);
-                        newReport.Pumps.Add(op);
-                    }
-                }
-                if (newReport.Screens.Count == 0 && _well.RigProfile?.SolidsControl != null)
-                {
-                    foreach (var sc in _well.RigProfile.SolidsControl)
-                    {
-                        newReport.Screens.Add(new ReportScreenUsage { ShakerName = $"{sc.Manufacturer} {sc.Model}", ScreenType = sc.ScreenType });
-                    }
-                }
-
-                Report = newReport;
-            }
-
-            // Hook up events for real-time hydraulics
             Report.PropertyChanged += OnReportPropertyChanged;
-            Report.Pumps.CollectionChanged += (s, e) => 
+
+            Report.Pumps.CollectionChanged += (s, e) =>
             {
                 if (e.NewItems != null)
-                    foreach (ReportPumpOperation p in e.NewItems) p.PropertyChanged += OnPumpPropertyChanged;
+                    foreach (ReportPumpOperation p in e.NewItems)
+                        p.PropertyChanged += OnPumpPropertyChanged;
+
                 if (e.OldItems != null)
-                    foreach (ReportPumpOperation p in e.OldItems) p.PropertyChanged -= OnPumpPropertyChanged;
+                    foreach (ReportPumpOperation p in e.OldItems)
+                        p.PropertyChanged -= OnPumpPropertyChanged;
+
                 UpdateHydraulics();
             };
 
-            foreach (var p in Report.Pumps) p.PropertyChanged += OnPumpPropertyChanged;
+            foreach (var p in Report.Pumps)
+                p.PropertyChanged += OnPumpPropertyChanged;
         }
 
         private void OnReportPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -224,24 +133,30 @@ namespace ProjectReport.ViewModels
 
         private void OnPumpPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ReportPumpOperation.Gpm) || e.PropertyName == nameof(ReportPumpOperation.Spm))
+            if (e.PropertyName == nameof(ReportPumpOperation.Gpm) ||
+                e.PropertyName == nameof(ReportPumpOperation.Spm))
+            {
                 UpdateHydraulics();
+            }
         }
 
         private void UpdateHydraulics()
         {
             if (Report == null) return;
 
-            // Total GPM
-            Report.TotalGpm = Math.Round(Report.Pumps.Sum(p => p.Gpm), 2);
+            Report.TotalGpm = Math.Round(
+                Report.Pumps.Sum(p => p.Gpm),
+                2
+            );
 
-            // Total Surface Pressure Loss
             if (_well.RigProfile != null && Report.MudDensity.HasValue)
             {
-                Report.SurfacePressureLoss = _hydraulicsService.CalculateTotalSurfacePressureLoss(
-                    _well.RigProfile, 
-                    Report.MudDensity.Value, 
-                    Report.TotalGpm);
+                Report.SurfacePressureLoss =
+                    _hydraulicsService.CalculateTotalSurfacePressureLoss(
+                        _well.RigProfile,
+                        Report.MudDensity.Value,
+                        Report.TotalGpm
+                    );
             }
             else
             {
@@ -249,25 +164,14 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        public void StartFresh()
-        {
-            // Clear inherited fields
-            Report.PresentActivity = "";
-            Report.PrimaryFluidSet = "";
-            Report.OtherActiveFluids = "";
-            Report.WellSection = "";
-            Report.OperatorReps.Clear();
-            Report.ContractorReps.Clear();
-            Report.BaroidReps.Clear();
-            InheritedFields = false;
-            OnPropertyChanged(nameof(InheritedFields));
-        }
+        #endregion
+
+        #region Navigation
 
         private void GoNext(object? obj)
         {
             if (CurrentStep == 1)
             {
-                // Use IDataErrorInfo validation check for Step 1
                 if (!ValidateStep1()) return;
 
                 CurrentStep = 2;
@@ -278,85 +182,86 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private bool CanGoNext(object? obj)
-        {
-            if (CurrentStep == 1)
-            {
-                // Optional: Live validation disable
-               // return string.IsNullOrEmpty(Report["IntervalNumber"]);
-                return true;
-            }
-
-            return false;
-        }
-
         private void GoBack(object? obj)
         {
             if (CurrentStep > 1)
                 CurrentStep--;
         }
 
-        private bool CanGoBack(object? obj)
-        {
-            return CurrentStep > 1;
-        }
+        #endregion
+
+        #region Actions
 
         private void Cancel(object? obj)
         {
-             var result = MessageBox.Show("Are you sure you want to cancel? Any unsaved changes will be lost.", 
-                 "Cancel Report", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                 
-             if (result == MessageBoxResult.Yes)
-             {
-                 RequestClose?.Invoke();
-             }
+            var result = MessageBox.Show(
+                "Are you sure you want to cancel?",
+                "Cancel Report",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+                RequestClose?.Invoke();
         }
 
         private async void SaveDraft(object? obj)
         {
             Report.IsDraft = true;
+
             await SaveReportAsync();
+
             ToastNotificationService.Instance.ShowSuccess("Draft saved");
+
             RequestClose?.Invoke();
         }
 
         private async void Finish(object? obj)
         {
-            if (!ValidateAll()) return;
+            try
+            {
+                if (!ValidateAll()) return;
 
-            Report.IsDraft = false;
-            
-            // Deduct from Inventory for Screens
-            DeductScreensFromInventory();
+                Report.IsDraft = false;
 
-            await SaveReportAsync();
-            ToastNotificationService.Instance.ShowSuccess("Report completed");
+                DeductScreensFromInventory();
 
-            // Update Global Thread Context
-            if (Report.MD.HasValue)
-                WellContextService.Instance.UpdateSystemDepth(Report.MD.Value);
-            
-            if (Report.MudDensity.HasValue)
-                WellContextService.Instance.UpdateMudDensity(Report.MudDensity.Value);
+                await SaveReportAsync();
 
-            // Notify Thermal Gradient module of report thermal data
-            WellContextService.Instance.NotifyReportThermalDataUpdated(Report.TVD, Report.MaxBHT);
+                // Mostrar mensaje de éxito
+                ToastNotificationService.Instance.ShowSuccess("Report saved successfully.");
 
-            NavigationService.Instance.NavigateToGeometry(_well.Id);
+                // Por ahora no navegamos a Geometry
+                // NavigationService.Instance.NavigateToGeometry(_well);
 
-            RequestClose?.Invoke();
+                // Cerrar modal/ventana
+                RequestClose?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                // Si hay un error al guardar, mostramos mensaje de error
+                ToastNotificationService.Instance.ShowError(
+                    $"Error saving report: {ex.Message}"
+                );
+            }
         }
+
+
+
+        #endregion
+
+        #region Inventory
 
         private void DeductScreensFromInventory()
         {
-            if (Report.Screens == null || Report.Screens.Count == 0) return;
+            if (Report.Screens == null || Report.Screens.Count == 0)
+                return;
 
             var ticket = new Ticket
             {
                 Date = Report.ReportDateTime,
                 Type = TicketType.Consumed,
-                User = "System", // Or current user if available
-                Observations = $"Daily Report {Report.IntervalNumber} - Automated Screen Deduction",
+                User = "System",
+                Observations = $"Daily Report {Report.IntervalNumber}",
                 Lines = new List<TicketLine>()
             };
 
@@ -366,11 +271,11 @@ namespace ProjectReport.ViewModels
                 {
                     ticket.Lines.Add(new TicketLine
                     {
-                        ProductCode = screen.ScreenType, // Using ScreenType as Code
+                        ProductCode = screen.ScreenType,
                         ProductName = $"{screen.ShakerName} Screen",
-                        Quantity = screen.Quantity,
-                        Context = $"Report {Report.IntervalNumber}"
+                        Quantity = screen.Quantity
                     });
+
                     screen.IsDeducted = true;
                 }
             }
@@ -383,29 +288,25 @@ namespace ProjectReport.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    // Log or show error, but don't block report saving
-                    System.Diagnostics.Debug.WriteLine($"Inventory deduction failed: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine(ex.Message);
                 }
             }
         }
 
-        private bool CanFinish(object? obj)
-        {
-            return true;
-        }
+        #endregion
+
+        #region Validation
 
         private bool ValidateStep1()
         {
-            // Check for IDataErrorInfo errors
-            if (!string.IsNullOrEmpty(Report["IntervalNumber"]) ||
-                !string.IsNullOrEmpty(Report["MD"]) ||
-                !string.IsNullOrEmpty(Report["TVD"]) ||
-                !string.IsNullOrEmpty(Report["WellSection"]) ||
-                !string.IsNullOrEmpty(Report["PresentActivity"]))
+            if (!string.IsNullOrEmpty(Report["IntervalNumber"]))
             {
-                ToastNotificationService.Instance.ShowError("Please fix validation errors before proceeding.");
+                ToastNotificationService.Instance.ShowError(
+                    "Please fix validation errors"
+                );
                 return false;
             }
+
             return true;
         }
 
@@ -414,41 +315,68 @@ namespace ProjectReport.ViewModels
             return ValidateStep1();
         }
 
+        #endregion
+
+        #region Persistence
+
         private async Task SaveReportAsync()
         {
-            if (_isEditMode && _originalReport != null)
-            {
-                // Update existing report in the collection
-                var index = _well.Reports?.IndexOf(_originalReport) ?? -1;
-                if (index >= 0 && _well.Reports != null)
-                {
-                    _well.Reports[index] = Report; // Replace with modified copy
-                }
-            }
-            else
-            {
-                // New Report
-                if (Report.Id == 0)
-                {
-                    Report.Id = (_well.Reports?.Count > 0 ? _well.Reports.Max(r => r.Id) : 0) + 1;
-                    _well.Reports?.Add(Report);
-                }
-            }
-
-            // Save Project
-            await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
+            // ⚡ SOLO guarda el proyecto
+            await DataPersistenceService.SaveProjectAsync(
+                _projectFilePath,
+                _project
+            );
         }
-
-        public ObservableCollection<string> WellSectionOptions { get; }
-             = new ObservableCollection<string>
-             {
-                  "Sidetrack",
-                  "Original"
-             };
 
         #endregion
 
+        #region Lists
 
+        public ObservableCollection<string> WellSectionOptions { get; }
+            = new ObservableCollection<string>
+            {
+                "Sidetrack",
+                "Original"
+            };
 
+        public ObservableCollection<string> HoleSizeOptions { get; }
+            = new ObservableCollection<string>();
+
+        private void LoadHoleSizeList()
+        {
+            try
+            {
+                string filePath = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    "Data",
+                    "HoleSizeList.xlsx"
+                );
+
+                if (!File.Exists(filePath))
+                    return;
+
+                HoleSizeOptions.Clear();
+
+                using var workbook = new XLWorkbook(filePath);
+
+                var sheet = workbook.Worksheet(1);
+
+                foreach (var row in sheet.RowsUsed().Skip(1))
+                {
+                    var value = row.Cell(1)
+                        .GetFormattedString()
+                        .Trim();
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                        HoleSizeOptions.Add(value);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        #endregion
     }
 }

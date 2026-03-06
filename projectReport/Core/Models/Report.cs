@@ -6,6 +6,7 @@ namespace ProjectReport.Models
 {
     public class Report : BaseModel, System.ComponentModel.IDataErrorInfo
     {
+
         // Sequential report number (displayed as Report #)
         private int _reportNumber;
         public int ReportNumber
@@ -91,12 +92,14 @@ namespace ProjectReport.Models
             set => SetProperty(ref _maxBhtSource, value);
         }
 
-        private double? _intervalSizeIn;
-        public double? IntervalSizeIn
+        private string _intervalSizeIn;
+
+        public string IntervalSizeIn
         {
             get => _intervalSizeIn;
             set => SetProperty(ref _intervalSizeIn, value);
         }
+
 
         private string _presentActivity = string.Empty;
         public string PresentActivity

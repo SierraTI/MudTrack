@@ -223,406 +223,467 @@
         <Style TargetType="TabItem">
             <Setter Property="Padding" Value="14,8"/>
         </Style>
+
     </UserControl.Resources>
 
     <Grid Background="{StaticResource AppBg}">
         <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
-
+            <!-- ========================= -->
             <!-- Wellbore Geometry -->
-
+            <!-- ========================= -->
             <TabItem Header="Wellbore Geometry">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid Margin="18">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
 
+                <!-- Main Grid -->
+                <Grid Margin="18">
+
+                    <!-- Layout Rows -->
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <!-- Top bar -->
-                        <Border Grid.Row="0" Style="{StaticResource CardBorder}" Margin="0,0,0,12">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Error -->
+                        <RowDefinition Height="*"/>
+                        <!-- DataGrid -->
+                    </Grid.RowDefinitions>
 
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="Total Wellbore MD:"
-                                               Foreground="{StaticResource TextMuted}"
-                                               FontWeight="SemiBold"/>
-                                    <TextBlock Text="{Binding TotalWellboreMD, StringFormat='  {0:F2} ft'}"
-                                               Foreground="{StaticResource BrandOrange}"
-                                               FontWeight="Bold"/>
-                                    <TextBlock Text="   Tip: use '.' for decimals."
-                                               Foreground="{StaticResource TextMuted}"
-                                               FontSize="12"
-                                               VerticalAlignment="Center"/>
-                                </StackPanel>
 
-                                <Button Grid.Column="1"
-                                        Content="Add Section"
-                                        Style="{StaticResource BrandPrimaryButton}"
-                                        Click="AddWellboreSection_Click"/>
-                            </Grid>
-                        </Border>
+                    <!-- ================= TOP BAR ================= -->
+                    <Border Grid.Row="0"
+               Style="{StaticResource CardBorder}"
+               Margin="0,0,0,12">
 
-                        <!-- Error detail -->
-                        <Border Grid.Row="1"
-                                Margin="0,0,0,10"
-                                Background="#FFFEE2E2"
-                                BorderBrush="{StaticResource Danger}"
-                                BorderThickness="1"
-                                CornerRadius="10"
-                                Padding="12"
-                                Visibility="{Binding ElementName=WellboreDataGrid, Path=SelectedItem.HasValidationError, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="❌" FontSize="14" Margin="0,0,8,0" Foreground="{StaticResource Danger}"/>
-                                <TextBlock Text="Error in selected row:" FontWeight="Bold" Foreground="{StaticResource Danger}" Margin="0,0,6,0"/>
-                                <TextBlock Text="{Binding ElementName=WellboreDataGrid, Path=SelectedItem.ValidationMessage}"
-                                           Foreground="{StaticResource Danger}"
-                                           TextWrapping="Wrap"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                           Orientation="Horizontal"
+                           VerticalAlignment="Center">
+
+                                <TextBlock Text="Total Wellbore MD:"
+                              Foreground="{StaticResource TextMuted}"
+                              FontWeight="SemiBold"/>
+
+                                <TextBlock Text="{Binding TotalWellboreMD,
+                              StringFormat='  {0:F2} ft'}"
+                              Foreground="{StaticResource BrandOrange}"
+                              FontWeight="Bold"/>
+
+                                <TextBlock Text="   Tip: use '.' for decimals."
+                              Foreground="{StaticResource TextMuted}"
+                              FontSize="12"
+                              VerticalAlignment="Center"/>
                             </StackPanel>
-                        </Border>
 
-                        <!-- DataGrid with Zebra Striping -->
-                        <DataGrid Grid.Row="3"
-                                  x:Name="WellboreDataGrid"
-                                  Style="{StaticResource ModernDataGrid}"
-                                  ItemsSource="{Binding WellboreComponents}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="True"
-                                  SelectionMode="Single"
-                                  AlternationCount="2" Margin="-19,175,19,387">
+                            <Button Grid.Column="1"
+                       Content="Add Section"
+                       Style="{StaticResource BrandPrimaryButton}"
+                       Click="AddWellboreSection_Click"/>
 
-                            <DataGrid.RowStyle>
-                                <Style TargetType="DataGridRow">
-                                    <!-- Zebra Striping: Alternating row colors -->
-                                    <Setter Property="Background" Value="White"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="AlternationIndex" Value="1">
-                                            <Setter Property="Background" Value="#FFF9FAFB"/>
-                                        </Trigger>
-                                        <DataTrigger Binding="{Binding HasWarnings}" Value="True">
-                                            <Setter Property="Background" Value="#FFFFF7E6"/>
-                                            <Setter Property="BorderBrush" Value="#FFF59E0B"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding HasValidationError}" Value="True">
-                                            <Setter Property="Background" Value="#FFFFF1F2"/>
-                                            <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </DataGrid.RowStyle>
+                        </Grid>
+                    </Border>
 
-                            <DataGrid.Columns>
-                                <!-- 0. Status -->
-                                <DataGridTemplateColumn Header="" Width="30">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <TextBlock Text="⚠️"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           ToolTip="{Binding WarningMessage}"
-                                                           Visibility="{Binding HasWarnings, Converter={StaticResource BoolToVis}}"/>
-                                                <TextBlock Text="!"
-                                                           Foreground="{StaticResource Danger}"
-                                                           FontWeight="Bold"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           ToolTip="{Binding ValidationMessage}"
-                                                           Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
 
-                                <!-- No. Column -->
-                                <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="35" IsReadOnly="True"
-                                                    Foreground="{StaticResource TextMuted}"/>
+                    <!-- ================= ERROR PANEL ================= -->
+                    <Border Grid.Row="1"
+                      Margin="0,0,0,10"
+                      Background="#FFFEE2E2"
+                      BorderBrush="{StaticResource Danger}"
+                      BorderThickness="1"
+                      CornerRadius="10"
+                      Padding="12"
+                      Visibility="{Binding ElementName=WellboreDataGrid, Path=SelectedItem.HasValidationError, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="❌" FontSize="14" Margin="0,0,8,0" Foreground="{StaticResource Danger}"/>
+                            <TextBlock Text="Error in selected row:" FontWeight="Bold" Foreground="{StaticResource Danger}" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding ElementName=WellboreDataGrid, Path=SelectedItem.ValidationMessage}"
+                                 Foreground="{StaticResource Danger}"
+                                 TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
 
-                                <!-- Name / Description Column -->
-                                <DataGridTemplateColumn Header="Section Name" Width="130">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Grid>
-                                                <TextBlock Text="Ej: Intermediate Casing"
-                                                           Foreground="{StaticResource DisabledText}"
-                                                           FontStyle="Italic"
-                                                           VerticalAlignment="Center"
-                                                           Margin="10,0,0,0"
-                                                           IsHitTestVisible="False">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Name}" Value="">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
-                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
 
-                                <!-- Well Section Type Column (NEW) -->
-                                <DataGridTemplateColumn Header="Well Section" Width="110">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock VerticalAlignment="Center" Padding="10,6">
+                    <!-- ================= DATAGRID ================= -->
+                    <DataGrid Grid.Row="2"
+                 x:Name="WellboreDataGrid"
+                 Style="{StaticResource ModernDataGrid}"
+                 ItemsSource="{Binding WellboreComponents}"
+                 AutoGenerateColumns="False"
+                 CanUserAddRows="False"
+                 CanUserDeleteRows="True"
+                 SelectionMode="Single"
+                 AlternationCount="2"
+
+                 Margin="0"
+
+                 VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Auto" SelectionChanged="WellboreDataGrid_SelectionChanged">
+
+
+                        <!-- ================= ROW STYLE ================= -->
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+
+                                <Setter Property="Background" Value="White"/>
+
+                                <Style.Triggers>
+
+                                    <Trigger Property="AlternationIndex" Value="1">
+                                        <Setter Property="Background" Value="#FFF9FAFB"/>
+                                    </Trigger>
+
+                                    <DataTrigger Binding="{Binding HasWarnings}" Value="True">
+                                        <Setter Property="Background" Value="#FFFFF7E6"/>
+                                        <Setter Property="BorderBrush" Value="#FFF59E0B"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding HasValidationError}" Value="True">
+                                        <Setter Property="Background" Value="#FFFFF1F2"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </DataTrigger>
+
+                                </Style.Triggers>
+
+                            </Style>
+                        </DataGrid.RowStyle>
+
+
+                        <!-- ================= COLUMNS ================= -->
+                        <DataGrid.Columns>
+
+                            <!-- Status -->
+                            <DataGridTemplateColumn Header="" Width="30">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+
+                                            <TextBlock Text="⚠️"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          ToolTip="{Binding WarningMessage}"
+                                          Visibility="{Binding HasWarnings,
+                                          Converter={StaticResource BoolToVis}}"/>
+
+                                            <TextBlock Text="!"
+                                          Foreground="{StaticResource Danger}"
+                                          FontWeight="Bold"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          ToolTip="{Binding ValidationMessage}"
+                                          Visibility="{Binding HasValidationError,
+                                          Converter={StaticResource BoolToVis}}"/>
+
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- No. Column -->
+                            <DataGridTextColumn Header="No." Binding="{Binding Id}" Width="35" IsReadOnly="True"
+                                                   Foreground="{StaticResource TextMuted}"/>
+
+                            <!-- Name / Description Column -->
+                            <DataGridTemplateColumn Header="Section Name" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="Ej: Intermediate Casing"
+                                                          Foreground="{StaticResource DisabledText}"
+                                                          FontStyle="Italic"
+                                                          VerticalAlignment="Center"
+                                                          Margin="10,0,0,0"
+                                                          IsHitTestVisible="False">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="{Binding WellSection}"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding WellSection}" Value="{x:Null}">
-                                                                <Setter Property="Text" Value="-- Select --"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
-                                                                <Setter Property="FontStyle" Value="Italic"/>
+                                                            <DataTrigger Binding="{Binding Name}" Value="">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Name}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Visible"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                      SelectedItem="{Binding WellSection, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="."/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
-                                <!-- Component Column (Renamed from "Section Type") -->
-                                <DataGridTemplateColumn Header="Component" Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock VerticalAlignment="Center" Padding="10,6">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="{Binding Component}"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Component}" Value="{x:Null}">
-                                                                <Setter Property="Text" Value="-- Select --"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
-                                                                <Setter Property="FontStyle" Value="Italic"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding DataContext.ComponentTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                      SelectedItem="{Binding Component, UpdateSourceTrigger=PropertyChanged}"
-                                                      DisplayMemberPath="."/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
+                            <!-- Well Section Type Column (NEW) -->
+                            <DataGridTemplateColumn Header="Well Section" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock VerticalAlignment="Center" Padding="10,6">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding WellSection}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WellSection}" Value="{x:Null}">
+                                                            <Setter Property="Text" Value="-- Select --"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                            <Setter Property="FontStyle" Value="Italic"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.WellboreSectionTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                     SelectedItem="{Binding WellSection, UpdateSourceTrigger=PropertyChanged}"
+                                                     DisplayMemberPath="."/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
-                                <!-- 3. OD -->
-                                <DataGridTemplateColumn Width="85">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="OD (in)" ToolTip="For OpenHole: Hole diameter. For Casing/Liner: Outer diameter."/>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding OD, StringFormat=F3, TargetNullValue=''}" VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasWarnings}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource Warn}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding WarningMessage}"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding HasErrors}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource Danger}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding OD, StringFormat=F3, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}">
-                                                <TextBox.Style>
-                                                    <Style TargetType="TextBox">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasErrors}" Value="True">
-                                                                <Setter Property="Background" Value="#FFFFF1F2"/>
-                                                                <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBox.Style>
-                                            </TextBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
+                            <!-- Component Column (Renamed from "Section Type") -->
+                            <DataGridTemplateColumn Header="Component" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock VerticalAlignment="Center" Padding="10,6">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding Component}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Component}" Value="{x:Null}">
+                                                            <Setter Property="Text" Value="-- Select --"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                            <Setter Property="FontStyle" Value="Italic"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.ComponentTypes, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                     SelectedItem="{Binding Component, UpdateSourceTrigger=PropertyChanged}"
+                                                     DisplayMemberPath="."/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
-                                <!-- 4. ID -->
-                                <DataGridTemplateColumn Width="85">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="ID (in)" ToolTip="For OpenHole: always 0.000. For Casing/Liner: Inner diameter."/>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding ID, StringFormat=F3, TargetNullValue=''}" VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
-                                                                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-                                                                <Setter Property="FontStyle" Value="Italic"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding HasErrors}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource Danger}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding ID, StringFormat=F3, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}">
-                                                <TextBox.Style>
-                                                    <Style TargetType="TextBox">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
-                                                                <Setter Property="IsEnabled" Value="False"/>
-                                                                <Setter Property="Background" Value="#FFF3F4F6"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding HasErrors}" Value="True">
-                                                                <Setter Property="Background" Value="#FFFFF1F2"/>
-                                                                <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBox.Style>
-                                            </TextBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
+                            <!-- 3. OD -->
+                            <DataGridTemplateColumn Width="85">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="OD (in)" ToolTip="For OpenHole: Hole diameter. For Casing/Liner: Outer diameter."/>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding OD, TargetNullValue=''}" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasWarnings}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Warn}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding WarningMessage}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding OD, TargetNullValue='', UpdateSourceTrigger=LostFocus}">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                            <Setter Property="Background" Value="#FFFFF1F2"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
-                                <!-- 5. Top MD -->
-                                <DataGridTextColumn Header="Top MD (ft)" Binding="{Binding TopMD, StringFormat=0.##, TargetNullValue=''}" Width="100"/>
+                            <!-- 4. ID -->
+                            <DataGridTemplateColumn Width="85">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="ID (in)" ToolTip="For OpenHole: always 0.000. For Casing/Liner: Inner diameter."/>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ID, TargetNullValue=''}" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
+                                                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                                            <Setter Property="FontStyle" Value="Italic"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding ID, TargetNullValue='',  UpdateSourceTrigger=LostFocus}">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
+                                                            <Setter Property="IsEnabled" Value="False"/>
+                                                            <Setter Property="Background" Value="#FFF3F4F6"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                            <Setter Property="Background" Value="#FFFFF1F2"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
-                                <!-- 6. Bottom MD -->
-                                <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=0.##, TargetNullValue=''}" Width="110"/>
+                            <!-- 5. Top MD -->
+                            <DataGridTextColumn Header="Top MD (ft)" Binding="{Binding TopMD, StringFormat=0.##, TargetNullValue=''}" Width="100"/>
 
-                                <!-- 7. Washout -->
-                                <DataGridTemplateColumn Width="95">
-                                    <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="Washout (%)" ToolTip="Only for OpenHole. Typical 5–25%. Min 0.01%."/>
-                                    </DataGridTemplateColumn.Header>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <TextBlock VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="N/A"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-                                                        <Setter Property="FontStyle" Value="Italic"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
-                                                                <Setter Property="Text" Value="{Binding Washout, StringFormat=0.##}"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
-                                                                <Setter Property="FontStyle" Value="Normal"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding HasWarnings}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource Warn}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding WarningMessage}"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding HasErrors}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource Danger}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                    <DataGridTemplateColumn.CellEditingTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding Washout, StringFormat=0.##, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}">
-                                                <TextBox.Style>
-                                                    <Style TargetType="TextBox">
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
-                                                                <Setter Property="IsEnabled" Value="True"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding HasErrors}" Value="True">
-                                                                <Setter Property="Background" Value="#FFFFF1F2"/>
-                                                                <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
-                                                                <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBox.Style>
-                                            </TextBox>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellEditingTemplate>
-                                </DataGridTemplateColumn>
-
-                                <!-- 8. Volume -->
-                                <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding Volume, StringFormat=0.##}" Width="100" IsReadOnly="True"/>
-
-                                <!-- 9. Actions -->
-                                <DataGridTemplateColumn Header="Actions" Width="140">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Move Up"
-                                                        Click="MoveWellboreUp_Click" Tag="{Binding}"/>
-                                                <Button Content="↓" Style="{StaticResource IconMiniButton}" ToolTip="Move Down"
-                                                        Click="MoveWellboreDown_Click" Tag="{Binding}"/>
-                                                <Button Content="×" Style="{StaticResource IconMiniButton}" ToolTip="Delete"
-                                                        Click="DeleteWellbore_Click" Tag="{Binding}" Foreground="{StaticResource Danger}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
+                            <!-- 6. Bottom MD -->
+                            <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=0.##, TargetNullValue=''}" Width="110"/>
 
 
-                    </Grid>
-                </ScrollViewer>
+                            <!-- 7. Washout -->
+                            <DataGridTemplateColumn Width="95">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="Washout (%)" ToolTip="Only for OpenHole. Typical 5–25%. Min 0.01%."/>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="N/A"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
+                                                            <Setter Property="Text" Value="{Binding Washout, StringFormat=0.##}"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextStrong}"/>
+                                                            <Setter Property="FontStyle" Value="Normal"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasWarnings}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Warn}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding WarningMessage}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding Washout, StringFormat=0.##, TargetNullValue='', UpdateSourceTrigger=PropertyChanged}">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Component}" Value="{x:Static ds:ComponentType.OpenHole}">
+                                                            <Setter Property="IsEnabled" Value="True"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasErrors}" Value="True">
+                                                            <Setter Property="Background" Value="#FFFFF1F2"/>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource Danger}"/>
+                                                            <Setter Property="ToolTip" Value="{Binding ValidationMessage}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- 8. Volume -->
+                            <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding Volume, StringFormat=0.##}" Width="100" IsReadOnly="True"/>
+
+                            <!-- 9. Actions -->
+                            <DataGridTemplateColumn Header="Actions" Width="140">
+
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+
+                                        <StackPanel Orientation="Horizontal"
+                       HorizontalAlignment="Center">
+
+                                            <Button Content="↑"
+                       Style="{StaticResource IconMiniButton}"
+                       ToolTip="Move Up"
+                       Click="MoveWellboreUp_Click"
+                       Tag="{Binding}"/>
+
+                                            <Button Content="↓"
+                       Style="{StaticResource IconMiniButton}"
+                       ToolTip="Move Down"
+                       Click="MoveWellboreDown_Click"
+                       Tag="{Binding}"/>
+
+                                            <Button Content="×"
+                       Style="{StaticResource IconMiniButton}"
+                       ToolTip="Delete"
+                       Click="DeleteWellbore_Click"
+                       Tag="{Binding}"
+                       Foreground="{StaticResource Danger}"/>
+
+                                        </StackPanel>
+
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+
+                            </DataGridTemplateColumn>
+
+                        </DataGrid.Columns>
+
+                    </DataGrid>
+
+                </Grid>
+
+
             </TabItem>
-
+            
             <!-- ========================= -->
             <!-- Drill String Geometry -->
             <!-- ========================= -->
@@ -866,15 +927,21 @@
                                         </DataGridTemplateColumn>
 
                                         <DataGridTextColumn Header="Length (ft)" Binding="{Binding Length, StringFormat=0.##}" Width="100"/>
-                                        <DataGridTextColumn Header="OD (in)" Binding="{Binding OD, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
-                                        <DataGridTextColumn Header="ID (in)" Binding="{Binding ID, StringFormat=F3, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+                                        <DataGridTextColumn Header="OD (in)" 
+                    Binding="{Binding OD, UpdateSourceTrigger=LostFocus, ValidatesOnDataErrors=True}" 
+                    Width="85"/>
+                                        <DataGridTextColumn Header="ID (in)" 
+                    Binding="{Binding ID, UpdateSourceTrigger=LostFocus}" 
+                    Width="85"/>
+
+
                                         <DataGridTextColumn Header="Volume (bbl)" Binding="{Binding InternalVolume, StringFormat=0.##}" Width="100" IsReadOnly="True"/>
 
                                         <DataGridTemplateColumn Header="Actions" Width="140">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Move Up"
+                                                       <Button Content="↑" Style="{StaticResource IconMiniButton}" ToolTip="Move Up"
                                                         Command="{Binding DataContext.MoveDrillStringUpCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" 
                                                         CommandParameter="{Binding}"/>
                                                         <Button Content="↓" Style="{StaticResource IconMiniButton}" ToolTip="Move Down"

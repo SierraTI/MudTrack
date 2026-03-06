@@ -6,6 +6,7 @@ using ProjectReport.Modules.RigProfile.Views;
 using ProjectReport.Services;
 using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels;
+using ProjectReport.ViewModels.Geometry;
 using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Views.Geometry;
 using ProjectReport.Views.Inventory;
@@ -488,9 +489,41 @@ namespace ProjectReport.Views
 
         private GeometryView GetOrCreateGeometryView()
         {
-            _geometryView ??= new GeometryView();
+            if (_geometryView == null)
+            {
+                _geometryView = new GeometryView();
+
+                var vm = new GeometryViewModel(
+                    new GeometryCalculationService(),
+                    new DataPersistenceService(),
+                    new ThermalGradientService());
+
+                vm.LoadWell(_currentWell);
+
+                _geometryView.DataContext = vm;
+            }
+
+            var geometryVM = (GeometryViewModel)_geometryView.DataContext;
+
+            // 🔹 SOLO actualizar el reporte activo (no recargar el well)
+            var report = _currentWell?.Reports?
+                .OrderByDescending(r => r.Id)
+                .FirstOrDefault();
+
+            if (report != null && geometryVM.CurrentReport != report)
+            {
+                geometryVM.LoadReport(report);
+            }
+            // 🔹 sincronizar SIEMPRE al entrar
+            if (_geometryView.DataContext is GeometryViewModel geoVm)
+            {
+                geoVm.SyncGeometryWithReport();
+            }
+
+
             return _geometryView;
         }
+
 
         private void ReportDetailButton_Click(object sender, RoutedEventArgs e)
         {

@@ -312,6 +312,7 @@
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
 
+        
     </UserControl.Resources>
 
     <Border Background="{StaticResource AppBg}">
@@ -376,14 +377,22 @@
                                     </StackPanel>
 
 
-                                    <StackPanel Margin="6">
-                                        <TextBlock Text="Interval Size (in)"
-                                               Style="{StaticResource FieldLabel}"/>
-                                        <TextBox Margin="0,6,0,0"
-         Text="{Binding Report.IntervalSize,
-                        Mode=TwoWay}"/>
+                                    <StackPanel Grid.Column="0" Margin="6">
+
+                                        <TextBlock 
+        Text="Interval Size (in)" 
+        Style="{StaticResource FieldLabel}"/>
+
+                                        <ComboBox
+        ItemsSource="{Binding HoleSizeOptions}"
+        SelectedItem="{Binding Report.IntervalSizeIn, Mode=TwoWay}"
+        Height="35"
+        FontSize="14"
+        Margin="0,5,0,0"/>
 
                                     </StackPanel>
+
+
 
                                     <StackPanel Margin="6">
                                         <TextBlock Text="Report Date"
@@ -405,7 +414,7 @@
                                         <TextBox Margin="0,6,0,0"
          Text="{Binding Report.MD,
                         Mode=TwoWay}"
-                                                 IsEnabled="False"/>
+                                                 />
 
                                     </StackPanel>
 
@@ -445,7 +454,7 @@
 
                                         <ComboBox 
         ItemsSource="{Binding WellSectionOptions}" 
-        SelectedItem="{Binding Report.WellSection, Mode=TwoWay, ValidatesOnDataErrors=True}" 
+        SelectedItem="{Binding Report.WellSection, Mode=TwoWay}" 
         IsEditable="False"
         Margin="0,6,0,0"
         Height="35"
@@ -479,8 +488,7 @@
 />
 
                                     <TextBox Text="{Binding Report.PresentActivity,
-                UpdateSourceTrigger=PropertyChanged,
-                ValidatesOnDataErrors=True}"
+                UpdateSourceTrigger=PropertyChanged}"
          Margin="0,6,0,0"/>
 
 

@@ -21,11 +21,19 @@ namespace ProjectReport.ViewModels
 
         private readonly GeometryValidationService _geometryValidationService;
         private Report? _Report;
-
+      
         public Report? Report
         {
             get => _Report;
-            set => SetProperty(ref _Report, value);
+            set
+            {
+                if (SetProperty(ref _Report, value))
+                {
+                    // Cada vez que cambia Report, actualizar GeometryViewModel
+                    if (_Report != null)
+                        GeometryViewModel.LoadReport(_Report);
+                }
+            }
         }
 
 
@@ -57,6 +65,7 @@ namespace ProjectReport.ViewModels
                 geoService,
                 dataService,
                 thermalService
+
             );
         }
 
@@ -117,57 +126,47 @@ namespace ProjectReport.ViewModels
             if (well == null) return;
 
             CurrentWell = well;
-            GeometryViewModel.LoadWell(well);
 
-            // Asegurarse de que la colección de reportes exista
+            // Inicializa la colección si es null
             if (CurrentWell.Reports == null)
                 CurrentWell.Reports = new ObservableCollection<Report>();
 
             // Crear primer reporte si no hay ninguno
             if (!CurrentWell.Reports.Any())
             {
-                CreateFirstEmptyReport();
-                await SaveProject(); // Guardar inmediatamente
+                var firstReport = new Report
+                {
+                    Id = 1,
+                    ReportNumber = 1,
+                    IntervalNumber = "1",
+                    ReportDateTime = DateTime.Now,
+                    MD = 10,
+                    TVD = 0,
+                    Activity = string.Empty,
+                    WellSection = string.Empty,
+                    MudDensity = 0,
+                    IsDraft = true
+                };
+
+                CurrentWell.Reports.Add(firstReport);
+                await SaveProject();
             }
 
-            // Seleccionar el último reporte existente (o el que acabamos de crear)
-            if (CurrentWell.Reports.Any())
+            // Seleccionar el último reporte (o el recién creado)
+            var lastReport = CurrentWell.Reports
+                .OrderByDescending(r => r.ReportNumber)
+                .FirstOrDefault();
+
+            if (lastReport != null)
             {
-                Report = CurrentWell.Reports
-                    .OrderByDescending(r => r.ReportNumber)
-                    .First();
+                Report = lastReport; // Esto automáticamente llama a GeometryViewModel.LoadReport
             }
 
             OnPropertyChanged(nameof(Reports));
         }
 
 
-        private void CreateFirstEmptyReport()
-        {
-            if (CurrentWell == null) return;
 
-            var firstReport = new Report
-            {
-                Id = 1,
-                ReportNumber = 1,
-                IntervalNumber = "1",
-
-                // Fecha fija inicial
-                ReportDateTime = DateTime.Now,
-
-                MD = 0,
-                TVD = 0,
-                Activity = string.Empty,
-                WellSection = string.Empty,
-                MudDensity = 0,
-
-                IsDraft = true
-            };
-
-            CurrentWell.Reports.Add(firstReport);
-
-            OnPropertyChanged(nameof(Reports));
-        }
 
 
         #endregion
@@ -229,46 +228,44 @@ namespace ProjectReport.ViewModels
 
         private async void CreateReportFromPrevious()
         {
-            if (CurrentWell == null || CurrentWell.Reports == null) return;
+            try
+            {
+                if (CurrentWell == null || CurrentWell.Reports == null) return;
 
-            // ✅ Tomar el último por NUMERO
-            var lastReport = CurrentWell.Reports
-                .OrderByDescending(r => r.ReportNumber)
-                .FirstOrDefault();
+                // ✅ Tomar el último por NUMERO
+                var lastReport = CurrentWell.Reports
+                    .OrderByDescending(r => r.ReportNumber)
+                    .FirstOrDefault();
 
-            if (lastReport == null) return;
+                if (lastReport == null) return;
 
-            var newReport = lastReport.Duplicate();
+                var newReport = lastReport.Duplicate();
 
-            int newId = CurrentWell.Reports.Any()
-                ? CurrentWell.Reports.Max(r => r.Id) + 1
-                : 1;
+                int newId = CurrentWell.Reports.Any()
+                    ? CurrentWell.Reports.Max(r => r.Id) + 1
+                    : 1;
 
-            int newNumber = CurrentWell.Reports.Any()
-                ? CurrentWell.Reports.Max(r => r.ReportNumber) + 1
-                : 1;
+                int newNumber = CurrentWell.Reports.Any()
+                    ? CurrentWell.Reports.Max(r => r.ReportNumber) + 1
+                    : 1;
 
-            newReport.Id = newId;
-            newReport.ReportNumber = newNumber;
-
-            // Mantener intervalo anterior
-            newReport.IntervalNumber = lastReport.IntervalNumber;
-
-            // Fecha solo informativa
-            newReport.ReportDateTime = DateTime.Now;
-
-            newReport.IsDraft = true;
-
-            CurrentWell.Reports.Add(newReport);
-
-            await SaveProject();
-
-            // ✅ Forzar selección del nuevo
-            Report = newReport;
-
-            OnPropertyChanged(nameof(Reports));
-
+                newReport.Id = newId;
+                newReport.ReportNumber = newNumber;
+                newReport.IntervalNumber = lastReport.IntervalNumber;
+                newReport.ReportDateTime = DateTime.Now;
+                newReport.IsDraft = true;
+                CurrentWell.Reports.Add(newReport);
+                await SaveProject();
+                Report = newReport;
+                OnPropertyChanged(nameof(Reports));
+                ToastNotificationService.Instance.ShowSuccess("Report created from previous");
+            }
+            catch (Exception ex)
+            {
+                ToastNotificationService.Instance.ShowError($"Error: {ex.Message}");
+            }
         }
+
 
 
         private void ViewReport(object? parameter)

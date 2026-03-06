@@ -1,3 +1,19 @@
+using LiveCharts;
+using LiveCharts.Defaults;
+using LiveCharts.Wpf;
+using Microsoft.Win32;
+using ProjectReport.Models;
+using ProjectReport.Models.Geometry;
+using ProjectReport.Models.Geometry.DrillString;
+using ProjectReport.Models.Geometry.Survey;
+using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Geometry.WellTest;
+using ProjectReport.Services;
+using ProjectReport.Services.DrillString;
+using ProjectReport.Services.Survey;
+using ProjectReport.Services.Wellbore;
+using ProjectReport.ViewModels.Geometry.ThermalGradient;
+using ProjectReport.Views.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,22 +25,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.Win32;
-using ProjectReport.Models;
-using ProjectReport.Models.Geometry;
-using ProjectReport.Models.Geometry.DrillString;
-using ProjectReport.Models.Geometry.Wellbore;
-using ProjectReport.Models.Geometry.Survey;
-using ProjectReport.Models.Geometry.WellTest;
-using ProjectReport.Services;
-using ProjectReport.Services.Wellbore;
-using ProjectReport.Services.Survey;
-using ProjectReport.Views.Geometry;
-using ProjectReport.Services.DrillString;
-using ProjectReport.ViewModels.Geometry.ThermalGradient;
-using LiveCharts;
-using LiveCharts.Wpf;
-using LiveCharts.Defaults;
 using System.Windows.Media; // added for Brushes
 
 namespace ProjectReport.ViewModels.Geometry
@@ -58,7 +58,8 @@ namespace ProjectReport.ViewModels.Geometry
         private string _bhaWarningMessage = string.Empty;
         private string _bhaInsertPosition = "Bottom";
         private readonly List<string> _bhaInsertPositions = new() { "Top", "Bottom" };
-        
+        public Report? CurrentReport { get; private set; }
+
         public int SelectedTabIndex
         {
             get => _selectedTabIndex;
@@ -67,6 +68,7 @@ namespace ProjectReport.ViewModels.Geometry
 
         public GeometryViewModel(GeometryCalculationService geometryService, DataPersistenceService dataService, ThermalGradientService thermalService)
         {
+
             _geometryService = geometryService ?? throw new ArgumentNullException(nameof(geometryService));
             _validationService = new GeometryValidationService(); // new instance
             _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
@@ -78,11 +80,11 @@ namespace ProjectReport.ViewModels.Geometry
 
             // Initialize Sub-ViewModels
             ThermalGradientViewModel = new ThermalGradientViewModel(_thermalService);
-            
+
             // Connect to Global Context
             WellContextService.Instance.WellChanged += OnWellContextChanged;
             WellContextService.Instance.DepthUpdated += OnGlobalDepthUpdated;
-            
+
             // Initialize collections
             WellboreComponents = new ObservableCollection<WellboreComponent>();
             DrillStringComponents = new ObservableCollection<DrillStringComponent>();
@@ -99,7 +101,7 @@ namespace ProjectReport.ViewModels.Geometry
             var stages = new List<WellboreStage?> { null };
             stages.AddRange(Enum.GetValues(typeof(WellboreStage)).Cast<WellboreStage?>());
             WellboreStages = new ObservableCollection<WellboreStage?>(stages);
-            
+
             // Component Types for Wellbore Geometry (Casing, Liner, OpenHole only)
             ComponentTypes = new ObservableCollection<ComponentType>(new[]
             {
@@ -127,9 +129,9 @@ namespace ProjectReport.ViewModels.Geometry
             });
 
 
-            WellTestTypes = new ObservableCollection<string> 
-            { 
-                "Leak Off", "Fracture gradient", "Pore pressure", "Integrity" 
+            WellTestTypes = new ObservableCollection<string>
+            {
+                "Leak Off", "Fracture gradient", "Pore pressure", "Integrity"
             };
 
             // Subscribe to collection changes
@@ -139,7 +141,7 @@ namespace ProjectReport.ViewModels.Geometry
             WellboreComponents.CollectionChanged += (s, e) => OnPropertyChanged(nameof(WellboreSectionNames));
 
             // Initialize formatters
-            YAxisLabelFormatter = value => 
+            YAxisLabelFormatter = value =>
             {
                 if (double.IsNaN(value) || double.IsInfinity(value)) return "0";
                 return Math.Abs(value).ToString("N0");
@@ -165,7 +167,7 @@ namespace ProjectReport.ViewModels.Geometry
             }
 
             InitializeSurveyChart();
-            
+
             WellContextService.Instance.MudDensityUpdated += OnMudDensityUpdated;
             _currentMudWeight = 10.0; // Default
             SafetySeriesCollection = new SeriesCollection();
@@ -176,6 +178,61 @@ namespace ProjectReport.ViewModels.Geometry
                 test.PropertyChanged += OnWellTestPropertyChanged;
             }
         }
+
+        public void LoadReport(Report report)
+        {
+            if (report == null)
+                throw new ArgumentNullException(nameof(report));
+
+            // Desuscribir anterior
+            if (CurrentReport != null)
+                CurrentReport.PropertyChanged -= OnReportPropertyChanged;
+
+            CurrentReport = report;
+            // Suscribir nuevo
+            CurrentReport.PropertyChanged += OnReportPropertyChanged;
+            OnPropertyChanged(nameof(CurrentReport));
+        }
+
+
+        public void SyncGeometryWithReport()
+        {
+            if (CurrentReport == null || !CurrentReport.MD.HasValue)
+                return;
+
+            var lastSection = WellboreComponents
+                .OrderBy(c => c.TopMD ?? double.MaxValue)
+                .LastOrDefault();
+
+            if (lastSection != null && lastSection.TopMD.HasValue)
+            {
+                if (CurrentReport.MD.Value > lastSection.TopMD.Value)
+                {
+                    lastSection.BottomMD = CurrentReport.MD.Value;
+                }
+            }
+
+            RecalculateTotals();
+        }
+
+        private void OnReportPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Report.MD))
+            {
+                if (CurrentReport?.MD == null) return;
+
+                var lastSection = WellboreComponents
+                    .OrderBy(c => c.TopMD ?? double.MaxValue)
+                    .LastOrDefault();
+
+                if (lastSection != null)
+                {
+                    lastSection.BottomMD = CurrentReport.MD.Value;
+                }
+            }
+        }
+
+
 
         private void InitializeSurveyChart()
         {
@@ -273,25 +330,37 @@ namespace ProjectReport.ViewModels.Geometry
                     ValidateWellboreComponent(component);
                 }
             }
+
             if (e.OldItems != null)
             {
                 foreach (WellboreComponent component in e.OldItems)
                 {
                     component.PropertyChanged -= OnWellboreComponentChanged;
                 }
-                
+
                 // Renumber existing items logic (Rule: Renumber on Delete)
                 RenumberWellboreSections();
             }
-            
-            // Re-validate all components after collection change (order may have changed)
+
+            // Re-validate all components after collection change
             foreach (var component in WellboreComponents)
             {
                 ValidateWellboreComponent(component);
             }
-            
+
+            // 🔹 Sync Report MD with last section
+            var lastSection = WellboreComponents
+                .OrderBy(c => c.TopMD ?? double.MaxValue)
+                .LastOrDefault();
+
+            if (lastSection?.BottomMD != null && CurrentReport != null)
+            {
+                CurrentReport.MD = lastSection.BottomMD;
+            }
+
             RecalculateTotals();
         }
+
 
         private void RenumberWellboreSections()
         {
@@ -382,7 +451,7 @@ namespace ProjectReport.ViewModels.Geometry
         {
             if (_isLoading) return;
 
-            if (e.PropertyName == nameof(WellboreComponent.TopMD) || 
+            if (e.PropertyName == nameof(WellboreComponent.TopMD) ||
                 e.PropertyName == nameof(WellboreComponent.BottomMD) ||
                 e.PropertyName == nameof(WellboreComponent.ID) ||
                 e.PropertyName == nameof(WellboreComponent.OD) ||
@@ -392,59 +461,82 @@ namespace ProjectReport.ViewModels.Geometry
             {
                 if (sender is WellboreComponent component)
                 {
-                    // OpenHole Guard: If Component == OpenHole, automatically set ID = 0.000 and disable that cell
-                    if (e.PropertyName == nameof(WellboreComponent.Component) && 
+                    // OpenHole Guard
+                    if (e.PropertyName == nameof(WellboreComponent.Component) &&
                         component.Component == ComponentType.OpenHole)
                     {
-                        // ID is already set to 0 in the Component setter, but ensure it's locked
                         component.ID = 0.0;
                     }
 
-                    // Determine previous component for context-aware calculation
-                    var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
+                    // Ordenar componentes por TopMD
+                    var sorted = WellboreComponents
+                        .OrderBy(c => c.TopMD ?? double.MaxValue)
+                        .ToList();
+
                     int index = sorted.IndexOf(component);
                     var prev = index > 0 ? sorted[index - 1] : null;
 
+                    // Calcular volumen del componente actual
                     _geometryService.CalculateWellboreComponentVolume(component, "Imperial", prev);
+
                     ValidateWellboreComponent(component);
 
-                    // Check for Casing Overwrite Logic (Rule 4.1) - REMOVED per User Request to allow History/Stacking
-                    // The user wants to keep the previous casing as "History" even if they overlap.
-                    // We simply allow the new row to exist.
-                    // if (prev != null && component.SectionType == ComponentType.Casing && prev.SectionType == ComponentType.Casing)
-                    // {
-                    //      ... logic removed ...
-                    // }
-
-                    // DEPTH CHAINING: Update next component's TopMD if BottomMD changed
+                    // ================================
+                    // DEPTH CHAINING
+                    // ================================
                     if (e.PropertyName == nameof(WellboreComponent.BottomMD))
                     {
                         var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
+
                         if (next != null)
                         {
                             next.SetPreviousBottomMD(component.BottomMD);
-                            ValidateWellboreComponent(next); // Re-validate next section (Continuity)
+                            ValidateWellboreComponent(next);
                         }
-                        
-                        // Validate if this is the last section
+
+                        // Validar si es la última sección
                         if (index == sorted.Count - 1)
                         {
                             ValidateLastSectionDepth(component);
                         }
+
+                        // ====================================
+                        // ACTUALIZAR MD DEL REPORTE ACTIVO
+                        // ====================================
+                        if (CurrentReport != null)
+                        {
+                            var deepest = WellboreComponents
+                                .Where(c => c.BottomMD.HasValue)
+                                .Max(c => c.BottomMD!.Value);
+
+                            // ⚠ Solo aumentar el MD, nunca reducirlo automáticamente
+                            if (!CurrentReport.MD.HasValue || deepest > CurrentReport.MD)
+                            {
+                                CurrentReport.MD = deepest;
+
+                                System.Diagnostics.Debug.WriteLine(
+                                    $"Report MD updated to {CurrentReport.MD}"
+                                );
+                            }
+                        }
                     }
 
-                    // VOLUME CASCADING: If this ID changes, the NEXT component's annular volume might change.
-                    if (e.PropertyName == nameof(WellboreComponent.ID) || e.PropertyName == nameof(WellboreComponent.OD)) // OD can also affect next if we ever support complex annulus
+                    // ================================
+                    // VOLUME CASCADING
+                    // ================================
+                    if (e.PropertyName == nameof(WellboreComponent.ID) ||
+                        e.PropertyName == nameof(WellboreComponent.OD))
                     {
                         var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
-                         if (next != null)
+
+                        if (next != null)
                         {
-                             // Recalculate next component volume with THIS component as 'previous'
                             _geometryService.CalculateWellboreComponentVolume(next, "Imperial", component);
-                            ValidateWellboreComponent(next); // Re-validate next section (Telescopic Rule A2)
+                            ValidateWellboreComponent(next);
                         }
                     }
                 }
+
                 RecalculateTotals();
             }
         }
@@ -1080,82 +1172,69 @@ namespace ProjectReport.ViewModels.Geometry
         // Wellbore commands
         public ICommand AddWellboreSectionCommand => new RelayCommand(AddWellboreSection);
         public ICommand DeleteWellboreSectionCommand => new RelayCommand(DeleteWellboreSection);
-        
         private void AddWellboreSection(object? parameter)
         {
-            var sorted = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
-            var lastSection = sorted.LastOrDefault();
-            
-            double? initialTopMD = null;
-            if (lastSection != null)
+            // Obtener la última sección si existe
+            var lastSection = WellboreComponents
+                .OrderBy(c => c.TopMD ?? double.MaxValue)
+                .LastOrDefault();
+
+            double initialTopMD = 0.0;
+            double bottomMD = 0.0;
+
+            if (lastSection != null && lastSection.BottomMD.HasValue)
             {
-                initialTopMD = lastSection.BottomMD;
+                // TopMD inicia donde terminó la anterior
+                initialTopMD = lastSection.BottomMD.Value;
+
+                // BottomMD será el doble del anterior
+                bottomMD = lastSection.BottomMD.Value * 2;
             }
             else if (_currentWell?.RigProfile != null)
             {
-                // Rule 11: Connect Top MD with Wellhead
-                // Offset = RKB - Wellhead (Casing Head)
                 double rkb = _currentWell.RigProfile.RkbElevation;
                 double wh = _currentWell.RigProfile.CasingHeadElevation;
-                if (rkb > 0 && wh > 0 && rkb > wh)
+
+                initialTopMD = (rkb > 0 && wh > 0 && rkb > wh) ? rkb - wh : 0.0;
+
+                // Si no hay sección previa, usar MD del reporte o valor base
+                if (CurrentReport != null && CurrentReport.MD.HasValue)
                 {
-                    initialTopMD = rkb - wh;
+                    bottomMD = CurrentReport.MD.Value;
                 }
                 else
                 {
-                    initialTopMD = 0;
+                    bottomMD = initialTopMD + 100; // fallback seguro
                 }
             }
-            else
-            {
-                initialTopMD = 0;
-            }
 
-            // Create section
+            // Crear nueva sección
             var newSection = new WellboreComponent
             {
                 Id = GetNextWellboreId(),
                 Name = string.Empty,
                 SectionType = default,
                 TopMD = initialTopMD,
-                BottomMD = initialTopMD.HasValue ? initialTopMD.Value + 100 : null,
+                BottomMD = bottomMD,
                 OD = null,
                 ID = null,
                 Washout = null
             };
-            
-            // Auto-Fill Depths: When a user adds a new section, automatically set its Top MD to the Bottom MD of the previous section
-            if (WellboreComponents.Count == 0)
-            {
-                // First row: must start at 0.00
-                newSection.SetAsFirstRow(true);
-                newSection.TopMD = 0.0;
-            }
-            else
-            {
-                // Subsequent rows: TopMD = previous row's BottomMD (auto-linked)
-                // Find the last section by sorting by TopMD
-                var sortedSections = WellboreComponents.OrderBy(c => c.TopMD ?? double.MaxValue).ToList();
-                var previousSection = sortedSections.LastOrDefault();
-                
-                if (previousSection != null && previousSection.BottomMD.HasValue)
-                {
-                    newSection.SetPreviousBottomMD(previousSection.BottomMD.Value);
-                    newSection.TopMD = previousSection.BottomMD.Value; // Auto-fill Top MD
-                    
-                    // Intelligent Input: Auto-fill Component based on previous row
-                    newSection.Component = previousSection.Component; // Copy type
-                    newSection.WellSection = previousSection.WellSection; // Copy well section
-                }
-            }
 
             WellboreComponents.Add(newSection);
             newSection.PropertyChanged += OnWellboreComponentChanged;
-            
-            // Validate immediately
+
             ValidateWellboreComponent(newSection);
             RecalculateTotals();
+
+            // Actualizar MD del reporte activo
+            if (CurrentReport != null)
+            {
+                CurrentReport.MD = newSection.BottomMD;
+            }
         }
+
+
 
         private void DeleteWellboreSection(object? parameter)
         {

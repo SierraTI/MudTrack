@@ -319,7 +319,7 @@
                  Margin="0"
 
                  VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto">
+                 HorizontalScrollBarVisibility="Auto" SelectionChanged="WellboreDataGrid_SelectionChanged">
 
 
                         <!-- ================= ROW STYLE ================= -->
@@ -580,8 +580,6 @@
                             <!-- 6. Bottom MD -->
                             <DataGridTextColumn Header="Bottom MD (ft)" Binding="{Binding BottomMD, StringFormat=0.##, TargetNullValue=''}" Width="110"/>
 
-                            <!-- 6. Bottom Dr -->
-                            <DataGridTextColumn Header="DR" Binding="{Binding BottomMD, StringFormat=0.##, TargetNullValue=''}" Width="50"/>
 
                             <!-- 7. Washout -->
                             <DataGridTemplateColumn Width="95">

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ProjectReport.Views"
         xmlns:wizard="clr-namespace:ProjectReport.Views.ReportWizard"
         mc:Ignorable="d"
-        Title="New Daily Report"
+        Title="Edit Report"
         Height="700" Width="1000"
         WindowStartupLocation="CenterOwner"
         Background="#F7F8FA">
@@ -124,11 +124,14 @@
                 BorderBrush="{StaticResource BorderSoft}"
                 BorderThickness="0,0,0,1">
             <DockPanel LastChildFill="False">
-                <TextBlock Text="Create New Daily Report"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource TextStrong}"
-                           DockPanel.Dock="Left"/>
+                <TextBlock FontSize="20"
+           FontWeight="SemiBold"
+           Foreground="{StaticResource TextStrong}"
+           DockPanel.Dock="Left">
+    <Run Text="Edit Report #"/>
+    <Run Text="{Binding Report.ReportNumber}"/>
+                </TextBlock>
+
 
                 <Button Content="Save Draft"
                         Command="{Binding SaveDraftCommand}"
@@ -251,7 +254,7 @@
                         </Button.Style>
                     </Button>
 
-                    <Button Content="Finish &amp; Save"
+                    <Button Content="Save Changes"
                             Command="{Binding FinishCommand}">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">

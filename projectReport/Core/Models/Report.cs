@@ -6,6 +6,7 @@ namespace ProjectReport.Models
 {
     public class Report : BaseModel, System.ComponentModel.IDataErrorInfo
     {
+
         // Sequential report number (displayed as Report #)
         private int _reportNumber;
         public int ReportNumber

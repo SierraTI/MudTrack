@@ -1,8 +1,9 @@
-using System.Windows;
-using System.Windows.Controls;
+using ProjectReport.Models;
 using ProjectReport.Models.Geometry.DrillString;
 using ProjectReport.Services;
 using ProjectReport.ViewModels.Geometry;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace ProjectReport.Views.Geometry
 {
@@ -10,18 +11,17 @@ namespace ProjectReport.Views.Geometry
     {
         private readonly GeometryViewModel _viewModel;
 
-        public DrillStringGeometryView()
+        // ✅ Constructor que recibe un ViewModel existente
+        public DrillStringGeometryView(GeometryViewModel viewModel)
         {
             InitializeComponent();
-            
-            // Initialize services
-            var geometryService = new GeometryCalculationService();
-            var dataService = new DataPersistenceService();
-            
-            // Initialize ViewModel with required services
-            _viewModel = new GeometryViewModel(geometryService, dataService, new ThermalGradientService());
+
+            // Usamos el ViewModel que ya tiene el Report cargado
+            _viewModel = viewModel ?? throw new System.ArgumentNullException(nameof(viewModel));
+
             DataContext = _viewModel;
         }
+
 
         private void AddDrillStringComponent_Click(object sender, RoutedEventArgs e)
         {

@@ -1,16 +1,16 @@
-﻿using System;
+﻿using ClosedXML.Excel;
+using ProjectReport.Models;
+using ProjectReport.Models.Geometry.Wellbore;
+using ProjectReport.Models.Rig;
+using ProjectReport.Services;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using ProjectReport.Models;
-using ClosedXML.Excel;
 using System.IO;
-using System.Windows;
 using System.Linq;
-
-
-
+using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Input;
 
 namespace ProjectReport.Modules.ReportDetail.ViewModels
 {
@@ -18,16 +18,249 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
     {
         private Report _report;
         private Well _currentWell;
+        private WellboreComponent _wellboreComponent;
+
+        private readonly HydraulicsCalculationService _hydraulicsService = new HydraulicsCalculationService();
+
 
         public Report Report
         {
             get => _report;
-            set { _report = value; OnPropertyChanged(); }
+            set
+            {
+                _report = value;
+                OnPropertyChanged();
+            }
         }
 
         public ObservableCollection<Report> Reports { get; set; }
 
         public ICommand SaveNewReportCommand { get; }
+
+        public ObservableCollection<string> HoleSizeOptions { get; }
+            = new ObservableCollection<string>();
+
+        public ObservableCollection<string> WellSectionOptions { get; }
+            = new ObservableCollection<string>
+            {
+                "Sidetrack",
+                "Original"
+            };
+
+        public ReportDViewModel(Well well)
+        {
+            if (well == null)
+                throw new ArgumentNullException(nameof(well));
+
+            _currentWell = well;
+
+            Reports = well.Reports != null
+                ? new ObservableCollection<Report>(well.Reports)
+                : new ObservableCollection<Report>();
+
+            LoadHoleSizeList();
+
+            CreateReportFromPrevious();
+
+            SaveNewReportCommand = new RelayCommand(SaveNewReport);
+
+        }
+
+        private void CreateReportFromPrevious()
+        {
+            if (Reports.Count == 0)
+            {
+                Report = new Report
+                {
+                    ReportNumber = 1,
+                    ReportDateTime = DateTime.Now,
+                    IsDraft = true
+                };
+
+                HookEvents();
+                return;
+            }
+
+            var lastReport = Reports
+                .OrderByDescending(r => r.ReportNumber)
+                .First();
+
+            var newReport = lastReport.Duplicate();
+
+            newReport.Id = 0;
+            newReport.ReportNumber = lastReport.ReportNumber + 1;
+            newReport.ReportDateTime = DateTime.Now;
+            newReport.IsDraft = true;
+
+            // Rig profile inheritance
+            if (_currentWell.RigProfile != null)
+            {
+                newReport.RigName = _currentWell.RigProfile.RigName;
+                newReport.Contractor = _currentWell.RigProfile.Contractor;
+                newReport.RigType = _currentWell.RigProfile.RigType;
+            }
+
+            // Pumps
+            if (newReport.Pumps.Count == 0 && _currentWell.RigProfile?.Pumps != null)
+            {
+                foreach (var rp in _currentWell.RigProfile.Pumps)
+                {
+                    var op = new ReportPumpOperation { No = rp.No };
+                    op.UpdateFromRigPump(rp);
+                    newReport.Pumps.Add(op);
+                }
+            }
+
+            // Screens
+            if (newReport.Screens.Count == 0 && _currentWell.RigProfile?.SolidsControl != null)
+            {
+                foreach (var sc in _currentWell.RigProfile.SolidsControl)
+                {
+                    newReport.Screens.Add(new ReportScreenUsage
+                    {
+                        ShakerName = $"{sc.Manufacturer} {sc.Model}",
+                        ScreenType = sc.ScreenType
+                    });
+                }
+            }
+
+            Report = newReport;
+
+            HookEvents();
+        }
+
+        private void HookEvents()
+        {
+            if (Report == null) return;
+
+            Report.PropertyChanged -= OnReportPropertyChanged;
+            Report.PropertyChanged += OnReportPropertyChanged;
+
+            foreach (var pump in Report.Pumps)
+            {
+                pump.PropertyChanged -= OnPumpPropertyChanged;
+                pump.PropertyChanged += OnPumpPropertyChanged;
+            }
+        }
+
+        private void OnReportPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Report.MudDensity))
+                UpdateHydraulics();
+        }
+
+        private void OnPumpPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ReportPumpOperation.Gpm) ||
+                e.PropertyName == nameof(ReportPumpOperation.Spm))
+                UpdateHydraulics();
+        }
+
+        private void UpdateHydraulics()
+        {
+            if (Report == null) return;
+
+            Report.TotalGpm = Math.Round(Report.Pumps.Sum(p => p.Gpm), 2);
+
+            if (_currentWell.RigProfile != null && Report.MudDensity.HasValue)
+            {
+                Report.SurfacePressureLoss =
+                    _hydraulicsService.CalculateTotalSurfacePressureLoss(
+                        _currentWell.RigProfile,
+                        Report.MudDensity.Value,
+                        Report.TotalGpm);
+            }
+            else
+            {
+                Report.SurfacePressureLoss = 0;
+            }
+        }
+
+        private void SaveNewReport()
+        {
+            if (!ValidateReport())
+                return;
+
+            if (_currentWell.Reports == null)
+                _currentWell.Reports = new ObservableCollection<Report>();
+
+            if (Report.Id == 0)
+            {
+                Report.Id = _currentWell.Reports.Any()
+                    ? _currentWell.Reports.Max(r => r.Id) + 1
+                    : 1;
+
+                _currentWell.Reports.Add(Report);
+            }
+
+            if (!Reports.Contains(Report))
+                Reports.Add(Report);
+
+            ToastNotificationService.Instance.ShowSuccess("Report saved");
+
+            OnReportSaved?.Invoke(this, Report);
+
+            PrepareNextReport();
+        }
+
+        private void PrepareNextReport()
+        {
+            var newReport = Report.Duplicate();
+
+            newReport.Id = 0;
+            newReport.ReportNumber++;
+            newReport.ReportDateTime = DateTime.Now;
+            newReport.IsDraft = true;
+
+            Report = newReport;
+
+            HookEvents();
+        }
+
+        public event EventHandler<Report> OnReportSaved;
+
+        private bool ValidateReport()
+        {
+            if (Report == null) return false;
+
+            if (string.IsNullOrWhiteSpace(Report.IntervalNumber))
+            {
+                MessageBox.Show("Interval Number is required.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Report.IntervalSizeIn))
+            {
+                MessageBox.Show("Interval Size is required.");
+                return false;
+            }
+
+            if (Report.MD < 0)
+            {
+                MessageBox.Show("MD must be greater than 0.");
+                return false;
+            }
+
+            if (Report.TVD < 0)
+            {
+                MessageBox.Show("TVD must be greater than 0.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Report.WellSection))
+            {
+                MessageBox.Show("Well Section is required.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Report.PresentActivity))
+            {
+                MessageBox.Show("Present Activity is required.");
+                return false;
+            }
+
+            return true;
+        }
 
         private void LoadHoleSizeList()
         {
@@ -51,17 +284,14 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 {
                     var sheet = workbook.Worksheet(1);
 
-                    var rows = sheet.RowsUsed().Skip(1); // Saltar encabezado
+                    var rows = sheet.RowsUsed().Skip(1);
 
                     foreach (var row in rows)
                     {
-                        // Leer EXACTO como texto
                         var value = row.Cell(1).GetFormattedString().Trim();
 
                         if (!string.IsNullOrWhiteSpace(value))
-                        {
                             HoleSizeOptions.Add(value);
-                        }
                     }
                 }
             }
@@ -71,121 +301,19 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             }
         }
 
-
-        public ObservableCollection<string> HoleSizeOptions { get; }
-      = new ObservableCollection<string>();
-
-        public ObservableCollection<string> WellSectionOptions { get; }
-            = new ObservableCollection<string>
-            {
-                "Sidetrack",
-                "Original"
-            };
-
-        public ReportDViewModel(Well well)
-        {
-            if (well == null)
-                throw new ArgumentNullException(nameof(well), "El pozo no puede ser nulo.");
-
-            _currentWell = well;
-
-            // Inicializa ObservableCollection para UI
-            Reports = well.Reports != null
-                ? new ObservableCollection<Report>(well.Reports)
-                : new ObservableCollection<Report>();
-            LoadHoleSizeList();
-            // Mostrar el último reporte si existe, sino uno vacío
-            if (Reports.Count > 0)
-            {
-                var last = Reports[^1];
-                // Crear una copia para no modificar el original
-                Report = new Report
-                {
-                    IntervalNumber = last.IntervalNumber,
-                    ReportNumber = last.ReportNumber + 1, // Incrementar en 1 para el nuevo
-                    IntervalSizeIn = last.IntervalSizeIn,
-                    ReportDateTime = last.ReportDateTime,
-                    MD = last.MD,
-                    TVD = last.TVD,
-                    WellSection = last.WellSection,
-                    MaxBHT = last.MaxBHT,
-                    PresentActivity = last.PresentActivity,
-                    PrimaryFluidSet = last.PrimaryFluidSet,
-                    OperatorReps = new ObservableCollection<string>(last.OperatorReps ?? new ObservableCollection<string>()),
-                    ContractorReps = new ObservableCollection<string>(last.ContractorReps ?? new ObservableCollection<string>()),
-                    BaroidReps = new ObservableCollection<string>(last.BaroidReps ?? new ObservableCollection<string>())
-                };
-            }
-            else
-            {
-                Report = new Report
-                {
-                    ReportNumber = 1 // Si no hay reportes, el primero empieza en 1
-                };
-            }
-
-            
-            // Comando para guardar un nuevo reporte
-            SaveNewReportCommand = new RelayCommand(SaveNewReport);
-           
-        }
-
-        private void SaveNewReport()
-        {
-            if (!ValidateReport())
-                return;
-
-            // Inicializar la lista interna del pozo si es null
-            if (_currentWell.Reports == null)
-                _currentWell.Reports = new ObservableCollection<Report>();
-
-            // Determinar el siguiente número de reporte
-            int nextReportNumber = 1;
-            if (_currentWell.Reports.Count > 0)
-                nextReportNumber = _currentWell.Reports[^1].ReportNumber + 1;
-
-            // Crear un nuevo reporte basado en lo que escribió el usuario
-            var newReport = new Report
-            {
-                IntervalNumber = _report.IntervalNumber,
-                ReportNumber = nextReportNumber, // Asignar número incrementado
-                ReportDateTime = _report.ReportDateTime,
-                IntervalSizeIn = _report.IntervalSizeIn,
-                MD = _report.MD,
-                TVD = _report.TVD,
-                WellSection = _report.WellSection,
-                MaxBHT = _report.MaxBHT,
-                PresentActivity = _report.PresentActivity,
-                PrimaryFluidSet = _report.PrimaryFluidSet,
-                OperatorReps = new ObservableCollection<string>(_report.OperatorReps ?? new ObservableCollection<string>()),
-                ContractorReps = new ObservableCollection<string>(_report.ContractorReps ?? new ObservableCollection<string>()),
-                BaroidReps = new ObservableCollection<string>(_report.BaroidReps ?? new ObservableCollection<string>())
-            };
-
-            // Agregar el nuevo reporte a la colección interna y a la UI
-            _currentWell.Reports.Add(newReport);
-            Reports.Add(newReport);
-
-            // Disparar evento opcional para navegación
-            OnReportSaved?.Invoke(this, newReport);
-
-            // Preparar un nuevo reporte vacío listo para llenar
-            Report = new Report
-            {
-                ReportNumber = newReport.ReportNumber + 1 // Siguiente número listo para el próximo
-            };
-        }
-
-        // Evento para que la vista principal navegue después de guardar
-        public event EventHandler<Report> OnReportSaved;
-
         #region INotifyPropertyChanged
+
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        protected void OnPropertyChanged(
+            [CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this,
+                new PropertyChangedEventArgs(propertyName));
+        }
+
         #endregion
 
-        // RelayCommand simple incluido aquí
         private class RelayCommand : ICommand
         {
             private readonly Action _execute;
@@ -193,12 +321,15 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
 
             public RelayCommand(Action execute, Func<bool> canExecute = null)
             {
-                _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+                _execute = execute;
                 _canExecute = canExecute;
             }
 
-            public bool CanExecute(object parameter) => _canExecute == null || _canExecute();
-            public void Execute(object parameter) => _execute();
+            public bool CanExecute(object parameter)
+                => _canExecute == null || _canExecute();
+
+            public void Execute(object parameter)
+                => _execute();
 
             public event EventHandler CanExecuteChanged
             {
@@ -206,63 +337,5 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 remove => CommandManager.RequerySuggested -= value;
             }
         }
-
-        private bool ValidateReport()
-        {
-            if (Report == null)
-                return false;
-
-            // Interval Number
-            if (string.IsNullOrWhiteSpace(Report.IntervalNumber))
-            {
-                MessageBox.Show("Interval Number is required.");
-                return false;
-            }
-
-            // Interval Size
-            if (string.IsNullOrWhiteSpace(Report.IntervalSizeIn))
-            {
-                MessageBox.Show("Interval Size is required.");
-                return false;
-            }
-
-            // Fecha
-            if (Report.ReportDateTime == default)
-            {
-                MessageBox.Show("Report Date is required.");
-                return false;
-            }
-
-            // MD
-            if (Report.MD < 0)
-            {
-                MessageBox.Show("MD must be greater than 0.");
-                return false;
-            }
-
-            // TVD
-            if (Report.TVD < 0)
-            {
-                MessageBox.Show("TVD must be greater than 0.");
-                return false;
-            }
-
-            // Well Section
-            if (string.IsNullOrWhiteSpace(Report.WellSection))
-            {
-                MessageBox.Show("Well Section is required.");
-                return false;
-            }
-
-            // Present Activity
-            if (string.IsNullOrWhiteSpace(Report.PresentActivity))
-            {
-                MessageBox.Show("Present Activity is required.");
-                return false;
-            }
-
-            return true; // TODO OK
-        }
-
     }
 }

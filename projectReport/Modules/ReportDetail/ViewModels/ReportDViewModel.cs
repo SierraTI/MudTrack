@@ -16,9 +16,9 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
 {
     internal class ReportDViewModel : INotifyPropertyChanged
     {
-        private Report _report;
+        private Report? _report;
         private Well _currentWell;
-        private WellboreComponent _wellboreComponent;
+        private WellboreComponent? _wellboreComponent;
 
         private readonly HydraulicsCalculationService _hydraulicsService = new HydraulicsCalculationService();
 
@@ -217,7 +217,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             HookEvents();
         }
 
-        public event EventHandler<Report> OnReportSaved;
+        public event EventHandler<Report>? OnReportSaved;
 
         private bool ValidateReport()
         {
@@ -303,10 +303,10 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged(
-            [CallerMemberName] string propertyName = null)
+            [CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this,
                 new PropertyChangedEventArgs(propertyName));
@@ -325,13 +325,13 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 _canExecute = canExecute;
             }
 
-            public bool CanExecute(object parameter)
+            public bool CanExecute(object? parameter)
                 => _canExecute == null || _canExecute();
 
-            public void Execute(object parameter)
+            public void Execute(object? parameter)
                 => _execute();
 
-            public event EventHandler CanExecuteChanged
+            public event EventHandler? CanExecuteChanged
             {
                 add => CommandManager.RequerySuggested += value;
                 remove => CommandManager.RequerySuggested -= value;

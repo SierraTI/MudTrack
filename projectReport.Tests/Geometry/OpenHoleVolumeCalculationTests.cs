@@ -17,8 +17,8 @@ namespace ProjectReport.Tests.Geometry
         {
             // Arrange - Example from specification
             // Section: 8.500" hole, 12.50% washout, 100 ft length
-            // Formula: V = [OD × √(1 + W/100)]² × L / 1029.4
-            // Expected Volume: ~7.89 bbl
+            // Formula: V = [OD * (1 + W/100)]^2 * L / 1029.4
+            // Expected Volume: ~8.89 bbl
             var component = new WellboreComponent
             {
                 SectionType = ComponentType.OpenHole,
@@ -33,21 +33,21 @@ namespace ProjectReport.Tests.Geometry
             double volume = component.Volume;
 
             // Assert
-            // Formula: V = [OD × √(1 + W/100)]² × L / 1029.4
-            // OD_eff = 8.500 × √(1.125) = 8.500 × 1.0606 = 9.0148"
-            // Volume = (9.0148² × 100) / 1029.4 ≈ 7.89 bbl
-            
-            double expectedVolume = 7.89;
+            // Formula: V = [OD * (1 + W/100)]^2 * L / 1029.4
+            // OD_eff = 8.500 * 1.125 = 9.5625"
+            // Volume = (9.5625^2 * 100) / 1029.4 ~ 8.89 bbl
+            double expectedVolume = 8.89;
             Assert.InRange(volume, expectedVolume - TOLERANCE, expectedVolume + TOLERANCE);
         }
 
         [Theory]
-        [InlineData(8.500, 0.00, 100, 5.42)]   // No washout: (8.5² × 100)/1029.4 = 5.42
-        [InlineData(8.500, 5.00, 100, 5.69)]   // 5% washout: [8.5 × √1.05]² × 100 / 1029.4 ≈ 5.69
-        [InlineData(8.500, 10.00, 100, 5.98)]  // 10% washout: [8.5 × √1.10]² × 100 / 1029.4 ≈ 5.98
-        [InlineData(8.500, 12.50, 100, 7.89)]  // 12.5% washout (spec example): [8.5 × √1.125]² × 100 / 1029.4 ≈ 7.89
-        [InlineData(8.500, 25.00, 100, 8.17)]  // 25% washout: [8.5 × √1.25]² × 100 / 1029.4 ≈ 8.17
-        [InlineData(12.250, 10.00, 500, 50.58)] // Larger hole, longer section
+        [InlineData(8.500, 0.00, 100, 7.02)]    // No washout: (8.5^2 * 100)/1029.4 = 7.02
+        [InlineData(8.500, 5.00, 100, 7.74)]    // 5% washout: (8.5 * 1.05)^2 * 100 / 1029.4 ~ 7.74
+        [InlineData(8.500, 10.00, 100, 8.49)]   // 10% washout: (8.5 * 1.10)^2 * 100 / 1029.4 ~ 8.49
+        [InlineData(8.500, 12.50, 100, 8.89)]   // 12.5% washout: (8.5 * 1.125)^2 * 100 / 1029.4 ~ 8.89
+        [InlineData(8.500, 25.00, 100, 10.97)]  // 25% washout: (8.5 * 1.25)^2 * 100 / 1029.4 ~ 10.97
+        [InlineData(12.250, 10.00, 500, 88.19)] // Larger hole, longer section
+        [InlineData(8.500, 10.00, 1000, 84.93)] // Field example: 10% washout over 1000 ft
         public void OpenHole_VolumeCalculation_WithVariousWashoutPercentages(
             double holeDiameter, 
             double washoutPercent, 
@@ -90,11 +90,9 @@ namespace ProjectReport.Tests.Geometry
             double volume = component.Volume;
 
             // Assert
-            // Formula: Volume = ID² × Length / 1029.4
-            // Volume = 12.615² × 1000 / 1029.4
-            // Volume = 159.138225 × 1000 / 1029.4
-            // Volume ≈ 154.57 bbl
-            
+            // Formula: Volume = ID^2 * Length / 1029.4
+            // Volume = 12.615^2 * 1000 / 1029.4
+            // Volume ~ 154.57 bbl
             double expectedVolume = 154.57;
             Assert.InRange(volume, expectedVolume - TOLERANCE, expectedVolume + TOLERANCE);
         }
@@ -151,15 +149,15 @@ namespace ProjectReport.Tests.Geometry
             double length = 100;
             double factor = 1029.4;
 
-            // Step 1: Calculate effective diameter using CORRECT formula with square root
-            double effectiveOD = holeDiameter * Math.Sqrt(1 + washoutPercent / 100.0);
-            Assert.Equal(9.0148, effectiveOD, 3);
+            // Step 1: Calculate effective diameter using diameter-based washout
+            double effectiveOD = holeDiameter * (1 + washoutPercent / 100.0);
+            Assert.Equal(9.5625, effectiveOD, 3);
 
             // Step 2: Calculate volume
             double volume = (effectiveOD * effectiveOD * length) / factor;
             
-            // Expected: (9.0148² × 100) / 1029.4 = 81.27 × 100 / 1029.4 ≈ 7.89 bbl
-            double expectedVolume = 7.89;
+            // Expected: (9.5625^2 * 100) / 1029.4 ~ 8.89 bbl
+            double expectedVolume = 8.89;
             Assert.InRange(volume, expectedVolume - 0.05, expectedVolume + 0.05);
         }
     }

@@ -86,11 +86,12 @@ namespace ProjectReport.Services
                 {
                     double holeDiameter = component.OD.Value;
                     double washoutPercent = component.Washout.GetValueOrDefault(0);
-                    
-                    // Correct FORMULA: V = [OD × √(1 + W/100)]² × L / 1029.4
-                    double effectiveDiameter = holeDiameter * Math.Sqrt(1.0 + (washoutPercent / 100.0));
+
+                    // CSA spec: washout is applied to the diameter (not directly to volume)
+                    // Volume = (OD × (1 + W/100))² × L / 1029.4
+                    double effectiveDiameter = holeDiameter * (1.0 + (washoutPercent / 100.0));
                     double vol = (Math.Pow(effectiveDiameter, 2) / BblVolumeConstant) * component.Length;
-                    
+
                     component.Volume = vol;
                     return vol;
                 }
@@ -549,22 +550,20 @@ namespace ProjectReport.Services
                     double length = overlapBottom - overlapTop;
                     
                     // Determine simplified diameter for capacity (ID for Casing, OD for OpenHole)
-                    double diameter = section.ID.GetValueOrDefault();
+                    double diameter = section.Component == ComponentType.OpenHole
+                        ? section.OD.GetValueOrDefault()
+                        : section.ID.GetValueOrDefault();
+
+                    // Apply washout on diameter (OpenHole only)
                     if (section.Component == ComponentType.OpenHole)
                     {
-                        diameter = section.OD.GetValueOrDefault();
+                        double washoutMultiplier = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
+                        diameter *= washoutMultiplier;
                     }
-                    
+
                     // Use Capacity formula: D^2 / 1029.4 * Length
                     double vol = (Math.Pow(diameter, 2) / BblVolumeConstant) * length;
-                    
-                     if (section.Component == ComponentType.OpenHole)
-                    {
-                         double washoutFactor = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
-                         // Apply linear washout factor: newVol = oldVol * (1+w)
-                         vol *= washoutFactor;
-                    }
-                    
+
                     totalVolume += vol;
                 }
             }
@@ -600,23 +599,20 @@ namespace ProjectReport.Services
                     double length = overlapBottom - overlapTop;
                     
                     // Determine simplified diameter for capacity (ID for Casing, OD for OpenHole)
-                    double diameter = section.ID.GetValueOrDefault();
+                    double diameter = section.Component == ComponentType.OpenHole
+                        ? section.OD.GetValueOrDefault()
+                        : section.ID.GetValueOrDefault();
+
+                    // Apply washout for Open Hole on diameter
                     if (section.Component == ComponentType.OpenHole)
                     {
-                        diameter = section.OD.GetValueOrDefault();
+                        double washoutMultiplier = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
+                        diameter *= washoutMultiplier;
                     }
 
                     // Use Capacity formula: D^2 / 1029.4 * Length
                     double vol = (Math.Pow(diameter, 2) / BblVolumeConstant) * length;
-                    
-                    // Apply washout for Open Hole using correct formula
-                    if (section.Component == ComponentType.OpenHole)
-                    {
-                        double washoutPercent = section.Washout.GetValueOrDefault(0);
-                        double effectiveDiameter = diameter * Math.Sqrt(1.0 + (washoutPercent / 100.0));
-                        vol = (Math.Pow(effectiveDiameter, 2) / BblVolumeConstant) * length;
-                    }
-                    
+
                     totalVolume += vol;
                 }
             }

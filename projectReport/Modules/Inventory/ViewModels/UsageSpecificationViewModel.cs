@@ -26,8 +26,7 @@ namespace ProjectReport.ViewModels.Inventory
                     OnPropertyChanged(nameof(UsageType));
                     OnPropertyChanged(nameof(IsFluidType));
                     OnPropertyChanged(nameof(IsActivityType));
-                    // Reset detail when type changes
-                    Movement.OriginOrUse = "";
+                    // Keep user-entered description; only toggle fluid flag
                     Movement.IsAddedToFluid = (value == "Fluid");
                 }
             }
@@ -88,8 +87,11 @@ namespace ProjectReport.ViewModels.Inventory
         private void LoadFluids()
         {
             Fluidptions.Clear();
+            var well = WellContextService.Instance.CurrentWell;
             try
             {
+                var wellName = well?.WellName?.Trim();
+
                 var dataFile = Path.Combine(AppContext.BaseDirectory, "Data", "wholefluids.json");
                 if (File.Exists(dataFile))
                 {
@@ -97,13 +99,11 @@ namespace ProjectReport.ViewModels.Inventory
                     var fluids = JsonSerializer.Deserialize<WholeFluidItem[]>(json);
                     if (fluids != null)
                     {
-                        var currentWellName = WellContextService.Instance.CurrentWell?.WellName?.Trim();
-
                         var byWell = fluids
                             .Where(f => !string.IsNullOrWhiteSpace(f.ProductName))
-                            .Where(f => string.IsNullOrWhiteSpace(currentWellName) ||
+                            .Where(f => string.IsNullOrWhiteSpace(wellName) ||
                                         (!string.IsNullOrWhiteSpace(f.Context) &&
-                                         f.Context.IndexOf(currentWellName, StringComparison.OrdinalIgnoreCase) >= 0))
+                                         f.Context.IndexOf(wellName, StringComparison.OrdinalIgnoreCase) >= 0))
                             .Select(f => f.ProductName.Trim())
                             .Distinct(StringComparer.OrdinalIgnoreCase)
                             .OrderBy(n => n)
@@ -127,11 +127,16 @@ namespace ProjectReport.ViewModels.Inventory
             }
             catch { /* Ignore errors loading fluids */ }
 
-            var primaryFluid = WellContextService.Instance.CurrentWell?.LoadFluid?.Trim();
-            if (!string.IsNullOrWhiteSpace(primaryFluid) &&
-                !Fluidptions.Contains(primaryFluid, StringComparer.OrdinalIgnoreCase))
+            // Add fluids explicitly selected on the well (primary and stock)
+            var primaryFluid = well?.LoadFluid?.Trim();
+            var stockFluid = well?.LoadFluidStock?.Trim();
+            var explicitWellFluids = new[] { primaryFluid, stockFluid }
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+            foreach (var f in explicitWellFluids)
             {
-                Fluidptions.Insert(0, primaryFluid);
+                if (!Fluidptions.Contains(f, StringComparer.OrdinalIgnoreCase))
+                    Fluidptions.Insert(0, f);
             }
 
             if (Fluidptions.Count == 0)

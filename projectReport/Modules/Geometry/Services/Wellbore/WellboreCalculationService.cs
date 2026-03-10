@@ -16,7 +16,7 @@ namespace ProjectReport.Services.Wellbore
 
         /// <summary>
         /// Calcula el volumen de un componente de wellbore.
-        /// Para OpenHole: Volume = (ID² / 1029.4) × Length × (1 + Washout/100)
+        /// Para OpenHole: Volume = (OD * (1 + Washout/100))^2 * Length / 1029.4
         /// Para Casing/Liner: Volumen ANULAR con el casing/agujero previo que lo contiene.
         /// </summary>
         public void CalculateWellboreComponentVolume(WellboreComponent component, IEnumerable<WellboreComponent> allComponents)
@@ -39,9 +39,9 @@ namespace ProjectReport.Services.Wellbore
                 // OpenHole: Volumen = Diámetro del hoyo con washout
                 if (component.OD.HasValue && component.OD.Value > 0)
                 {
-                    double washoutFactor = 1.0 + ((component.Washout ?? 0) / 100.0);
-                    double idSquared = Math.Pow(component.OD.Value, 2);
-                    volume = (idSquared / FEET_TO_BBL_DIVISOR) * length * washoutFactor;
+                    double washoutMultiplier = 1.0 + ((component.Washout ?? 0) / 100.0);
+                    double effectiveDiameter = component.OD.Value * washoutMultiplier;
+                    volume = (Math.Pow(effectiveDiameter, 2) / FEET_TO_BBL_DIVISOR) * length;
                 }
             }
             else if (component.Component == ComponentType.Casing || component.Component == ComponentType.Liner)
@@ -98,8 +98,9 @@ namespace ProjectReport.Services.Wellbore
                 {
                     if (c.Component == ComponentType.OpenHole)
                     {
-                         double washoutFactor = 1.0 + ((c.Washout ?? 0) / 100.0);
-                         total += (Math.Pow(c.OD.GetValueOrDefault(), 2) / FEET_TO_BBL_DIVISOR) * len * washoutFactor;
+                         double washoutMultiplier = 1.0 + ((c.Washout ?? 0) / 100.0);
+                         double effectiveOD = c.OD.GetValueOrDefault() * washoutMultiplier;
+                         total += (Math.Pow(effectiveOD, 2) / FEET_TO_BBL_DIVISOR) * len;
                     }
                     else
                     {

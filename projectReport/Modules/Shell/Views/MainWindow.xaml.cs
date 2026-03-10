@@ -72,6 +72,7 @@ namespace ProjectReport.Views
             InitializeComponent();
 
             _databaseService = new DatabaseService();
+            _currentWell = new Well();
 
             // Demo project
             CurrentProject = new Project

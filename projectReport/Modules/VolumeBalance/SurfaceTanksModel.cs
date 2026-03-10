@@ -8,7 +8,7 @@ namespace ProjectReport.Modules.VolumeBalance
 {
     public class SurfaceTank : INotifyPropertyChanged
     {
-        private string _name;
+        private string _name = string.Empty;
         public string Name 
         { 
             get => _name; 
@@ -59,8 +59,8 @@ namespace ProjectReport.Modules.VolumeBalance
 
         public double PercentFull => MaxCapacity > 0 ? Math.Round((VolumeBbl / MaxCapacity) * 100, 1) : 0;
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }

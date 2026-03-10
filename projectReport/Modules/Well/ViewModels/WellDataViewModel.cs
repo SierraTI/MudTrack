@@ -99,7 +99,7 @@ namespace ProjectReport.ViewModels
         private List<FluidData> _allFluidData = new List<FluidData>();
         public ObservableCollection<FluidData> FilteredFluids { get; } = new ObservableCollection<FluidData>();
 
-        private string _selectedFluid;
+        private string? _selectedFluid;
         public string SelectedFluid
         {
             get => _selectedFluid;
@@ -114,7 +114,7 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private FluidData _selectedFluidStock;
+        private FluidData? _selectedFluidStock;
         public FluidData SelectedFluidStock
         {
             get => _selectedFluidStock;

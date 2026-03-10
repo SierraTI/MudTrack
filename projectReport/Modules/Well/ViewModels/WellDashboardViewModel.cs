@@ -140,7 +140,7 @@ namespace ProjectReport.ViewModels
                     ReportNumber = 1,
                     IntervalNumber = "1",
                     ReportDateTime = DateTime.Now,
-                    MD = 10,
+                    MD = 100,
                     TVD = 0,
                     Activity = string.Empty,
                     WellSection = string.Empty,

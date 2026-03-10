@@ -228,10 +228,20 @@ namespace ProjectReport.Views
             // Suscribirse al evento para abrir ReportDetails
             vm.OpenReportDetailsRequested += (selectedWell) =>
             {
+                var reportVM = new ProjectReport.Modules.ReportDetail.ViewModels.ReportDViewModel(selectedWell);
+
+                reportVM.OnReportSaved += (s, newReport) =>
+                {
+                    NavigateToWellDashboard(selectedWell.Id);
+                };
+
                 var view = new ReportDetailsView(selectedWell);
+                view.DataContext = reportVM;
+
                 ContentArea.Content = view;
                 ContentTitle.Text = $"Report Detail - {selectedWell.WellName}";
             };
+
 
             ContentTitle.Text = $"Dashboard - {well.WellName}";
             ContentArea.Content = _wellDashboardView;
@@ -527,18 +537,20 @@ namespace ProjectReport.Views
 
         private void ReportDetailButton_Click(object sender, RoutedEventArgs e)
         {
-         
             var reportVM = new ProjectReport.Modules.ReportDetail.ViewModels.ReportDViewModel(_currentWell);
 
             reportVM.OnReportSaved += (s, newReport) =>
             {
                 NavigateToWellDashboard(_currentWell.Id);
             };
-            var view = new ReportDetailsView(_currentWell); 
+
+            var view = new ReportDetailsView(_currentWell);
             view.DataContext = reportVM;
+
             ContentArea.Content = view;
             ContentTitle.Text = $"Report Detail - {_currentWell.WellName}";
         }
+
 
 
 

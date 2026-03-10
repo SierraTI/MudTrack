@@ -199,9 +199,8 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             ToastNotificationService.Instance.ShowSuccess("Report saved");
 
             OnReportSaved?.Invoke(this, Report);
-
-            PrepareNextReport();
         }
+
 
         private void PrepareNextReport()
         {

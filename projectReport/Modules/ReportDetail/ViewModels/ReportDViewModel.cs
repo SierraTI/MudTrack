@@ -20,6 +20,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         private Report? _report;
         private Well _currentWell;
         private WellboreComponent? _wellboreComponent;
+        private bool _isUpdatingSelection = false;
 
         private readonly HydraulicsCalculationService _hydraulicsService = new HydraulicsCalculationService();
 
@@ -36,8 +37,6 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         public ObservableCollection<Report> Reports { get; set; }
 
         public ICommand SaveNewReportCommand { get; }
-
-        // Comandos para seleccionar y remover fluidos
         public ICommand RemoveFluidCommand { get; }
 
         public ObservableCollection<string> HoleSizeOptions { get; } = new ObservableCollection<string>();
@@ -71,8 +70,6 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         }
 
 
-
-        // Para binding de fluidos
         public ObservableCollection<WellFluid> SelectedFluids { get; set; } = new ObservableCollection<WellFluid>();
         public ObservableCollection<string> FluidTypes { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<DisplayFluid> FilteredFluids { get; set; } = new ObservableCollection<DisplayFluid>();
@@ -109,70 +106,76 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             CreateReportFromPrevious();
 
             SaveNewReportCommand = new RelayCommand(SaveNewReport);
-
-            
+            RemoveFluidCommand = new RelayCommand<WellFluid>(RemoveFluid);
         }
+
 
         // Filtrar fluidos según tipo y marcar seleccionados
         private void FilterFluids()
         {
-            FilteredFluids.Clear();
+            _isUpdatingSelection = true;
 
-            if (_currentWell.SelectedFluids == null || string.IsNullOrEmpty(SelectedFluid))
-                return;
-
-            var filtered = _currentWell.SelectedFluids
-                .Where(f => f.Type == SelectedFluid)
-                .OrderBy(f => f.Name);
-
-            foreach (var f in filtered)
+            try
             {
-                var display = new DisplayFluid
+                FilteredFluids.Clear();
+
+                if (_currentWell.SelectedFluids == null || string.IsNullOrEmpty(SelectedFluid))
+                    return;
+
+                var filtered = _currentWell.SelectedFluids
+                    .Where(f => f.Type == SelectedFluid)
+                    .OrderBy(f => f.Name);
+
+                foreach (var f in filtered)
                 {
-                    Fluid = f,
-
-                    // sincroniza SIEMPRE con SelectedFluids
-                    IsChecked = SelectedFluids.Any(sf =>
+                    bool isSelected = SelectedFluids.Any(sf =>
                         sf.Name == f.Name &&
-                        sf.Type == f.Type)
-                };
+                        sf.Type == f.Type);
 
-                display.PropertyChanged += DisplayFluid_PropertyChanged;
+                    var display = new DisplayFluid
+                    {
+                        Fluid = f,
+                        IsChecked = isSelected
+                    };
 
-                FilteredFluids.Add(display);
+                    display.PropertyChanged += DisplayFluid_PropertyChanged;
+
+                    FilteredFluids.Add(display);
+                }
+            }
+            finally
+            {
+                _isUpdatingSelection = false;
             }
         }
 
-
-
-
         private void DisplayFluid_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != nameof(DisplayFluid.IsChecked))
+            if (_isUpdatingSelection || e.PropertyName != nameof(DisplayFluid.IsChecked))
                 return;
 
-            var df = sender as DisplayFluid;
-            if (df == null)
+            var display = sender as DisplayFluid;
+            if (display == null)
                 return;
 
-            if (df.IsChecked)
+            var fluid = display.Fluid;
+
+            if (display.IsChecked)
             {
-                if (!SelectedFluids.Any(sf =>
-                    sf.Name == df.Fluid.Name &&
-                    sf.Type == df.Fluid.Type))
+                if (!SelectedFluids.Any(sf => sf.Name == fluid.Name && sf.Type == fluid.Type))
                 {
                     SelectedFluids.Add(new WellFluid
                     {
-                        Name = df.Fluid.Name,
-                        Type = df.Fluid.Type
+                        Name = fluid.Name,
+                        Type = fluid.Type
                     });
                 }
             }
             else
             {
                 var existing = SelectedFluids.FirstOrDefault(sf =>
-                    sf.Name == df.Fluid.Name &&
-                    sf.Type == df.Fluid.Type);
+                    sf.Name == fluid.Name &&
+                    sf.Type == fluid.Type);
 
                 if (existing != null)
                     SelectedFluids.Remove(existing);
@@ -259,39 +262,43 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             }
 
             Report = newReport;
-
-            // Cargar fluidos del último reporte
             SelectedFluids.Clear();
 
-            if (!string.IsNullOrEmpty(lastReport.PrimaryFluidSet))
+            if (lastReport.ActiveFluids != null && lastReport.ActiveFluids.Any())
             {
-                var fluids = lastReport.PrimaryFluidSet
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var f in fluids)
+                foreach (var fluid in lastReport.ActiveFluids)
                 {
-                    var parts = f.Trim()
-                        .Split('(', ')', StringSplitOptions.RemoveEmptyEntries);
-
-                    if (parts.Length == 2)
+                    SelectedFluids.Add(new WellFluid
                     {
-                        SelectedFluids.Add(new WellFluid
-                        {
-                            Name = parts[0].Trim(),
-                            Type = parts[1].Trim()
-                        });
-                    }
+                        Name = fluid.Name,
+                        Type = fluid.Type
+                    });
                 }
             }
 
-            // Refrescar lista izquierda
-            FilterFluids();
-
-
-
             HookEvents();
+            FilterFluids();
         }
 
+        private void RemoveFluid(WellFluid fluid)
+        {
+            if (fluid == null)
+                return;
+
+            if (SelectedFluids.Contains(fluid))
+                SelectedFluids.Remove(fluid);
+
+            var display = FilteredFluids.FirstOrDefault(f =>
+                f.Fluid.Name == fluid.Name &&
+                f.Fluid.Type == fluid.Type);
+
+            if (display != null)
+            {
+                _isUpdatingSelection = true;
+                display.IsChecked = false;
+                _isUpdatingSelection = false;
+            }
+        }
 
 
         private void HookEvents()
@@ -346,9 +353,25 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             if (!ValidateReport())
                 return;
 
+            if (Report.ActiveFluids == null)
+                Report.ActiveFluids = new ObservableCollection<WellFluid>();
+
+            Report.ActiveFluids.Clear();
+
             if (SelectedFluids != null && SelectedFluids.Any())
             {
-                Report.PrimaryFluidSet = string.Join(", ", SelectedFluids.Select(f => $"{f.Name} ({f.Type})"));
+                foreach (var fluid in SelectedFluids)
+                {
+                    Report.ActiveFluids.Add(new WellFluid
+                    {
+                        Name = fluid.Name,
+                        Type = fluid.Type
+                    });
+                }
+
+                Report.PrimaryFluidSet = string.Join(", ",
+                    Report.ActiveFluids.Select(f => $"{f.Name} ({f.Type})"));
+
                 Report.OtherActiveFluids = string.Empty;
             }
             else
@@ -375,6 +398,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             ToastNotificationService.Instance.ShowSuccess("Report saved");
             OnReportSaved?.Invoke(this, Report);
         }
+
 
         private void PrepareNextReport()
         {

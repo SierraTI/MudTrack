@@ -6,15 +6,16 @@ using ProjectReport.Models.Rig;
 using ProjectReport.Services;
 using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels.Geometry;
-
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.IO;
+using static ProjectReport.Models.Well;
 
 namespace ProjectReport.ViewModels
 {
@@ -26,6 +27,7 @@ namespace ProjectReport.ViewModels
 
         private readonly InventoryService _inventoryService;
         private readonly HydraulicsCalculationService _hydraulicsService;
+        private bool _isUpdatingSelection = false;
 
         public ReportWizardViewModel(Well well, Project project, Report reportToEdit)
         {
@@ -43,18 +45,19 @@ namespace ProjectReport.ViewModels
             _inventoryService = new InventoryService(new JsonInventoryRepository());
             _hydraulicsService = new HydraulicsCalculationService();
 
-            // ⚡ IMPORTANTE: editar el mismo objeto
             Report = reportToEdit;
 
             HookEvents();
-
             LoadHoleSizeList();
+            LoadFluidTypes();
+            LoadExistingFluids();
 
             NextCommand = new RelayCommand(GoNext);
             BackCommand = new RelayCommand(GoBack);
             CancelCommand = new RelayCommand(Cancel);
             SaveDraftCommand = new RelayCommand(SaveDraft);
             FinishCommand = new RelayCommand(Finish);
+            RemoveFluidCommand = new RelayCommand<WellFluid>(RemoveFluid);
 
             UpdateHydraulics();
         }
@@ -87,6 +90,175 @@ namespace ProjectReport.ViewModels
 
         #endregion
 
+        #region FLUIDS (NUEVO)
+
+        public class DisplayFluid : BaseViewModel
+        {
+            public WellFluid Fluid { get; set; }
+
+            private bool _isChecked;
+            public bool IsChecked
+            {
+                get => _isChecked;
+                set => SetProperty(ref _isChecked, value);
+            }
+        }
+
+        public ObservableCollection<WellFluid> SelectedFluids { get; }
+            = new ObservableCollection<WellFluid>();
+
+        public ObservableCollection<string> FluidTypes { get; }
+            = new ObservableCollection<string>();
+
+        public ObservableCollection<DisplayFluid> FilteredFluids { get; }
+            = new ObservableCollection<DisplayFluid>();
+
+        private string _selectedFluid;
+        public string SelectedFluid
+        {
+            get => _selectedFluid;
+            set
+            {
+                if (SetProperty(ref _selectedFluid, value))
+                    FilterFluids();
+            }
+        }
+
+        public ICommand RemoveFluidCommand { get; }
+
+        private void LoadExistingFluids()
+        {
+            SelectedFluids.Clear();
+
+            if (Report.ActiveFluids == null)
+                return;
+
+            foreach (var fluid in Report.ActiveFluids)
+            {
+                SelectedFluids.Add(new WellFluid
+                {
+                    Name = fluid.Name,
+                    Type = fluid.Type
+                });
+            }
+
+            FilterFluids();
+        }
+
+        private void LoadFluidTypes()
+        {
+            if (_well.SelectedFluids == null)
+                return;
+
+            var types = _well.SelectedFluids
+                .Select(f => f.Type)
+                .Distinct()
+                .OrderBy(t => t);
+
+            FluidTypes.Clear();
+
+            foreach (var t in types)
+                FluidTypes.Add(t);
+
+            if (FluidTypes.Any())
+                SelectedFluid = FluidTypes.First();
+        }
+
+        private void FilterFluids()
+        {
+            _isUpdatingSelection = true;
+
+            try
+            {
+                FilteredFluids.Clear();
+
+                if (_well.SelectedFluids == null || string.IsNullOrEmpty(SelectedFluid))
+                    return;
+
+                var filtered = _well.SelectedFluids
+                    .Where(f => f.Type == SelectedFluid)
+                    .OrderBy(f => f.Name);
+
+                foreach (var f in filtered)
+                {
+                    bool isSelected = SelectedFluids.Any(sf =>
+                        sf.Name == f.Name &&
+                        sf.Type == f.Type);
+
+                    var display = new DisplayFluid
+                    {
+                        Fluid = f,
+                        IsChecked = isSelected
+                    };
+
+                    display.PropertyChanged += DisplayFluid_PropertyChanged;
+
+                    FilteredFluids.Add(display);
+                }
+            }
+            finally
+            {
+                _isUpdatingSelection = false;
+            }
+        }
+
+        private void DisplayFluid_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (_isUpdatingSelection || e.PropertyName != nameof(DisplayFluid.IsChecked))
+                return;
+
+            var display = sender as DisplayFluid;
+            if (display == null)
+                return;
+
+            var fluid = display.Fluid;
+
+            if (display.IsChecked)
+            {
+                if (!SelectedFluids.Any(sf =>
+                    sf.Name == fluid.Name &&
+                    sf.Type == fluid.Type))
+                {
+                    SelectedFluids.Add(new WellFluid
+                    {
+                        Name = fluid.Name,
+                        Type = fluid.Type
+                    });
+                }
+            }
+            else
+            {
+                var existing = SelectedFluids.FirstOrDefault(sf =>
+                    sf.Name == fluid.Name &&
+                    sf.Type == fluid.Type);
+
+                if (existing != null)
+                    SelectedFluids.Remove(existing);
+            }
+        }
+
+        private void RemoveFluid(WellFluid fluid)
+        {
+            if (fluid == null)
+                return;
+
+            if (SelectedFluids.Contains(fluid))
+                SelectedFluids.Remove(fluid);
+
+            var display = FilteredFluids.FirstOrDefault(f =>
+                f.Fluid.Name == fluid.Name &&
+                f.Fluid.Type == fluid.Type);
+
+            if (display != null)
+            {
+                _isUpdatingSelection = true;
+                display.IsChecked = false;
+                _isUpdatingSelection = false;
+            }
+        }
+
+        #endregion
+
         #region Commands
 
         public ICommand NextCommand { get; }
@@ -96,6 +268,7 @@ namespace ProjectReport.ViewModels
         public ICommand FinishCommand { get; }
 
         public event Action? RequestClose;
+
 
         #endregion
 
@@ -225,26 +398,37 @@ namespace ProjectReport.ViewModels
 
                 DeductScreensFromInventory();
 
+                // NUEVO: guardar fluidos
+                if (Report.ActiveFluids == null)
+                    Report.ActiveFluids = new ObservableCollection<WellFluid>();
+
+                Report.ActiveFluids.Clear();
+
+                foreach (var fluid in SelectedFluids)
+                {
+                    Report.ActiveFluids.Add(new WellFluid
+                    {
+                        Name = fluid.Name,
+                        Type = fluid.Type
+                    });
+                }
+
+                Report.PrimaryFluidSet = string.Join(", ",
+                    Report.ActiveFluids.Select(f => $"{f.Name} ({f.Type})"));
+
                 await SaveReportAsync();
 
-                // Mostrar mensaje de éxito
                 ToastNotificationService.Instance.ShowSuccess("Report saved successfully.");
 
-                // Por ahora no navegamos a Geometry
-                // NavigationService.Instance.NavigateToGeometry(_well);
-
-                // Cerrar modal/ventana
                 RequestClose?.Invoke();
             }
             catch (Exception ex)
             {
-                // Si hay un error al guardar, mostramos mensaje de error
                 ToastNotificationService.Instance.ShowError(
                     $"Error saving report: {ex.Message}"
                 );
             }
         }
-
 
 
         #endregion
@@ -321,7 +505,6 @@ namespace ProjectReport.ViewModels
 
         private async Task SaveReportAsync()
         {
-            // ⚡ SOLO guarda el proyecto
             await DataPersistenceService.SaveProjectAsync(
                 _projectFilePath,
                 _project

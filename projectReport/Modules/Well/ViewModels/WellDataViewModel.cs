@@ -28,10 +28,7 @@ namespace ProjectReport.ViewModels
             _currentWell = new Well();
             _projectFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
 
-            // Cargar fluidos desde Excel
             LoadFluidsFromExcel();
-
-            // Inicializa dropdown options
             InitializeDropdownOptions();
 
             // Inicializa comandos
@@ -188,7 +185,6 @@ namespace ProjectReport.ViewModels
             if (string.IsNullOrEmpty(SelectedFluid))
                 return;
 
-            // Buscar todos los fluidos del tipo seleccionado en _allFluidData
             var filtered = _allFluidData
                 .Where(f => string.Equals(f.Type?.Trim(), SelectedFluid?.Trim(), StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -280,10 +276,6 @@ namespace ProjectReport.ViewModels
                 }
             }
         }
-
-
-
-
 
 
         public ObservableCollection<string> TrajectoryTypes { get; } = new ObservableCollection<string>
@@ -450,9 +442,6 @@ namespace ProjectReport.ViewModels
 
         #endregion
 
-
-
-
         #region Command Implementations
 
         private async Task SaveAndOpenDashboardAsync()
@@ -564,7 +553,6 @@ namespace ProjectReport.ViewModels
 
 
 
-
         #endregion
 
         #region Auto-Save
@@ -649,7 +637,7 @@ namespace ProjectReport.ViewModels
                 }
             }
 
-            // 🔹 Asegurar que todos los fluidos en CurrentWell.SelectedFluids que no existan en _allFluidData se agreguen
+            // Asegurar que todos los fluidos en CurrentWell.SelectedFluids que no existan en _allFluidData se agreguen
             foreach (var wellFluid in CurrentWell.SelectedFluids)
             {
                 if (!_allFluidData.Any(f => f.Name == wellFluid.Name))

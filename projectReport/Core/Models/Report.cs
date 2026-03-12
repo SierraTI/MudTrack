@@ -1,6 +1,7 @@
+using ProjectReport.Models.Rig;
 using System;
 using System.Collections.ObjectModel;
-using ProjectReport.Models.Rig;
+using static ProjectReport.Models.Well;
 
 namespace ProjectReport.Models
 {
@@ -142,6 +143,8 @@ namespace ProjectReport.Models
         public ObservableCollection<string> ContractorReps { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<string> BaroidReps { get; set; } = new ObservableCollection<string>();
 
+        public ObservableCollection<WellFluid> ActiveFluids { get; set; }
+    = new ObservableCollection<WellFluid>();
 
 
         private double _totalGpm;

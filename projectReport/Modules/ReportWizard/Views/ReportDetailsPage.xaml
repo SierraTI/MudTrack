@@ -9,6 +9,7 @@
              Background="#F7F8FA">
 
     <UserControl.Resources>
+        <SolidColorBrush x:Key="SoftBorderBrush" Color="#FFB0B0B0"/>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <converters:NumberFormattingConverter x:Key="NumberFormatConverter" />
 
@@ -398,20 +399,116 @@ Margin="0,5,0,0"/>
 
                         <!-- Row 6 -->
                         <StackPanel Grid.Row="4" Margin="0,0,0,14">
-                            <TextBlock Text="Fluid" Style="{StaticResource FieldLabel}"/>
-                            <Grid>
+
+                            <Grid Margin="12"
+      xmlns:i="http://schemas.microsoft.com/xaml/behaviors">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" Text="{Binding Report.PrimaryFluidSet}" Margin="0,6,0,0"/>
-                                <Button Grid.Column="1"
-                                        Content="⚙ Manage"
-                                        Style="{StaticResource LinkButton}"
-                                        Margin="10,6,0,0"
-                                        VerticalAlignment="Center"
-                                        Visibility="{Binding IsLoadFluidUndefined, Converter={StaticResource BoolToVis}}"/>
+
+                                <!-- Columna 1: ComboBox + lista de fluidos -->
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Primary Fluid Set"
+                   Style="{StaticResource FieldLabel}"
+                   Margin="0,0,0,6"/>
+
+                                    <!-- ComboBox de tipos de fluido -->
+                                    <ComboBox ItemsSource="{Binding FluidTypes}" 
+                  SelectedItem="{Binding SelectedFluid, Mode=TwoWay}"
+                  Height="34"
+                  Padding="4,2"
+                  BorderBrush="{StaticResource SoftBorderBrush}"
+                  BorderThickness="1"
+                  Background="White"
+                  Foreground="Black"
+                  IsEditable="False"
+                  Margin="0,0,0,6"/>
+
+                                    <!-- Lista de fluidos filtrados -->
+                                    <ListBox ItemsSource="{Binding FilteredFluids}" Height="120"
+         BorderBrush="{StaticResource SoftBorderBrush}"
+         BorderThickness="1" Background="White">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" Margin="6,2" VerticalAlignment="Center">
+                                                    <CheckBox.Content>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Fluid.Name}" FontWeight="SemiBold"/>
+                                                            <TextBlock Text=" (" Foreground="Gray"/>
+                                                            <TextBlock Text="{Binding Fluid.Type}" Foreground="Gray"/>
+                                                            <TextBlock Text=")" Foreground="Gray"/>
+                                                        </StackPanel>
+                                                    </CheckBox.Content>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+
+
+                                </StackPanel>
+
+                                <!-- Columna 2: Selected Fluids -->
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <TextBlock Text="Selected Fluids"
+                   Style="{StaticResource FieldLabel}"
+                   Margin="0,0,0,6"/>
+
+                                    <ListBox ItemsSource="{Binding SelectedFluids}"
+                 Height="160"
+                 BorderBrush="{StaticResource SoftBorderBrush}"
+                 BorderThickness="1"
+                 Background="White">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="4">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <!-- Nombre + Tipo -->
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text=" (" Foreground="Gray"/>
+                                                        <TextBlock Text="{Binding Type}" Foreground="Gray"/>
+                                                        <TextBlock Text=")" Foreground="Gray"/>
+                                                    </StackPanel>
+
+                                                    <!-- Botón eliminar -->
+                                                    <Button Grid.Column="1"
+                                Content="✕"
+                                Width="26"
+                                Height="26"
+                                Margin="8,0,0,0"
+                                FontWeight="Bold"
+                                Background="#FFECEC"
+                                Foreground="#CC3333"
+                                BorderBrush="#FFD0D0"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                Command="{Binding DataContext.RemoveFluidCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                CommandParameter="{Binding}">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button">
+                                                                <Setter Property="Background" Value="#FFECEC"/>
+                                                                <Setter Property="Foreground" Value="#CC3333"/>
+                                                                <Setter Property="BorderBrush" Value="#FFD0D0"/>
+                                                                <Style.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter Property="Background" Value="#FFDCDC"/>
+                                                                    </Trigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
                             </Grid>
+
                         </StackPanel>
 
 

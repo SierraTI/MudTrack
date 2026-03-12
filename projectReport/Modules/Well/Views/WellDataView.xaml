@@ -326,49 +326,148 @@
                                 </Grid>
                             </Border>
 
+
                             <!-- Fluid Type -->
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,14">
+
                                 <TextBlock Style="{StaticResource LabelStyle}">
         <Run Text="Fluid Type"/>
         <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
 
                                 <ComboBox 
-    ItemsSource="{Binding LoadFluid}"
-    SelectedItem="{Binding SelectedFluid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-    Style="{StaticResource InputComboBoxStyle}"
-/>
+        ItemsSource="{Binding LoadFluid}"
+        SelectedItem="{Binding SelectedFluid, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+        Style="{StaticResource InputComboBoxStyle}"/>
 
                             </StackPanel>
 
+
                             <!-- Fluid Stock -->
                             <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,14">
+
                                 <TextBlock Style="{StaticResource LabelStyle}">
         <Run Text="Fluid Stock"/>
         <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
 
-                                <ComboBox 
-    ItemsSource="{Binding FilteredFluids}"
-    SelectedItem="{Binding SelectedFluidStock, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-    DisplayMemberPath="Name"
-    Style="{StaticResource InputComboBoxStyle}"
-/>
+                                <ListBox
+        ItemsSource="{Binding FilteredFluids}"
+        Height="140"
+        BorderBrush="{StaticResource SoftBorderBrush}"
+        BorderThickness="1">
 
-                               
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+
+                                            <CheckBox
+                    IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    Margin="4,2">
+
+                                                <TextBlock>
+                        <Run Text="{Binding Name}"/>
+                        <Run Text="  (" Foreground="Gray"/>
+                        <Run Text="{Binding Type}" Foreground="Gray"/>
+                        <Run Text=")" Foreground="Gray"/>
+                                                </TextBlock>
+
+                                            </CheckBox>
+
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+
+                                </ListBox>
+
                             </StackPanel>
-
 
 
                             <!-- Spud Date -->
                             <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,0,14">
+
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Spud Date"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+        <Run Text="Spud Date"/>
+        <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <DatePicker SelectedDate="{Binding CurrentWell.SpudDate, UpdateSourceTrigger=PropertyChanged}"
-                                                Height="34"/>
+
+                                <DatePicker 
+        SelectedDate="{Binding CurrentWell.SpudDate, UpdateSourceTrigger=PropertyChanged}"
+        Height="34"/>
+
                             </StackPanel>
-                            
+
+
+                            <!-- Selected Fluids -->
+                            <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,14">
+
+                                <TextBlock Style="{StaticResource LabelStyle}">
+        <Run Text="Selected Fluids"/>
+                                </TextBlock>
+
+                                <ListBox
+        ItemsSource="{Binding SelectedFluids}"
+        Height="140"
+        BorderBrush="{StaticResource SoftBorderBrush}"
+        BorderThickness="1">
+
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+
+                                            <Grid Margin="4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Nombre + Tipo -->
+                                                <TextBlock VerticalAlignment="Center">
+                        <Run Text="{Binding Name}"/>
+                        <Run Text="  (" Foreground="Gray"/>
+                        <Run Text="{Binding Type}" Foreground="Gray"/>
+                        <Run Text=")" Foreground="Gray"/>
+                                                </TextBlock>
+
+                                                <!-- Botón eliminar -->
+                                                <Button
+                                Grid.Column="1"
+                                Content="✕"
+                                Width="24"
+                                Height="24"
+                                Margin="8,0,0,0"
+                                FontWeight="Bold"
+                                Background="#FFECEC"
+                                Foreground="#CC3333"
+                                BorderBrush="#FFD0D0"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                Command="{Binding DataContext.RemoveFluidCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                CommandParameter="{Binding}">
+
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="#FFECEC"/>
+                                                            <Style.Triggers>
+
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#FFDCDC"/>
+                                                                </Trigger>
+
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+
+                                                </Button>
+
+                                            </Grid>
+
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+
+                                </ListBox>
+
+                            </StackPanel>
+
+
+
                         </Grid>
                     </Expander>
                 </Border>

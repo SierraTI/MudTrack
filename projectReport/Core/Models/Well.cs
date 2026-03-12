@@ -441,6 +441,16 @@ namespace ProjectReport.Models
         
         public RigProfile RigProfile { get; set; } = new RigProfile();
 
+        public ObservableCollection<WellFluid> SelectedFluids { get; set; } = new ObservableCollection<WellFluid>();
+
+        public class WellFluid
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty;
+        }
+
+
+
         #endregion
 
         /// <summary>

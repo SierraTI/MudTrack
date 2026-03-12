@@ -256,7 +256,7 @@ namespace ProjectReport.ViewModels.Inventory
         }
 
         /// <summary>
-        /// Transfers/loads a fluid to the Primary Fluid Set in the Daily Report
+        /// Transfers/loads a fluid to the Fluid set in the Daily Report
         /// </summary>
         private void TransferFluid(WholeFluidItem? fluidItem)
         {
@@ -272,7 +272,7 @@ namespace ProjectReport.ViewModels.Inventory
                 FluidTransferred?.Invoke(fluidItem);
                 
                 // Optionally show success message
-                Error = $"Fluid '{fluidItem.ProductName}' transferred to Primary Fluid Set";
+                Error = $"Fluid '{fluidItem.ProductName}' transferred to Fluid";
             }
             catch (Exception ex)
             {

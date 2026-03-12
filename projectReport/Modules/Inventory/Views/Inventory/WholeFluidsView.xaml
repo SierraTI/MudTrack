@@ -138,7 +138,7 @@
                                         <Button Content="TRANSFER" Width="70" Margin="4,0" 
                                                Command="{Binding DataContext.TransferFluidCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                CommandParameter="{Binding}"
-                                               ToolTip="Load fluid to Primary Fluid Set"/>
+                                               ToolTip="Load fluid to Fluid"/>
                                         <Button Content="EDIT" Width="60" Margin="4,0" Click="RowEdit_Click" Tag="{Binding}"/>
                                         <Button Content="DELETE" Width="60" Margin="4,0" Click="RowDelete_Click" Tag="{Binding}"/>
                                     </StackPanel>

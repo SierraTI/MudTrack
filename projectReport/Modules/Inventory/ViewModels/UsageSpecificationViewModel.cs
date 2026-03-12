@@ -141,7 +141,7 @@ namespace ProjectReport.ViewModels.Inventory
 
             if (Fluidptions.Count == 0)
             {
-                Fluidptions.Add("Primary Fluid Set");
+                Fluidptions.Add("Fluid");
             }
         }
 

@@ -92,8 +92,9 @@ namespace ProjectReport.ViewModels.Inventory
             TicketLines.Clear();
 
             var movements = _service.GetMovements();
+            var filteredMovements = movements.Where(m => m.Type != TicketType.Consumed).ToList();
 
-            var grouped = movements
+            var grouped = filteredMovements
                 .Where(m => !string.IsNullOrWhiteSpace(m.TicketId))
                 .GroupBy(m => m.TicketId)
                 .Select(g =>

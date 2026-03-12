@@ -504,7 +504,7 @@
 
                                     <StackPanel>
 
-                                        <TextBlock Text="Primary Fluid Set"
+                                        <TextBlock Text="Fluid"
                                                Style="{StaticResource FieldLabel}"/>
 
                                         <TextBox Margin="0,6,0,0"

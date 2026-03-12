@@ -55,13 +55,19 @@ namespace ProjectReport.ViewModels.Inventory
         {
             BalanceItems.Clear();
 
-            var selectedProducts = _service.GetSelectedProducts();
+            var allProducts = _service.GetProducts();
             var movements = _service.GetMovements();
             
             // Assume report date is today for this view instance
             var reportDate = DateTime.Today;
 
-            foreach (var product in selectedProducts)
+            // Products to show: those explicitly selected OR those with movements today
+            var productsToShow = allProducts.Where(p => 
+                p.IsSelectedForReport || 
+                movements.Any(m => string.Equals(m.ProductCode, p.Code, StringComparison.OrdinalIgnoreCase) && m.Date.Date == reportDate)
+            ).ToList();
+
+            foreach (var product in productsToShow)
             {
                 var prodMovements = movements.Where(m => string.Equals(m.ProductCode, product.Code, StringComparison.OrdinalIgnoreCase)).ToList();
                 

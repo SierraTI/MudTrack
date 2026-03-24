@@ -41,7 +41,9 @@ namespace ProjectReport.Models
         private string _basin= string.Empty;
         private string _state = string.Empty;
         private string _field = string.Empty;
-        
+        private double? _latitude;
+        private double? _longitude;
+
 
         // Operational Information
         private double? _totalMD;
@@ -137,7 +139,25 @@ namespace ProjectReport.Models
             }
         }
 
-       
+        public double? Latitude
+        {
+            get => _latitude;
+            set
+            {
+                if (SetProperty(ref _latitude, value))
+                    UpdateLastModified();
+            }
+        }
+
+        public double? Longitude
+        {
+            get => _longitude;
+            set
+            {
+                if (SetProperty(ref _longitude, value))
+                    UpdateLastModified();
+            }
+        }
         #endregion
 
         #region Design & Classification Properties

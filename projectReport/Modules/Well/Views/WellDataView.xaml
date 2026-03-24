@@ -598,64 +598,130 @@
                         </Expander.Header>
 
                         <Grid Margin="0,12,0,0">
+
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="20"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
+
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
+
+                            <!-- Row 0 -->
+
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Location"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+            <Run Text="Location"/>
+            <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <ComboBox ItemsSource="{Binding LocationTypes}"
-                                              SelectedItem="{Binding CurrentWell.Location, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource InputComboBoxStyle}"/>
+
+                                <ComboBox
+            ItemsSource="{Binding LocationTypes}"
+            SelectedItem="{Binding CurrentWell.Location, UpdateSourceTrigger=PropertyChanged}"
+            Style="{StaticResource InputComboBoxStyle}"/>
                             </StackPanel>
+
 
                             <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Country"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+            <Run Text="Country"/>
+            <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <ComboBox ItemsSource="{Binding Countries}"
-                                              SelectedItem="{Binding CurrentWell.Country, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource InputComboBoxStyle}"
-                                              IsEditable="False"/>
+
+                                <ComboBox
+            ItemsSource="{Binding Countries}"
+            SelectedItem="{Binding CurrentWell.Country, UpdateSourceTrigger=PropertyChanged}"
+            Style="{StaticResource InputComboBoxStyle}"
+            IsEditable="False"/>
                             </StackPanel>
+
+
+                            <!-- Row 1 -->
 
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Basin"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+            <Run Text="Basin"/>
+            <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <ComboBox ItemsSource="{Binding Basins}"
-                                              SelectedItem="{Binding CurrentWell.Basin, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource InputComboBoxStyle}"
-                                              IsEditable="False"/>
+
+                                <ComboBox
+            ItemsSource="{Binding Basins}"
+            SelectedItem="{Binding CurrentWell.Basin, UpdateSourceTrigger=PropertyChanged}"
+            Style="{StaticResource InputComboBoxStyle}"
+            IsEditable="False"/>
                             </StackPanel>
+
 
                             <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="State/Province"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+            <Run Text="State/Province"/>
+            <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <ComboBox ItemsSource="{Binding ColombianStates}"
-                                              SelectedItem="{Binding CurrentWell.State, UpdateSourceTrigger=PropertyChanged}"
-                                              Style="{StaticResource InputComboBoxStyle}"
-                                              IsEditable="False"/>
+
+                                <ComboBox
+            ItemsSource="{Binding ColombianStates}"
+            SelectedItem="{Binding CurrentWell.State, UpdateSourceTrigger=PropertyChanged}"
+            Style="{StaticResource InputComboBoxStyle}"
+            IsEditable="False"/>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="2">
+
+                            <!-- Row 2 -->
+
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,14">
                                 <TextBlock Style="{StaticResource LabelStyle}">
-                                        <Run Text="Block"/><Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+            <Run Text="Block"/>
+            <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
                                 </TextBlock>
-                                <TextBox Text="{Binding CurrentWell.Field, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource InputTextBoxStyle}"/>
+
+                                <TextBox
+            Text="{Binding CurrentWell.Field, UpdateSourceTrigger=PropertyChanged}"
+            Style="{StaticResource InputTextBoxStyle}"/>
                             </StackPanel>
+
+
+                            <!-- Row 3 (COORDINATES) -->
+
+                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+        <Run Text="Latitude"/>
+        <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+
+                                <TextBox
+        Text="{Binding CurrentWell.Latitude,
+               UpdateSourceTrigger=LostFocus,
+               ValidatesOnExceptions=True,
+               NotifyOnValidationError=True}"
+        Style="{StaticResource InputTextBoxStyle}"
+        ToolTip="Example: 4.60971"/>
+                            </StackPanel>
+
+
+                            <StackPanel Grid.Row="3" Grid.Column="2" Margin="0,0,0,14">
+                                <TextBlock Style="{StaticResource LabelStyle}">
+        <Run Text="Longitude"/>
+        <Run Text=" *" Foreground="{StaticResource DangerBrush}"/>
+                                </TextBlock>
+
+                                <TextBox
+        Text="{Binding CurrentWell.Longitude,
+               UpdateSourceTrigger=LostFocus,
+               ValidatesOnExceptions=True,
+               NotifyOnValidationError=True}"
+        Style="{StaticResource InputTextBoxStyle}"
+        ToolTip="Example: -74.08175"/>
+                            </StackPanel>
+
+
                         </Grid>
+
                     </Expander>
                 </Border>
             </StackPanel>

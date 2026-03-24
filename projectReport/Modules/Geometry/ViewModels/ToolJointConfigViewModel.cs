@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using ProjectReport.Models.Geometry.DrillString;
+using ProjectReport.Models.Geometry.Wellbore;
 using ProjectReport.ViewModels;
 
 namespace ProjectReport.ViewModels.Geometry.Config
@@ -15,6 +16,8 @@ namespace ProjectReport.ViewModels.Geometry.Config
         private double? _tjLength;
         private double? _weight;
         private double? _tjIDLength;
+
+        private readonly WellboreComponent? _currentWellboreComponent; // 👈 NUEVO
 
         public double? TJ_OD
         {
@@ -166,9 +169,6 @@ namespace ProjectReport.ViewModels.Geometry.Config
             }
         }
 
-        /// <summary>
-        /// Drill pipe grade (API standard)
-        /// </summary>
         public string Grade
         {
             get => Model.Grade;
@@ -182,11 +182,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
             }
         }
 
-        /// <summary>
-        /// Available API standard grades for dropdown
-        /// </summary>
         public System.Collections.Generic.List<string> AvailableGrades => ToolJointConfig.StandardGrades;
-
 
         private ComponentType _componentType;
         public ComponentType ComponentType
@@ -208,10 +204,16 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public event Action<bool>? RequestClose;
 
-        public ToolJointConfigViewModel(ToolJointConfig model, ComponentType componentType = ComponentType.DrillPipe)
+        public ToolJointConfigViewModel(
+            ToolJointConfig model,
+            ComponentType componentType = ComponentType.DrillPipe,
+            WellboreComponent? currentWellboreComponent = null // 👈 NUEVO
+        )
         {
             Model = model ?? throw new ArgumentNullException(nameof(model));
             _componentType = componentType;
+            _currentWellboreComponent = currentWellboreComponent;
+
             _tjOD = model.TJ_OD;
             _tjID = model.TJ_ID;
             _tjLength = model.TJ_Length;
@@ -226,18 +228,47 @@ namespace ProjectReport.ViewModels.Geometry.Config
             OnPropertyChanged(nameof(Weight_String));
             OnPropertyChanged(nameof(TJ_ID_Length_String));
             OnPropertyChanged(nameof(Grade));
-            OnPropertyChanged(nameof(Grade));
             OnPropertyChanged(nameof(AvailableGrades));
 
+            // 🔥 VALIDACIÓN COMPLETA
             SaveCommand = new RelayCommand(_ =>
             {
+                // 🔴 Regla básica
                 if (Model.TJ_ID.HasValue && Model.TJ_OD.HasValue && Model.TJ_ID >= Model.TJ_OD)
                 {
-                    MessageBox.Show("Tool Joint ID must be less than Tool Joint OD", "Validation Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(
+                        "Tool Joint ID must be less than Tool Joint OD",
+                        "Validation Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                     return;
                 }
 
+                // 🔵 Validación contra Wellbore
+                if (_currentWellboreComponent != null)
+                {
+                    if (Model.TJ_OD.HasValue && Model.TJ_OD > _currentWellboreComponent.OD)
+                    {
+                        MessageBox.Show(
+                            $"Tool Joint OD ({Model.TJ_OD}) cannot exceed Wellbore OD ({_currentWellboreComponent.OD})",
+                            "Validation Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        return;
+                    }
+
+                    if (Model.TJ_ID.HasValue && Model.TJ_ID > _currentWellboreComponent.ID)
+                    {
+                        MessageBox.Show(
+                            $"Tool Joint ID ({Model.TJ_ID}) cannot exceed Wellbore ID ({_currentWellboreComponent.ID})",
+                            "Validation Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        return;
+                    }
+                }
+
+                // ✅ TODO OK
                 RequestClose?.Invoke(true);
             });
 
@@ -245,4 +276,3 @@ namespace ProjectReport.ViewModels.Geometry.Config
         }
     }
 }
-

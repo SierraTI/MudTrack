@@ -5,9 +5,12 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using ProjectReport.Models;
 using ProjectReport.Models.Rig;
+using ProjectReport.Models.Geometry.DrillString;
+using ProjectReport.Models.Geometry.Wellbore;
 using ProjectReport.Services;
 
 namespace ProjectReport.Modules.VolumeBalance.ViewModels
@@ -79,6 +82,11 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
     {
         private const string ClassificationActive = "Active";
 
+        // Latest geometry values cached for stamping into new events
+        private double _latestStringVol;
+        private double _latestAnnulusVol;
+        private double _latestDepthFt;
+
         #region Wellbore Section (auto-populated from Geometry)
 
         private double _holeCapacity;
@@ -123,6 +131,20 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             set { if (SetField(ref _annulusActual, value)) RefreshSummary(); }
         }
 
+        // Granular Hole Volumes (from organized spec)
+        public double HoleRiserTheoretical => WellContextService.Instance.CurrentWell?.WellboreComponents
+            .Where(c => c.Component == ComponentType.Riser).Sum(c => c.Volume) ?? 0;
+
+        public double HoleCasingTheoretical => WellContextService.Instance.CurrentWell?.WellboreComponents
+            .Where(c => c.Component == ComponentType.Casing || c.Component == ComponentType.Liner).Sum(c => c.Volume) ?? 0;
+
+        public double HoleOpenHoleTheoretical => WellContextService.Instance.CurrentWell?.WellboreComponents
+            .Where(c => c.Component == ComponentType.OpenHole).Sum(c => c.Volume) ?? 0;
+
+        public double HoleAnnularTheoretical => AnnulusTheoretical;
+
+        public double TotalHoleTheoretical => HoleRiserTheoretical + HoleCasingTheoretical + HoleOpenHoleTheoretical + HoleAnnularTheoretical;
+
         public double TheoreticalWellbore => Math.Max(0, HoleCapacity - StringDisplacement);
         public double TotalWellTheoretical => StringTheoretical + AnnulusTheoretical;
         public double TotalWellActual => StringActual + AnnulusActual;
@@ -134,61 +156,83 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
         public ObservableCollection<SurfaceTank> SurfaceTanks { get; } = new();
 
-        public double TotalSurfaceVolume => SurfaceTanks.Sum(t => t.VolumeBbl);
-        public double TotalActiveSurfaceVolume => SurfaceTanks.Where(IsActiveTank).Sum(t => t.VolumeBbl);
         public double TotalSurfaceMaxCapacity => SurfaceTanks.Sum(t => t.MaxCapacity);
+
+        public double TotalActiveSurfaceVolume => SurfaceTanks.Where(t => string.Equals(t.Classification, "Active", StringComparison.OrdinalIgnoreCase)).Sum(t => t.VolumeBbl);
+        public double TotalReserveSurfaceVolume => SurfaceTanks.Where(t => string.Equals(t.Classification, "Reserve", StringComparison.OrdinalIgnoreCase)).Sum(t => t.VolumeBbl);
+        public double TotalOtherSurfaceVolume => SurfaceTanks.Where(t => string.Equals(t.Classification, "Other", StringComparison.OrdinalIgnoreCase)).Sum(t => t.VolumeBbl);
+
+        public double TotalSurfaceVolume => SurfaceTanks.Sum(t => t.VolumeBbl);
+
+        public double TotalFluidOnLocation => TotalHoleTheoretical + TotalSurfaceVolume;
 
         public void SyncFromRigProfile(IList<RigPit> activePits)
         {
             var existing = new Dictionary<string, SurfaceTank>(StringComparer.OrdinalIgnoreCase);
-            var existingNameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var tank in SurfaceTanks)
             {
                 tank.PropertyChanged -= OnSurfaceTankPropertyChanged;
-
-                var displayName = string.IsNullOrWhiteSpace(tank.Name) ? "Unnamed Pit" : tank.Name.Trim();
-                var ordinal = existingNameCounts.TryGetValue(displayName, out var current) ? current + 1 : 1;
-                existingNameCounts[displayName] = ordinal;
-                existing[$"{displayName}#{ordinal}"] = tank;
+                existing[tank.Name.Trim()] = tank;
             }
 
             SurfaceTanks.Clear();
 
-            var incomingNameCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            var position = 0;
-            foreach (var pit in activePits)
+            // Always enforce the 10 standard Listas tanks
+            var standardTanks = new List<SurfaceTank>();
+            for (int i = 1; i <= 5; i++) standardTanks.Add(new SurfaceTank { Name = $"Tank {i}", Classification = "Active", MaxCapacity = 500 });
+            for (int i = 6; i <= 8; i++) standardTanks.Add(new SurfaceTank { Name = $"Tank {i}", Classification = "Reserve", MaxCapacity = 500 });
+            for (int i = 9; i <= 10; i++) standardTanks.Add(new SurfaceTank { Name = $"Tank {i}", Classification = "Other", MaxCapacity = 500 });
+
+            // If activePits has data, we can optionally map it to standardTanks by index.
+            // But main requirement is the 10 Listas tanks are always present.
+            for (int i = 0; i < standardTanks.Count; i++)
             {
-                position++;
-                var displayName = string.IsNullOrWhiteSpace(pit.PitName)
-                    ? $"Pit {((pit.No > 0) ? pit.No : position)}"
-                    : pit.PitName.Trim();
-
-                var ordinal = incomingNameCounts.TryGetValue(displayName, out var current) ? current + 1 : 1;
-                incomingNameCounts[displayName] = ordinal;
-                var lookupKey = $"{displayName}#{ordinal}";
-
-                var tank = new SurfaceTank
-                {
-                    Name = displayName,
-                    MaxCapacity = pit.MaxCapacity
-                };
-
-                if (existing.TryGetValue(lookupKey, out var oldTank))
+                var tank = standardTanks[i];
+                if (existing.TryGetValue(tank.Name, out var oldTank))
                 {
                     tank.VolumeBbl = oldTank.VolumeBbl;
-                    tank.Classification = oldTank.Classification;
+                    tank.Classification = oldTank.Classification; // allow user to override classification
                     tank.FluidType = oldTank.FluidType;
                     tank.Density = oldTank.Density;
                     tank.YesterdayVol = oldTank.YesterdayVol;
+                    tank.MaxCapacity = oldTank.MaxCapacity;
                 }
-                else
+                else if (activePits != null && i < activePits.Count)
                 {
-                    tank.VolumeBbl = pit.CurrentVolume;
+                    // Map rig profile pit limits if it's new
+                    tank.MaxCapacity = activePits[i].MaxCapacity > 0 ? activePits[i].MaxCapacity : 500;
+                    tank.VolumeBbl = activePits[i].CurrentVolume;
                 }
 
                 tank.PropertyChanged += OnSurfaceTankPropertyChanged;
                 SurfaceTanks.Add(tank);
+            }
+
+            // Also add any extra pits from Rig Profile beyond the 10 if necessary
+            if (activePits != null && activePits.Count > 10)
+            {
+                for (int i = 10; i < activePits.Count; i++)
+                {
+                    var pit = activePits[i];
+                    var displayName = string.IsNullOrWhiteSpace(pit.PitName) ? $"Pit {i+1}" : pit.PitName.Trim();
+                    
+                    var tank = new SurfaceTank { Name = displayName, Classification = "Other", MaxCapacity = pit.MaxCapacity };
+                    if (existing.TryGetValue(displayName, out var oldExtra))
+                    {
+                        tank.VolumeBbl = oldExtra.VolumeBbl;
+                        tank.Classification = oldExtra.Classification;
+                        tank.FluidType = oldExtra.FluidType;
+                        tank.Density = oldExtra.Density;
+                        tank.YesterdayVol = oldExtra.YesterdayVol;
+                    }
+                    else
+                    {
+                        tank.VolumeBbl = pit.CurrentVolume;
+                    }
+                    tank.PropertyChanged += OnSurfaceTankPropertyChanged;
+                    SurfaceTanks.Add(tank);
+                }
             }
 
             RefreshSummary();
@@ -421,7 +465,25 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             OnPropertyChanged(nameof(VarianceStatus));
             OnPropertyChanged(nameof(VarianceColor));
             OnPropertyChanged(nameof(VarianceTrend));
+
+            // Refinement Summary
+            OnPropertyChanged(nameof(HoleRiserTheoretical));
+            OnPropertyChanged(nameof(HoleCasingTheoretical));
+            OnPropertyChanged(nameof(HoleOpenHoleTheoretical));
+            OnPropertyChanged(nameof(HoleAnnularTheoretical));
+            OnPropertyChanged(nameof(TotalHoleTheoretical));
+            OnPropertyChanged(nameof(TotalActiveSurfaceVolume));
+            OnPropertyChanged(nameof(TotalReserveSurfaceVolume));
+            OnPropertyChanged(nameof(TotalOtherSurfaceVolume));
+            OnPropertyChanged(nameof(TotalFluidOnLocation));
+
+            // Logic Gates for UI
+            OnPropertyChanged(nameof(VolumeBalanceGateStatus));
+            OnPropertyChanged(nameof(ChemicalBalanceGateStatus));
         }
+
+        public string VolumeBalanceGateStatus => SelectedEvent?.VolumeBalanceGateText ?? "NO DATA";
+        public string ChemicalBalanceGateStatus => SelectedEvent?.ChemicalBalanceGateText ?? "NO DATA";
 
         #endregion
 
@@ -474,6 +536,9 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
                 RefreshSummary();
             };
+
+            // Pre-load the 10 tanks on initialization
+            SyncFromRigProfile(new List<RigPit>());
         }
 
         public void Detach()
@@ -523,6 +588,10 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             StringDisplacement = Math.Round(e.StringDisplacement, 2);
             StringTheoretical = Math.Round(e.StringInternalVolume, 2);
             AnnulusTheoretical = Math.Round(e.AnnularVolume, 2);
+
+            // Cache for stamping into new events
+            _latestStringVol  = Math.Round(e.StringInternalVolume, 2);
+            _latestAnnulusVol = Math.Round(e.AnnularVolume, 2);
 
             LastSyncedAt = DateTime.Now.ToString("HH:mm:ss");
             IsGeometrySynced = true;
@@ -590,6 +659,230 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             OnPropertyChanged(propertyName!);
             return true;
         }
+
+        #endregion
+
+        // ════════════════════════════════════════════════════════
+        #region Event Ledger
+        // ════════════════════════════════════════════════════════
+
+        public ObservableCollection<VolumeBalanceEvent> Events { get; } = new();
+
+        private VolumeBalanceEvent? _selectedEvent;
+        public VolumeBalanceEvent? SelectedEvent
+        {
+            get => _selectedEvent;
+            set { if (SetField(ref _selectedEvent, value)) OnPropertyChanged(nameof(HasSelectedEvent)); }
+        }
+
+        public bool HasSelectedEvent => SelectedEvent != null;
+
+        private bool _isEventPanelOpen;
+        public bool IsEventPanelOpen
+        {
+            get => _isEventPanelOpen;
+            set { SetField(ref _isEventPanelOpen, value); }
+        }
+
+        private VolumeBalanceEvent? _draftEvent;
+        public VolumeBalanceEvent? DraftEvent
+        {
+            get => _draftEvent;
+            private set { SetField(ref _draftEvent, value); }
+        }
+
+        private string _validationMessage = string.Empty;
+        public string ValidationMessage
+        {
+            get => _validationMessage;
+            private set { SetField(ref _validationMessage, value); }
+        }
+
+        // ── ADD EVENT command ─────────────────────────────────────
+        private ICommand? _addEventCommand;
+        public ICommand AddEventCommand => _addEventCommand ??= new RelayCommand(_ =>
+        {
+            var draft = new VolumeBalanceEvent
+            {
+                Timestamp     = DateTime.Now,
+                DepthFt       = _latestDepthFt,
+                StringVolBbl  = _latestStringVol,
+                AnnulusVolBbl = _latestAnnulusVol
+            };
+
+            // Snapshot current pits → populate PreviousVol from current VolumeBbl
+            foreach (var tank in SurfaceTanks)
+            {
+                draft.TankSnapshots.Add(new EventTankSnapshot
+                {
+                    TankName       = tank.Name,
+                    Classification = tank.Classification ?? "Active",
+                    PreviousVol    = tank.VolumeBbl,
+                    CurrentVol     = tank.VolumeBbl,   // starts same; user edits current
+                    Density        = tank.Density,
+                    MaxCapacity    = tank.MaxCapacity
+                });
+            }
+
+            // Add default rows for common loss categories
+            draft.Losses.Add(new EventLoss { Category = LossCategory.SCE,      LossType = "Shakers" });
+            draft.Losses.Add(new EventLoss { Category = LossCategory.Downhole,  LossType = "Filtration" });
+            draft.Losses.Add(new EventLoss { Category = LossCategory.Misc,      LossType = "Evaporation" });
+
+            // Copy active chemicals from the global list
+            foreach (var chem in ChemicalUsages)
+            {
+                draft.Chemicals.Add(new EventChemical
+                {
+                    ProductCode  = chem.ProductCode,
+                    ProductName  = chem.Description,
+                    SG           = chem.SG
+                });
+            }
+
+            DraftEvent = draft;
+            ValidationMessage = string.Empty;
+            IsEventPanelOpen = true;
+        });
+
+        // ── SAVE EVENT command ────────────────────────────────────
+        private ICommand? _saveEventCommand;
+        public ICommand SaveEventCommand => _saveEventCommand ??= new RelayCommand(_ =>
+        {
+            if (DraftEvent == null) return;
+
+            var errors = ValidateDraft(DraftEvent);
+            if (errors.Count > 0)
+            {
+                ValidationMessage = string.Join("  |  ", errors);
+                return;
+            }
+
+            // Push current-vol back to the live SurfaceTanks so the main dashboard stays in sync
+            foreach (var snap in DraftEvent.TankSnapshots)
+            {
+                var tank = SurfaceTanks.FirstOrDefault(t =>
+                    string.Equals(t.Name, snap.TankName, StringComparison.OrdinalIgnoreCase));
+                if (tank != null)
+                {
+                    tank.VolumeBbl = snap.CurrentVol;
+                    tank.Density   = snap.Density;
+                }
+            }
+
+            Events.Insert(0, DraftEvent);     // newest first
+            SelectedEvent = DraftEvent;
+
+            DraftEvent = null;
+            IsEventPanelOpen = false;
+            ValidationMessage = string.Empty;
+
+            OnPropertyChanged(nameof(TrendPoints));
+            RefreshSummary();
+        });
+
+        // ── CANCEL EVENT command ──────────────────────────────────
+        private ICommand? _cancelEventCommand;
+        public ICommand CancelEventCommand => _cancelEventCommand ??= new RelayCommand(_ =>
+        {
+            DraftEvent = null;
+            IsEventPanelOpen = false;
+            ValidationMessage = string.Empty;
+        });
+
+        // ── DELETE EVENT command ──────────────────────────────────
+        private ICommand? _deleteEventCommand;
+        public ICommand DeleteEventCommand => _deleteEventCommand ??= new RelayCommand(_ =>
+        {
+            if (SelectedEvent == null) return;
+
+            var result = MessageBox.Show(
+                $"Delete event from {SelectedEvent.TimestampLabel}?",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            Events.Remove(SelectedEvent);
+            SelectedEvent = Events.FirstOrDefault();
+            OnPropertyChanged(nameof(TrendPoints));
+        });
+
+        // ── DRAFT — add/remove loss ───────────────────────────────
+        private ICommand? _addDraftLossCommand;
+        public ICommand AddDraftLossCommand => _addDraftLossCommand ??= new RelayCommand(_ =>
+        {
+            DraftEvent?.Losses.Add(new EventLoss { Category = LossCategory.SCE, LossType = "Shakers" });
+        });
+
+        private ICommand? _removeDraftLossCommand;
+        public ICommand RemoveDraftLossCommand => _removeDraftLossCommand ??= new RelayCommand(p =>
+        {
+            if (p is EventLoss loss) DraftEvent?.Losses.Remove(loss);
+        });
+
+        // ── DRAFT — add/remove base fluid ────────────────────────
+        private ICommand? _addDraftFluidCommand;
+        public ICommand AddDraftFluidCommand => _addDraftFluidCommand ??= new RelayCommand(_ =>
+        {
+            DraftEvent?.BaseFluidAdditions.Add(new EventBaseFluid { FluidType = BaseFluidType.Water });
+        });
+
+        private ICommand? _removeDraftFluidCommand;
+        public ICommand RemoveDraftFluidCommand => _removeDraftFluidCommand ??= new RelayCommand(p =>
+        {
+            if (p is EventBaseFluid item) DraftEvent?.BaseFluidAdditions.Remove(item);
+        });
+
+        // ── DRAFT — add/remove chemical ──────────────────────────
+        private ICommand? _addDraftChemicalCommand;
+        public ICommand AddDraftChemicalCommand => _addDraftChemicalCommand ??= new RelayCommand(_ =>
+        {
+            DraftEvent?.Chemicals.Add(new EventChemical { ProductName = "New Chemical", SG = 1.0 });
+        });
+
+        private ICommand? _removeDraftChemicalCommand;
+        public ICommand RemoveDraftChemicalCommand => _removeDraftChemicalCommand ??= new RelayCommand(p =>
+        {
+            if (p is EventChemical item) DraftEvent?.Chemicals.Remove(item);
+        });
+
+        // ── DRAFT — add/remove transfer ──────────────────────────
+        private ICommand? _addDraftTransferCommand;
+        public ICommand AddDraftTransferCommand => _addDraftTransferCommand ??= new RelayCommand(_ =>
+        {
+            DraftEvent?.Transfers.Add(new EventTransfer());
+        });
+
+        private ICommand? _removeDraftTransferCommand;
+        public ICommand RemoveDraftTransferCommand => _removeDraftTransferCommand ??= new RelayCommand(p =>
+        {
+            if (p is EventTransfer item) DraftEvent?.Transfers.Remove(item);
+        });
+
+        // ── Validation ────────────────────────────────────────────
+        private static List<string> ValidateDraft(VolumeBalanceEvent draft)
+        {
+            var errors = new List<string>();
+
+            if (draft.HasUnlabeledLoss)
+                errors.Add("All loss entries must have a Type selected.");
+
+            if (draft.TankSnapshots.Any(t => t.IsNegative))
+                errors.Add("Pit volume cannot be negative.");
+
+            if (draft.TankSnapshots.Any(t => t.IsOverCapacity))
+                errors.Add("One or more pits exceed their max capacity.");
+
+            return errors;
+        }
+
+        // ── Trend data for chart ──────────────────────────────────
+        /// <summary>Ordered list of (Timestamp, TotalPitVol) for the trend chart.</summary>
+        public IList<(DateTime Time, double Volume)> TrendPoints =>
+            Events
+                .OrderBy(e => e.Timestamp)
+                .Select(e => (e.Timestamp, e.TotalCurrentPitVol))
+                .ToList();
 
         #endregion
     }

@@ -159,6 +159,16 @@ namespace ProjectReport.Services
             return Math.Max(0, totalWellboreVolume - totalDrillStringVolume);
         }
 
+        private double GetEffectiveHoleDiameter(WellboreComponent section)
+        {
+            if (section.Component == ProjectReport.Models.Geometry.DrillString.ComponentType.OpenHole)
+            {
+                double washoutMult = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
+                return section.OD.GetValueOrDefault(0) * washoutMult;
+            }
+            return section.ID.GetValueOrDefault(0);
+        }
+
         /// <summary>
         /// Calculates detailed annular volume breakdown for the UI table
         /// </summary>
@@ -181,16 +191,17 @@ namespace ProjectReport.Services
                 int id = 1;
                 foreach (var section in sortedWellbore)
                 {
-                    if ((section.ID ?? 0) <= 0 || (section.TopMD ?? 0) >= (section.BottomMD ?? 0)) continue;
+                    double effectiveDiam = GetEffectiveHoleDiameter(section);
+                    if (effectiveDiam <= 0 || (section.TopMD ?? 0) >= (section.BottomMD ?? 0)) continue;
                     
                     double length = (section.BottomMD ?? 0) - (section.TopMD ?? 0);
-                    double volume = CalculateCylindricalVolume(section.ID ?? 0, length, unitSystem);
+                    double volume = CalculateCylindricalVolume(effectiveDiam, length, unitSystem);
                     
                     details.Add(new AnnularVolumeDetail
                     {
                         Id = id++,
                         Name = $"{section.Name} (No String)",
-                        WellboreID = section.ID ?? 0,
+                        WellboreID = effectiveDiam,
                         DrillStringOD = 0,
                         TopMD = section.TopMD ?? 0,
                         BottomMD = section.BottomMD ?? 0,
@@ -258,7 +269,8 @@ namespace ProjectReport.Services
             
             foreach (var section in sortedWellbore)
             {
-                if ((section.ID ?? 0) <= 0 || (section.TopMD ?? 0) >= (section.BottomMD ?? 0)) continue;
+                double effectiveDiam = GetEffectiveHoleDiameter(section);
+                if (effectiveDiam <= 0 || (section.TopMD ?? 0) >= (section.BottomMD ?? 0)) continue;
                 
                 double sectionTop = section.TopMD ?? 0;
                 double sectionBottom = section.BottomMD ?? 0;
@@ -272,12 +284,12 @@ namespace ProjectReport.Services
                 if (!overlaps.Any())
                 {
                     // Empty hole (below drill string)
-                    double vol = CalculateCylindricalVolume(section.ID ?? 0, sectionBottom - sectionTop, unitSystem);
+                    double vol = CalculateCylindricalVolume(effectiveDiam, sectionBottom - sectionTop, unitSystem);
                     details.Add(new AnnularVolumeDetail
                     {
                         Id = detailIdCounter++,
                         Name = $"{section.Name} (Empty)",
-                        WellboreID = section.ID.GetValueOrDefault(),
+                        WellboreID = effectiveDiam,
                         DrillStringOD = 0,
                         TopMD = sectionTop,
                         BottomMD = sectionBottom
@@ -311,13 +323,13 @@ namespace ProjectReport.Services
                     if (end > start)
                     {
                         double length = end - start;
-                        double vol = CalculateAnnularVolume(section.ID.GetValueOrDefault(), comp.OD.GetValueOrDefault(), length, unitSystem);
+                        double vol = CalculateAnnularVolume(effectiveDiam, comp.OD.GetValueOrDefault(), length, unitSystem);
                         
                         details.Add(new AnnularVolumeDetail
                         {
                             Id = detailIdCounter++,
                             Name = $"{section.Name} / {comp.Name}",
-                            WellboreID = section.ID.GetValueOrDefault(),
+                            WellboreID = effectiveDiam,
                             DrillStringOD = comp.OD.GetValueOrDefault(),
                             TopMD = start,
                             BottomMD = end,
@@ -333,13 +345,13 @@ namespace ProjectReport.Services
                 if (currentCursor < sectionBottom)
                 {
                     double length = sectionBottom - currentCursor;
-                    double vol = CalculateCylindricalVolume(section.ID.GetValueOrDefault(), length, unitSystem);
+                    double vol = CalculateCylindricalVolume(effectiveDiam, length, unitSystem);
                     
                     details.Add(new AnnularVolumeDetail
                     {
                         Id = detailIdCounter++,
                         Name = $"{section.Name} (Below String)",
-                        WellboreID = section.ID.GetValueOrDefault(),
+                        WellboreID = effectiveDiam,
                         DrillStringOD = 0,
                         TopMD = currentCursor,
                         BottomMD = sectionBottom,
@@ -398,6 +410,7 @@ namespace ProjectReport.Services
 
             foreach (var w in sortedWellbore)
             {
+                double effectiveDiam = GetEffectiveHoleDiameter(w);
                 double sectionVolume = 0;
                 double sectionTop = w.TopMD ?? 0;
                 double sectionBottom = w.BottomMD ?? 0;
@@ -413,7 +426,7 @@ namespace ProjectReport.Services
                     if (overlapBottom > overlapTop)
                     {
                         double overlapLen = overlapBottom - overlapTop;
-                        sectionVolume += CalculateAnnularVolume(w.ID.GetValueOrDefault(), ds.OD.GetValueOrDefault(), overlapLen, unitSystem);
+                        sectionVolume += CalculateAnnularVolume(effectiveDiam, ds.OD.GetValueOrDefault(), overlapLen, unitSystem);
                     }
                     cursor = dsBottom;
                     if (cursor >= sectionBottom) break;
@@ -550,12 +563,12 @@ namespace ProjectReport.Services
                     double length = overlapBottom - overlapTop;
                     
                     // Determine simplified diameter for capacity (ID for Casing, OD for OpenHole)
-                    double diameter = section.Component == ComponentType.OpenHole
+                    double diameter = section.Component == ProjectReport.Models.Geometry.DrillString.ComponentType.OpenHole
                         ? section.OD.GetValueOrDefault()
                         : section.ID.GetValueOrDefault();
 
                     // Apply washout on diameter (OpenHole only)
-                    if (section.Component == ComponentType.OpenHole)
+                    if (section.Component == ProjectReport.Models.Geometry.DrillString.ComponentType.OpenHole)
                     {
                         double washoutMultiplier = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
                         diameter *= washoutMultiplier;
@@ -599,12 +612,12 @@ namespace ProjectReport.Services
                     double length = overlapBottom - overlapTop;
                     
                     // Determine simplified diameter for capacity (ID for Casing, OD for OpenHole)
-                    double diameter = section.Component == ComponentType.OpenHole
+                    double diameter = section.Component == ProjectReport.Models.Geometry.DrillString.ComponentType.OpenHole
                         ? section.OD.GetValueOrDefault()
                         : section.ID.GetValueOrDefault();
 
                     // Apply washout for Open Hole on diameter
-                    if (section.Component == ComponentType.OpenHole)
+                    if (section.Component == ProjectReport.Models.Geometry.DrillString.ComponentType.OpenHole)
                     {
                         double washoutMultiplier = 1.0 + (section.Washout.GetValueOrDefault(0) / 100.0);
                         diameter *= washoutMultiplier;
@@ -621,4 +634,3 @@ namespace ProjectReport.Services
         }
     }
 }
-

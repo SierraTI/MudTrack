@@ -124,6 +124,36 @@
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
 
+                <!-- Description / Size Column -->
+                <DataGridTemplateColumn Header="Description / Size" Width="200">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Name, Converter={StaticResource StringIsNullOrEmptyConverter}}" Value="True">
+                                                <Setter Property="Text" Value="Select size..."/>
+                                                <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                <Setter Property="FontStyle" Value="Italic"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding AvailableCatalogItems}"
+                                      SelectedItem="{Binding SelectedCatalogItem, UpdateSourceTrigger=PropertyChanged}"
+                                      Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True"
+                                      Padding="8,6"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
                 <!-- Length Column -->
                 <DataGridTextColumn Header="Length (ft)" 
                                     Binding="{Binding Length, StringFormat=F2, TargetNullValue=''}" 

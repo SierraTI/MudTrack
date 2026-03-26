@@ -171,31 +171,28 @@
                     <DataGridTemplateColumn Header="Name / Descripción" Width="200">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Grid>
-                                    <TextBlock Text="Ej: Intermediate Casing"
-                                               Foreground="{StaticResource DisabledText}"
-                                               FontStyle="Italic"
-                                               VerticalAlignment="Center"
-                                               Margin="10,0,0,0"
-                                               IsHitTestVisible="False">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Name, Converter={StaticResource StringIsNullOrEmptyConverter}}" Value="False">
-                                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6"/>
-                                </Grid>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" Padding="10,6">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Name, Converter={StaticResource StringIsNullOrEmptyConverter}}" Value="True">
+                                                    <Setter Property="Text" Value="Ej: Intermediate Casing"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource DisabledText}"/>
+                                                    <Setter Property="FontStyle" Value="Italic"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                         <DataGridTemplateColumn.CellEditingTemplate>
                             <DataTemplate>
-                                <!-- Placeholder handled by CellTemplate usually, but in editing mode we just show TextBox -->
-                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8,6"/>
+                                <ComboBox ItemsSource="{Binding AvailableCatalogItems}"
+                                          SelectedItem="{Binding SelectedCatalogItem, UpdateSourceTrigger=PropertyChanged}"
+                                          Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          Padding="8,6"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>

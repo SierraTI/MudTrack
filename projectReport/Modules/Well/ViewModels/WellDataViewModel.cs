@@ -28,10 +28,7 @@ namespace ProjectReport.ViewModels
             _currentWell = new Well();
             _projectFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
 
-            // Cargar fluidos desde Excel
             LoadFluidsFromExcel();
-
-            // Inicializa dropdown options
             InitializeDropdownOptions();
 
             // Inicializa comandos
@@ -39,6 +36,8 @@ namespace ProjectReport.ViewModels
             CancelCommand = new RelayCommand(_ => Cancel());
             UploadLogoCommand = new RelayCommand(_ => UploadLogo());
             RemoveLogoCommand = new RelayCommand(_ => RemoveLogo(), _ => !string.IsNullOrEmpty(CurrentWell.OperatorLogoPath));
+            RemoveFluidCommand = new RelayCommand(RemoveFluid);
+
 
             // Setup auto-save timer (500ms debounce)
             _autoSaveTimer = new System.Timers.Timer(500);
@@ -97,7 +96,11 @@ namespace ProjectReport.ViewModels
         };
 
         private List<FluidData> _allFluidData = new List<FluidData>();
+
         public ObservableCollection<FluidData> FilteredFluids { get; } = new ObservableCollection<FluidData>();
+
+        public ObservableCollection<FluidData> SelectedFluids { get; } = new ObservableCollection<FluidData>();
+
 
         private string? _selectedFluid;
         public string SelectedFluid
@@ -114,22 +117,7 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private FluidData? _selectedFluidStock;
-        public FluidData SelectedFluidStock
-        {
-            get => _selectedFluidStock;
-            set
-            {
-                if (_selectedFluidStock != value)
-                {
-                    _selectedFluidStock = value;
-                    OnPropertyChanged(nameof(SelectedFluidStock));
-
-                    if (CurrentWell != null)
-                        CurrentWell.LoadFluidStock = _selectedFluidStock?.Name;
-                }
-            }
-        }
+      
 
         #endregion
 
@@ -164,14 +152,19 @@ namespace ProjectReport.ViewModels
 
                         if (!string.IsNullOrWhiteSpace(fluidSetName) && !string.IsNullOrWhiteSpace(baseFluid))
                         {
-                            _allFluidData.Add(new FluidData
+                            var fluid = new FluidData
                             {
                                 Name = fluidSetName.Trim(),
                                 Type = baseFluid.Trim(),
                                 Category = category?.Trim(),
                                 System = system?.Trim(),
                                 BrineType = brineType?.Trim()
-                            });
+                            };
+
+                            fluid.PropertyChanged += Fluid_PropertyChanged;
+
+                            _allFluidData.Add(fluid);
+
                         }
                     }
                 }
@@ -189,23 +182,100 @@ namespace ProjectReport.ViewModels
         {
             FilteredFluids.Clear();
 
-            if (!string.IsNullOrEmpty(SelectedFluid))
+            if (string.IsNullOrEmpty(SelectedFluid))
+                return;
+
+            var filtered = _allFluidData
+                .Where(f => string.Equals(f.Type?.Trim(), SelectedFluid?.Trim(), StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (filtered.Any())
             {
-                var filtered = _allFluidData
-                    .Where(f => string.Equals(f.Type?.Trim(), SelectedFluid?.Trim(), StringComparison.OrdinalIgnoreCase));
-
                 foreach (var item in filtered)
-                    FilteredFluids.Add(item);
+                {
+                    // Marcar si ya está seleccionado en CurrentWell
+                    item.IsSelected = CurrentWell.SelectedFluids.Any(f => f.Name == item.Name);
+
+                    // Agregar a FilteredFluids
+                    if (!FilteredFluids.Contains(item))
+                        FilteredFluids.Add(item);
+
+                    // Sincronizar CurrentWell.SelectedFluids
+                    if (item.IsSelected && !CurrentWell.SelectedFluids.Any(f => f.Name == item.Name))
+                    {
+                        CurrentWell.SelectedFluids.Add(new Well.WellFluid
+                        {
+                            Name = item.Name,
+                            Type = item.Type
+                        });
+                    }
+                }
             }
+            else
+            {
+                // Si no hay stock en Excel, crear fluido dinámicamente
+                var existingFluid = _allFluidData.FirstOrDefault(f => f.Name == SelectedFluid);
 
-            SelectedFluidStock = null;
+                if (existingFluid == null)
+                {
+                    var fluid = new FluidData
+                    {
+                        Name = SelectedFluid,
+                        Type = SelectedFluid,
+                        IsSelected = true
+                    };
 
-            if (CurrentWell != null)
-                CurrentWell.LoadFluid = SelectedFluid;
+                    fluid.PropertyChanged += Fluid_PropertyChanged;
+
+                    // Agregar a todas las listas
+                    _allFluidData.Add(fluid);
+                    SelectedFluids.Add(fluid);
+                    FilteredFluids.Add(fluid);
+
+                    // 🔹 Agregar siempre a CurrentWell.SelectedFluids
+                    if (!CurrentWell.SelectedFluids.Any(f => f.Name == fluid.Name))
+                    {
+                        CurrentWell.SelectedFluids.Add(new Well.WellFluid
+                        {
+                            Name = fluid.Name,
+                            Type = fluid.Type
+                        });
+                    }
+                }
+            }
         }
 
+        private void Fluid_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(FluidData.IsSelected))
+            {
+                if (sender is not FluidData fluid) return;
 
+                if (fluid.IsSelected)
+                {
+                    if (!SelectedFluids.Contains(fluid))
+                        SelectedFluids.Add(fluid);
 
+                    if (!CurrentWell.SelectedFluids.Any(f => f.Name == fluid.Name))
+                    {
+                        CurrentWell.SelectedFluids.Add(new Well.WellFluid
+                        {
+                            Name = fluid.Name,
+                            Type = fluid.Type
+                        });
+                    }
+                }
+                else
+                {
+                    if (SelectedFluids.Contains(fluid))
+                        SelectedFluids.Remove(fluid);
+
+                    var toRemove = CurrentWell.SelectedFluids.FirstOrDefault(f => f.Name == fluid.Name);
+                    if (toRemove != null)
+                        CurrentWell.SelectedFluids.Remove(toRemove);
+                }
+            }
+        }
 
 
         public ObservableCollection<string> TrajectoryTypes { get; } = new ObservableCollection<string>
@@ -342,21 +412,35 @@ namespace ProjectReport.ViewModels
         public ICommand CancelCommand { get; }
         public ICommand UploadLogoCommand { get; }
         public ICommand RemoveLogoCommand { get; }
+        public ICommand RemoveFluidCommand { get; }
 
-        public class FluidData
+        public class FluidData : INotifyPropertyChanged
         {
-            public string Name { get; set; }        // FLUID SET NAME
-            public string Type { get; set; }        // BASE FLUID TYPE
-            public string Category { get; set; }    // FLUID CATEGORY
-            public string System { get; set; }      // FLUID SYSTEM
-            public string BrineType { get; set; }   // BRINE TYPE
+            public string Name { get; set; }
+            public string Type { get; set; }
+            public string Category { get; set; }
+            public string System { get; set; }
+            public string BrineType { get; set; }
+
+            private bool _isSelected;
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set
+                {
+                    if (_isSelected != value)
+                    {
+                        _isSelected = value;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+                    }
+                }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
         }
 
 
         #endregion
-
-
-
 
         #region Command Implementations
 
@@ -451,6 +535,24 @@ namespace ProjectReport.ViewModels
             ToastNotificationService.Instance.ShowInfo("Logo removed");
         }
 
+        private void RemoveFluid(object parameter)
+        {
+            if (parameter is FluidData fluid)
+            {
+                fluid.IsSelected = false;
+
+                if (SelectedFluids.Contains(fluid))
+                    SelectedFluids.Remove(fluid);
+
+                var toRemove = CurrentWell.SelectedFluids.FirstOrDefault(f => f.Name == fluid.Name);
+                if (toRemove != null)
+                    CurrentWell.SelectedFluids.Remove(toRemove);
+            }
+        }
+
+
+
+
         #endregion
 
         #region Auto-Save
@@ -518,15 +620,45 @@ namespace ProjectReport.ViewModels
 
             CurrentWell = well;
 
-            if (!string.IsNullOrEmpty(CurrentWell.LoadFluid))
+            // Restaurar tipo de fluido
+            SelectedFluid = CurrentWell.LoadFluid;
+
+            // Limpiar SelectedFluids local
+            SelectedFluids.Clear();
+
+            // Recorrer todos los fluidos en _allFluidData y marcar como seleccionados si están en CurrentWell.SelectedFluids
+            foreach (var fluid in _allFluidData)
             {
-                SelectedFluid = CurrentWell.LoadFluid; 
+                fluid.IsSelected = CurrentWell.SelectedFluids.Any(f => f.Name == fluid.Name);
+
+                if (fluid.IsSelected && !SelectedFluids.Contains(fluid))
+                {
+                    SelectedFluids.Add(fluid);
+                }
             }
 
-            if (!string.IsNullOrEmpty(CurrentWell.LoadFluidStock))
+            // Asegurar que todos los fluidos en CurrentWell.SelectedFluids que no existan en _allFluidData se agreguen
+            foreach (var wellFluid in CurrentWell.SelectedFluids)
             {
-                SelectedFluidStock = FilteredFluids.FirstOrDefault(f => f.Name == CurrentWell.LoadFluidStock);
+                if (!_allFluidData.Any(f => f.Name == wellFluid.Name))
+                {
+                    var fluid = new FluidData
+                    {
+                        Name = wellFluid.Name,
+                        Type = wellFluid.Type,
+                        IsSelected = true
+                    };
+
+                    fluid.PropertyChanged += Fluid_PropertyChanged;
+
+                    _allFluidData.Add(fluid);
+                    SelectedFluids.Add(fluid);
+                    FilteredFluids.Add(fluid);
+                }
             }
+
+            // Actualizar dropdown filtrado
+            FilterFluids();
         }
 
 

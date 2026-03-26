@@ -479,6 +479,26 @@ namespace ProjectReport.ViewModels.Geometry
                     // Calcular volumen del componente actual
                     _geometryService.CalculateWellboreComponentVolume(component, "Imperial", prev);
 
+                    // ================================
+                    // VALIDACIÓN CON CanApplyWellboreChange
+                    // ================================
+                    if (e.PropertyName == nameof(WellboreComponent.ID) || e.PropertyName == nameof(WellboreComponent.OD))
+                    {
+                        double valueToCheck = e.PropertyName == nameof(WellboreComponent.OD)
+                            ? component.OD.GetValueOrDefault()
+                            : component.ID.GetValueOrDefault();
+
+                        if (!CanApplyWellboreChange(component, valueToCheck, out string drillError))
+                        {
+                            component.AddValidationError(drillError);
+                        }
+                        else
+                        {
+                            component.ClearValidationErrors();
+                        }
+                    }
+
+                    // Validar el componente completo
                     ValidateWellboreComponent(component);
 
                     // ================================
@@ -513,7 +533,6 @@ namespace ProjectReport.ViewModels.Geometry
                             if (!CurrentReport.MD.HasValue || deepest > CurrentReport.MD)
                             {
                                 CurrentReport.MD = deepest;
-
                                 System.Diagnostics.Debug.WriteLine(
                                     $"Report MD updated to {CurrentReport.MD}"
                                 );
@@ -524,8 +543,7 @@ namespace ProjectReport.ViewModels.Geometry
                     // ================================
                     // VOLUME CASCADING
                     // ================================
-                    if (e.PropertyName == nameof(WellboreComponent.ID) ||
-                        e.PropertyName == nameof(WellboreComponent.OD))
+                    if (e.PropertyName == nameof(WellboreComponent.ID) || e.PropertyName == nameof(WellboreComponent.OD))
                     {
                         var next = index < sorted.Count - 1 ? sorted[index + 1] : null;
 
@@ -540,6 +558,7 @@ namespace ProjectReport.ViewModels.Geometry
                 RecalculateTotals();
             }
         }
+
 
         /// <summary>
         /// Validates a wellbore component against all rules including telescoping and casing progression
@@ -1204,7 +1223,7 @@ namespace ProjectReport.ViewModels.Geometry
                 }
                 else
                 {
-                    bottomMD = initialTopMD + 100; // fallback seguro
+                    bottomMD = initialTopMD + 1000; // fallback seguro
                 }
             }
 
@@ -1274,7 +1293,7 @@ namespace ProjectReport.ViewModels.Geometry
                 Id = GetNextDrillStringId(),
                 Name = "Drill Pipe",
                 ComponentType = ComponentType.DrillPipe,
-                Length = 100.0,
+                Length = 1000.0,
                 OD = 5.0,   // Initial value
                 ID = 4.276, // Initial value
                 WellboreComponents = WellboreComponents // Associate Wellbore collection
@@ -3462,55 +3481,104 @@ namespace ProjectReport.ViewModels.Geometry
             }
         }
 
+        //Metodo para validar OD ID EN EL DRILLSTRING
         private void ValidateDrillVsWellbore(DrillStringComponent component)
         {
-            if (component == null) return;
+            if (component == null)
+                return;
 
-            if (component.OD == null || component.OD <= 0) return;
+            if (component.OD == null || component.OD <= 0)
+                return;
 
-            if (WellboreComponents == null || WellboreComponents.Count == 0) return;
+            if (!component.TopMD.HasValue || !component.BottomMD.HasValue)
+                return;
 
-            // Tomar sección activa (última)
-            var section = WellboreComponents
-    .Where(c => c.OD.HasValue && c.OD.Value > 0) // solo secciones válidas
-    .OrderByDescending(c => c.BottomMD ?? 0)
-    .FirstOrDefault();
-
-            if (section == null) return;
+            if (WellboreComponents == null || WellboreComponents.Count == 0)
+                return;
 
             double drillOD = component.OD.Value;
+            double toolTop = component.TopMD.Value;
+            double toolBottom = component.BottomMD.Value;
 
-            // =========================
-            // OPEN HOLE
-            // =========================
-            if (section.SectionType == ComponentType.OpenHole)
+            // Buscar todas las secciones del wellbore que intersectan la herramienta
+            var intersectingSections = WellboreComponents
+                .Where(c =>
+                    c.TopMD.HasValue &&
+                    c.BottomMD.HasValue &&
+                    toolBottom >= c.TopMD.Value &&
+                    toolTop <= c.BottomMD.Value)
+                .ToList();
+
+            if (!intersectingSections.Any())
+                return;
+
+            double minRestriction = double.MaxValue;
+            ComponentType? restrictionType = null;
+
+            foreach (var section in intersectingSections)
             {
-                double holeOD = section.OD ?? 0;
+                double restriction = double.MaxValue;
 
-                if (holeOD > 0 && drillOD >= holeOD)
+                if (section.SectionType == ComponentType.OpenHole)
                 {
-                    component.AddError(nameof(component.OD), $"OD ({drillOD}) must be smaller than Open Hole ({holeOD}).");
+                    restriction = section.OD ?? double.MaxValue;
+                }
+                else if (section.SectionType == ComponentType.Casing ||
+                         section.SectionType == ComponentType.Liner)
+                {
+                    restriction = section.ID ?? double.MaxValue;
                 }
 
-                return;
+                if (restriction < minRestriction)
+                {
+                    minRestriction = restriction;
+                    restrictionType = section.SectionType;
+                }
             }
 
-            // =========================
-            // CASING / LINER
-            // =========================
-            if (section.SectionType == ComponentType.Casing ||
-                section.SectionType == ComponentType.Liner)
+            // Validar restricción mínima
+            if (drillOD >= minRestriction)
             {
-                double casingID = section.ID ?? 0;
-
-                if (casingID > 0 && drillOD >= casingID)
-                {
-                    component.AddError(
-                        nameof(component.OD),
-                        $"OD ({drillOD}) must be smaller than ID ({casingID}) of {section.SectionType}.");
-                }
+                component.AddError(
+                    nameof(component.OD),
+                    $"OD ({drillOD}) exceeds minimum wellbore restriction ({minRestriction}) in {restrictionType?.ToString() ?? "Unknown"}.");
             }
         }
+
+        public WellboreComponent? GetCurrentWellboreComponent()
+        {
+            return WellboreComponents?.LastOrDefault();
+        }
+
+
+        //Metodo para validar OD ID EN EL WELLBORE
+        private bool CanApplyWellboreChange(WellboreComponent section, double newRestriction, out string error)
+        {
+            error = null;
+
+            foreach (var tool in DrillStringComponents)
+            {
+                if (!tool.OD.HasValue || !tool.TopMD.HasValue || !tool.BottomMD.HasValue)
+                    continue;
+
+                bool intersects =
+                    tool.BottomMD.Value >= section.TopMD.GetValueOrDefault() &&
+                    tool.TopMD.Value <= section.BottomMD.GetValueOrDefault();
+
+                if (!intersects)
+                    continue;
+
+                if (tool.OD.Value >= newRestriction)
+                {
+                    error = $"DrillString OD ({tool.OD.Value}) exceeds wellbore restriction ({newRestriction}) between MD {section.TopMD}-{section.BottomMD}.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+
 
 
         #endregion

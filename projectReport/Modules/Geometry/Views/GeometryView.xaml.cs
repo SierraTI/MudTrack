@@ -202,13 +202,37 @@ namespace ProjectReport.Views
 
         private void ConfigureComponent_Click(object sender, RoutedEventArgs e)
         {
+            if (_viewModel == null) return;
+
             if (sender is Button button && button.Tag is DrillStringComponent component)
             {
                 switch (component.ComponentType)
                 {
                     case ComponentType.DrillPipe:
                     case ComponentType.HWDP:
-                        var toolJointWindow = new ProjectReport.Views.Geometry.ToolJointConfigWindow(component.ToolJoint ?? null, component.ComponentType);
+
+                        // 🔹 Obtener el Wellbore activo
+                        var currentWellboreComponent = _viewModel.GetCurrentWellboreComponent();
+
+                        // 🔹 Validar que exista
+                        if (currentWellboreComponent == null)
+                        {
+                            MessageBox.Show(
+                                "No hay un Wellbore activo para validar el Tool Joint.",
+                                "Error",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning
+                            );
+                            return;
+                        }
+
+                        // 🔹 Abrir ventana con Wellbore
+                        var toolJointWindow = new ProjectReport.Views.Geometry.ToolJointConfigWindow(
+                            component.ToolJoint ?? new ToolJointConfig(),
+                            component.ComponentType,
+                            currentWellboreComponent
+                        );
+
                         if (toolJointWindow.ShowDialog() == true)
                         {
                             component.ToolJoint = toolJointWindow.Config;
@@ -220,8 +244,14 @@ namespace ProjectReport.Views
                     case ComponentType.MWD:
                     case ComponentType.LWD:
                     case ComponentType.PWD:
-                        var pdConfig = component.PressureDropConfig ?? new PressureDropConfig { MudDensity = component.FluidDensity.GetValueOrDefault() };
+
+                        var pdConfig = component.PressureDropConfig ?? new PressureDropConfig
+                        {
+                            MudDensity = component.FluidDensity.GetValueOrDefault()
+                        };
+
                         var pressureDropWindow = new ProjectReport.Views.Geometry.PressureDropConfigWindow(pdConfig);
+
                         if (pressureDropWindow.ShowDialog() == true)
                         {
                             component.PressureDropConfig = pressureDropWindow.Config;
@@ -231,7 +261,11 @@ namespace ProjectReport.Views
                         break;
 
                     case ComponentType.Bit:
-                        var bitJetsWindow = new ProjectReport.Views.Geometry.BitAndJets.BitJetsConfigWindow(component.MultiBitJetsConfig ?? new ProjectReport.Models.Geometry.BitAndJets.MultiBitJetsConfig());
+
+                        var bitJetsWindow = new ProjectReport.Views.Geometry.BitAndJets.BitJetsConfigWindow(
+                            component.MultiBitJetsConfig ?? new ProjectReport.Models.Geometry.BitAndJets.MultiBitJetsConfig()
+                        );
+
                         if (bitJetsWindow.ShowDialog() == true)
                         {
                             component.MultiBitJetsConfig = bitJetsWindow.Config;
@@ -240,9 +274,11 @@ namespace ProjectReport.Views
                         break;
                 }
 
-                _viewModel?.RecalculateTotals();
+                // 🔹 Recalcular todo al final
+                _viewModel.RecalculateTotals();
             }
         }
+
 
         private void AddSurveyPoint_Click(object sender, RoutedEventArgs e)
         {

@@ -523,6 +523,8 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             WellContextService.Instance.GeometryDataUpdated += OnGeometryDataUpdated;
             WellContextService.Instance.RigProfileUpdated += OnRigProfileUpdated;
             WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
+            WellContextService.Instance.VolumeEventsUpdated += OnVolumeEventsUpdated;
+            WellContextService.Instance.DepthUpdated += OnGlobalDepthUpdated;
 
             SurfaceTanks.CollectionChanged += OnSurfaceTanksCollectionChanged;
 
@@ -539,6 +541,46 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
             // Pre-load the 10 tanks on initialization
             SyncFromRigProfile(new List<RigPit>());
+
+            // Subscribe to event ledger changes for persistence
+            Events.CollectionChanged += (s, e) => WellContextService.Instance.PublishVolumeEvents(Events);
+
+            // Load existing data if available
+            LoadExistingEvents();
+        }
+
+        private void LoadExistingEvents()
+        {
+            var loaded = WellContextService.Instance.GetLoadedEvents();
+            if (loaded != null && loaded.Any())
+            {
+                Events.Clear();
+                // newest first
+                foreach (var ev in loaded.OrderByDescending(x => x.Timestamp))
+                {
+                    Events.Add(ev);
+                }
+                
+                // Also update current SurfaceTanks to the most recent event's snapshot
+                var latest = loaded.OrderByDescending(x => x.Timestamp).FirstOrDefault();
+                if (latest != null)
+                {
+                    foreach (var snap in latest.TankSnapshots)
+                    {
+                        var tank = SurfaceTanks.FirstOrDefault(t => t.Name == snap.TankName);
+                        if (tank != null)
+                        {
+                            tank.VolumeBbl = snap.CurrentVol;
+                            tank.Density = snap.Density;
+                        }
+                    }
+                }
+                RefreshSummary();
+            }
+        }
+        private void OnVolumeEventsUpdated(IEnumerable<VolumeBalanceEvent> events)
+        {
+            LoadExistingEvents();
         }
 
         public void Detach()
@@ -546,6 +588,8 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             WellContextService.Instance.GeometryDataUpdated -= OnGeometryDataUpdated;
             WellContextService.Instance.RigProfileUpdated -= OnRigProfileUpdated;
             WellContextService.Instance.ChemicalSelectionUpdated -= OnChemicalSelectionUpdated;
+            WellContextService.Instance.VolumeEventsUpdated -= OnVolumeEventsUpdated;
+            WellContextService.Instance.DepthUpdated -= OnGlobalDepthUpdated;
 
             SurfaceTanks.CollectionChanged -= OnSurfaceTanksCollectionChanged;
             foreach (var tank in SurfaceTanks)
@@ -576,31 +620,29 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
             RefreshSummary();
         }
 
+        private void OnGlobalDepthUpdated(object? sender, double depth)
+        {
+            _latestDepthFt = depth;
+        }
+
         private void OnGeometryDataUpdated(object? sender, GeometryDataUpdatedEventArgs e)
         {
             _lastGeometryArgs = e;
             ApplyGeometryData(e);
         }
 
-        private void ApplyGeometryData(GeometryDataUpdatedEventArgs e)
-        {
-            HoleCapacity = Math.Round(e.HoleCapacity, 2);
-            StringDisplacement = Math.Round(e.StringDisplacement, 2);
-            StringTheoretical = Math.Round(e.StringInternalVolume, 2);
-            AnnulusTheoretical = Math.Round(e.AnnularVolume, 2);
-
-            // Cache for stamping into new events
-            _latestStringVol  = Math.Round(e.StringInternalVolume, 2);
-            _latestAnnulusVol = Math.Round(e.AnnularVolume, 2);
-
-            LastSyncedAt = DateTime.Now.ToString("HH:mm:ss");
-            IsGeometrySynced = true;
-            RefreshSummary();
-        }
-
         private void OnRigProfileUpdated(object? sender, RigProfileUpdatedEventArgs e)
         {
             SyncFromRigProfile(e.ActivePits);
+        }
+
+        private void ApplyGeometryData(GeometryDataUpdatedEventArgs e)
+        {
+            _latestStringVol = e.StringInternalVolume;
+            _latestAnnulusVol = e.AnnularVolume;
+            LastSyncedAt = DateTime.Now.ToString("HH:mm:ss");
+            IsGeometrySynced = true;
+            RefreshSummary();
         }
 
         private void OnSurfaceTanksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -688,7 +730,43 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
         public VolumeBalanceEvent? DraftEvent
         {
             get => _draftEvent;
-            private set { SetField(ref _draftEvent, value); }
+            private set 
+            { 
+                if (_draftEvent != null)
+                {
+                    _draftEvent.Transfers.CollectionChanged -= OnDraftTransfersChanged;
+                }
+
+                if (SetField(ref _draftEvent, value))
+                {
+                    if (_draftEvent != null)
+                    {
+                        _draftEvent.Transfers.CollectionChanged += OnDraftTransfersChanged;
+                    }
+                    OnPropertyChanged(nameof(HasSelectedEvent)); 
+                }
+            }
+        }
+
+        private void OnDraftTransfersChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.NewItems)
+                    item.PropertyChanged += OnTransferItemChanged;
+            }
+            if (e.OldItems != null)
+            {
+                foreach (INotifyPropertyChanged item in e.OldItems)
+                    item.PropertyChanged -= OnTransferItemChanged;
+            }
+
+            DraftEvent?.ApplyTransfersToSnapshots();
+        }
+
+        private void OnTransferItemChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            DraftEvent?.ApplyTransfersToSnapshots();
         }
 
         private string _validationMessage = string.Empty;

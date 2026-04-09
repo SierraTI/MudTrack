@@ -207,7 +207,7 @@ namespace ProjectReport.ViewModels
         private string _rigName = string.Empty;
         private string _contractor = string.Empty;
         private string _rigType = string.Empty;
-        private string _intervalSizeIn;
+        private string _intervalSizeIn = string.Empty;
 
         private string _maxBhtSource = "MWD"; // MWD or PWD
         public string MaxBHTSource

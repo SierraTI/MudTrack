@@ -23,6 +23,9 @@ namespace ProjectReport.ViewModels
             _project = project ?? throw new ArgumentNullException(nameof(project));
             _projectFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
             
+            // Load Wells from SQL
+            LoadWellsFromDb();
+            
             // Initialize collection view for filtering/sorting
             _wellsView = CollectionViewSource.GetDefaultView(_project.Wells);
             _wellsView.Filter = FilterWells;
@@ -42,6 +45,20 @@ namespace ProjectReport.ViewModels
 
             // Subscribe to collection changes
             _project.Wells.CollectionChanged += (s, e) => UpdateDashboardStatistics();
+        }
+
+        private void LoadWellsFromDb()
+        {
+            try
+            {
+                var wells = WellContextService.Instance.GetAllWells();
+                _project.Wells.Clear();
+                foreach (var w in wells) _project.Wells.Add(w);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading wells: {ex.Message}");
+            }
         }
 
         #region Properties
@@ -197,7 +214,8 @@ namespace ProjectReport.ViewModels
                 _project.AddWell(newWell);
                 _project.SetActiveWell(newWell.Id);
 
-                await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
+                WellContextService.Instance.CurrentWell = newWell;
+                await WellContextService.Instance.SaveCurrentWell();
 
                 // Navigate to Well Data (creación del pozo)
                 NavigationService.Instance.NavigateToWellData(newWell.Id);
@@ -254,7 +272,8 @@ namespace ProjectReport.ViewModels
                     
                     _project.AddWell(duplicate);
                     
-                    await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
+                    WellContextService.Instance.CurrentWell = duplicate;
+                    await WellContextService.Instance.SaveCurrentWell();
 
                     ToastNotificationService.Instance.ShowSuccess($"Duplicated well: {duplicate.WellName}");
                 }
@@ -278,7 +297,8 @@ namespace ProjectReport.ViewModels
                 {
                     well.Status = WellStatus.Archived;
                     
-                    await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
+                    WellContextService.Instance.CurrentWell = well;
+                    await WellContextService.Instance.SaveCurrentWell();
                     
                     _wellsView.Refresh();
                     UpdateDashboardStatistics();
@@ -316,7 +336,7 @@ namespace ProjectReport.ViewModels
 
                     _project.RemoveWell(well.Id);
                     
-                    await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
+                    WellContextService.Instance.DeleteWell(well.Id);
                     
                     UpdateDashboardStatistics();
                     

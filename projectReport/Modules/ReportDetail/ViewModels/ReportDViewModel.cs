@@ -17,9 +17,8 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
 {
     internal class ReportDViewModel : INotifyPropertyChanged
     {
-        private Report? _report;
+        private Report _report = new Report();
         private Well _currentWell;
-        private WellboreComponent? _wellboreComponent;
         private bool _isUpdatingSelection = false;
 
         private readonly HydraulicsCalculationService _hydraulicsService = new HydraulicsCalculationService();
@@ -29,7 +28,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             get => _report;
             set
             {
-                _report = value;
+                _report = value ?? new Report();
                 OnPropertyChanged();
             }
         }
@@ -48,7 +47,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
 
         public class DisplayFluid : INotifyPropertyChanged
         {
-            public WellFluid Fluid { get; set; }
+            public WellFluid Fluid { get; set; } = new WellFluid();
 
             private bool _isChecked;
             public bool IsChecked
@@ -75,7 +74,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         public ObservableCollection<DisplayFluid> FilteredFluids { get; set; } = new ObservableCollection<DisplayFluid>();
 
 
-        private string _selectedFluid;
+        private string _selectedFluid = string.Empty;
         public string SelectedFluid
         {
             get => _selectedFluid;
@@ -149,7 +148,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             }
         }
 
-        private void DisplayFluid_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void DisplayFluid_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (_isUpdatingSelection || e.PropertyName != nameof(DisplayFluid.IsChecked))
                 return;
@@ -280,7 +279,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             FilterFluids();
         }
 
-        private void RemoveFluid(WellFluid fluid)
+        private void RemoveFluid(WellFluid? fluid)
         {
             if (fluid == null)
                 return;
@@ -315,13 +314,13 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             }
         }
 
-        private void OnReportPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void OnReportPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(Report.MudDensity))
                 UpdateHydraulics();
         }
 
-        private void OnPumpPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void OnPumpPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ReportPumpOperation.Gpm) ||
                 e.PropertyName == nameof(ReportPumpOperation.Spm))
@@ -506,9 +505,9 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         private class RelayCommand : ICommand
         {
             private readonly Action _execute;
-            private readonly Func<bool> _canExecute;
+            private readonly Func<bool>? _canExecute;
 
-            public RelayCommand(Action execute, Func<bool> canExecute = null)
+            public RelayCommand(Action execute, Func<bool>? canExecute = null)
             {
                 _execute = execute;
                 _canExecute = canExecute;
@@ -527,18 +526,35 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         private class RelayCommand<T> : ICommand
         {
             private readonly Action<T> _execute;
-            private readonly Func<T, bool> _canExecute;
+            private readonly Func<T, bool>? _canExecute;
 
-            public RelayCommand(Action<T> execute, Func<T, bool> canExecute = null)
+            public RelayCommand(Action<T> execute, Func<T, bool>? canExecute = null)
             {
                 _execute = execute;
                 _canExecute = canExecute;
             }
 
-            public bool CanExecute(object parameter) => _canExecute == null || _canExecute((T)parameter);
-            public void Execute(object parameter) => _execute((T)parameter);
+            public bool CanExecute(object? parameter)
+            {
+                if (_canExecute == null) return true;
+                if (parameter is T value) return _canExecute(value);
+                if (parameter == null && default(T) == null) return _canExecute((T)(object?)null);
+                return _canExecute(default!);
+            }
 
-            public event EventHandler CanExecuteChanged
+            public void Execute(object? parameter)
+            {
+                if (parameter is T value)
+                {
+                    _execute(value);
+                }
+                else if (parameter == null && default(T) == null)
+                {
+                    _execute((T)(object?)null);
+                }
+            }
+
+            public event EventHandler? CanExecuteChanged
             {
                 add => CommandManager.RequerySuggested += value;
                 remove => CommandManager.RequerySuggested -= value;

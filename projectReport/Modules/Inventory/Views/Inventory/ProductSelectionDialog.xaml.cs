@@ -29,7 +29,7 @@ namespace ProjectReport.Views.Inventory
             WellContextService.Instance.ChemicalSelectionUpdated += OnChemicalSelectionUpdated;
         }
 
-        private void OnChemicalSelectionUpdated(object sender, ChemicalSelectionUpdatedEventArgs e)
+        private void OnChemicalSelectionUpdated(object? sender, ChemicalSelectionUpdatedEventArgs e)
         {
             // Detach event handler and close dialog
             WellContextService.Instance.ChemicalSelectionUpdated -= OnChemicalSelectionUpdated;

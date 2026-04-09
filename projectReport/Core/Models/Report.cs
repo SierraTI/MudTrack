@@ -93,7 +93,7 @@ namespace ProjectReport.Models
             set => SetProperty(ref _maxBhtSource, value);
         }
 
-        private string _intervalSizeIn;
+        private string _intervalSizeIn = string.Empty;
 
         public string IntervalSizeIn
         {

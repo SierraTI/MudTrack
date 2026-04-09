@@ -13,12 +13,12 @@ namespace ProjectReport.Modules.VolumeBalance
                 case "gal":
                     return qty / 42.0;
                 case "lb":
-                    return qty / (sg * 8.34 * 42.0);
+                    return qty / (sg * 349.86);
                 case "ton":
-                    return (qty * 2000.0) / (sg * 8.34 * 42.0);
+                    return (qty * 2000.0) / (sg * 349.86);
                 case "big bag":
                     // Needs bag weight; placeholder: 2204.62 lb (1 metric ton)
-                    return (qty * 2204.62) / (sg * 8.34 * 42.0);
+                    return (qty * 2204.62) / (sg * 349.86);
                 default:
                     return 0.0;
             }

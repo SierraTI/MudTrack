@@ -458,13 +458,44 @@ namespace ProjectReport.Modules.VolumeBalance
         public bool IsValid => !HasUnlabeledLoss && !HasVolumeViolation && !TankSnapshots.Any(t => t.IsNegative);
 
         // ── Chemical ppb propagation ───────────────────────────────
-
-        /// <summary>Pushes current system volume to all chemical rows so ppb is always current.</summary>
-        public void RefreshChemicalConcentrations()
+ 
+         /// <summary>Pushes current system volume to all chemical rows so ppb is always current.</summary>
+         public void RefreshChemicalConcentrations()
+         {
+             var sysVol = TotalCurrentPitVol > 0 ? TotalCurrentPitVol : TotalPreviousPitVol;
+             foreach (var chem in Chemicals)
+                 chem.SystemVolumeBbl = sysVol;
+         }
+ 
+        /// <summary>
+        /// Resets all CurrentVol in TankSnapshots to their PreviousVol.
+        /// Useful before applying automated adjustments.
+        /// </summary>
+        public void ResetCurrentVolumes()
         {
-            var sysVol = TotalCurrentPitVol > 0 ? TotalCurrentPitVol : TotalPreviousPitVol;
-            foreach (var chem in Chemicals)
-                chem.SystemVolumeBbl = sysVol;
+            foreach (var snap in TankSnapshots)
+                snap.CurrentVol = snap.PreviousVol;
+        }
+
+        /// <summary>
+        /// Automatically adjusts tank CurrentVol based on transfers, starting from PreviousVol.
+        /// This ensures the operation is idempotent.
+        /// </summary>
+        public void ApplyTransfersToSnapshots()
+        {
+            ResetCurrentVolumes();
+
+            foreach (var transfer in Transfers)
+            {
+                if (string.IsNullOrEmpty(transfer.FromTank) || string.IsNullOrEmpty(transfer.ToTank) || transfer.VolumeBbl == 0)
+                    continue;
+
+                var fromTank = TankSnapshots.FirstOrDefault(t => t.TankName == transfer.FromTank);
+                var toTank = TankSnapshots.FirstOrDefault(t => t.TankName == transfer.ToTank);
+
+                if (fromTank != null) fromTank.CurrentVol -= transfer.VolumeBbl;
+                if (toTank != null) toTank.CurrentVol += transfer.VolumeBbl;
+            }
         }
 
         // ── Wire sub-collection change notifications ───────────────
@@ -500,11 +531,13 @@ namespace ProjectReport.Modules.VolumeBalance
             RaiseCalculatedProperties();
         }
 
-        private void RaiseCalculatedProperties()
-        {
-            RefreshChemicalConcentrations();
-
-            OnPropertyChanged(nameof(TotalPreviousPitVol));
+         private void RaiseCalculatedProperties()
+         {
+             RefreshChemicalConcentrations();
+            // We don't call ApplyTransfers here to avoid periodic recalculation loops, 
+            // instead we will call it explicitly from the ViewModel when a transfer is finalized/changed.
+ 
+             OnPropertyChanged(nameof(TotalPreviousPitVol));
             OnPropertyChanged(nameof(TotalCurrentPitVol));
             OnPropertyChanged(nameof(TotalLiquidAdditions));
             OnPropertyChanged(nameof(TotalLosses));

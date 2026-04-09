@@ -115,9 +115,9 @@ namespace ProjectReport.Services.Inventory
             var products = _repo.LoadProducts();
             var movements = _repo.LoadMovements();
 
-            var lines = ticket.Lines != null && ticket.Lines.Count > 0 
-                ? ticket.Lines 
-                : new List<TicketLine> { ticket.Line };
+            var lines = ticket.Lines != null && ticket.Lines.Count > 0
+                ? ticket.Lines
+                : (ticket.Line != null ? new List<TicketLine> { ticket.Line } : new List<TicketLine>());
 
             foreach (var line in lines)
             {

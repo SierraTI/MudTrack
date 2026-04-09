@@ -10,6 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace ProjectReport.ViewModels
 {
@@ -29,6 +31,9 @@ namespace ProjectReport.ViewModels
             {
                 if (SetProperty(ref _Report, value))
                 {
+                    // Sync with Context Service for SQL persistence
+                    WellContextService.Instance.CurrentReport = _Report;
+
                     // Cada vez que cambia Report, actualizar GeometryViewModel
                     if (_Report != null)
                         GeometryViewModel.LoadReport(_Report);
@@ -46,10 +51,10 @@ namespace ProjectReport.ViewModels
                 "project_data.json"
             );
 
-            NewReportCommand = new RelayCommand(_ => CreateNewReport(), _ => CanCreateReport());
+            NewReportCommand = new RelayCommand(async _ => await CreateNewReport(), _ => CanCreateReport());
             ViewReportCommand = new RelayCommand(ViewReport, CanInteractWithReport);
             EditReportCommand = new RelayCommand(EditReport, CanInteractWithReport);
-            DuplicateReportCommand = new RelayCommand(DuplicateReport, CanInteractWithReport);
+            DuplicateReportCommand = new RelayCommand(async p => await DuplicateReportAsync(p), CanInteractWithReport);
 
             NavigateHomeCommand = new RelayCommand(_ => NavigateHome());
             EditWellDataCommand = new RelayCommand(_ => NavigateToWellData(), _ => CurrentWell != null);
@@ -65,7 +70,6 @@ namespace ProjectReport.ViewModels
                 geoService,
                 dataService,
                 thermalService
-
             );
         }
 
@@ -159,15 +163,11 @@ namespace ProjectReport.ViewModels
 
             if (lastReport != null)
             {
-                Report = lastReport; // Esto automáticamente llama a GeometryViewModel.LoadReport
+                Report = lastReport; 
             }
 
             OnPropertyChanged(nameof(Reports));
         }
-
-
-
-
 
         #endregion
 
@@ -200,33 +200,45 @@ namespace ProjectReport.ViewModels
         {
             return CurrentWell != null;
         }
+
         public event Action<Well>? OpenReportDetailsRequested;
 
-        private void CreateNewReport()
+        private async Task DeleteReport(Report? reportToDelete)
         {
-            if (_currentWell == null) return;
+            if (reportToDelete == null || CurrentWell == null) return;
 
-            var result = MessageBox.Show(
-                "Do you want to modify Report Details?",
-                "New Report",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question
-            );
+            var result = System.Windows.MessageBox.Show($"Are you sure you want to delete report #{reportToDelete.ReportNumber}?", 
+                "Confirm Delete", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
 
-            if (result == MessageBoxResult.Yes)
+            if (result == System.Windows.MessageBoxResult.Yes)
             {
-                OpenReportDetailsRequested?.Invoke(_currentWell);
-            }
-            else
-            {
-                CreateReportFromPrevious();
+                CurrentWell.Reports.Remove(reportToDelete);
+                await SaveProject();
             }
         }
 
+        private async Task CreateNewReport()
+        {
+            if (CurrentWell == null) return;
 
+            var result = System.Windows.MessageBox.Show(
+                "Do you want to modify Report Details?",
+                "New Report",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question
+            );
 
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                OpenReportDetailsRequested?.Invoke(CurrentWell);
+            }
+            else
+            {
+                await CreateReportFromPrevious();
+            }
+        }
 
-        private async void CreateReportFromPrevious()
+        private async Task CreateReportFromPrevious()
         {
             try
             {
@@ -237,36 +249,37 @@ namespace ProjectReport.ViewModels
                     .OrderByDescending(r => r.ReportNumber)
                     .FirstOrDefault();
 
-                if (lastReport == null) return;
+                Report newReport;
+                if (lastReport == null)
+                {
+                    newReport = new Report
+                    {
+                        Id = 1,
+                        ReportNumber = 1,
+                        ReportDateTime = DateTime.Now,
+                        IsDraft = true
+                    };
+                }
+                else
+                {
+                    newReport = lastReport.Duplicate();
+                    newReport.Id = CurrentWell.Reports.Any() ? CurrentWell.Reports.Max(r => r.Id) + 1 : 1;
+                    newReport.ReportNumber = CurrentWell.Reports.Any() ? CurrentWell.Reports.Max(r => r.ReportNumber) + 1 : 1;
+                    newReport.ReportDateTime = DateTime.Now;
+                    newReport.IsDraft = true;
+                }
 
-                var newReport = lastReport.Duplicate();
-
-                int newId = CurrentWell.Reports.Any()
-                    ? CurrentWell.Reports.Max(r => r.Id) + 1
-                    : 1;
-
-                int newNumber = CurrentWell.Reports.Any()
-                    ? CurrentWell.Reports.Max(r => r.ReportNumber) + 1
-                    : 1;
-
-                newReport.Id = newId;
-                newReport.ReportNumber = newNumber;
-                newReport.IntervalNumber = lastReport.IntervalNumber;
-                newReport.ReportDateTime = DateTime.Now;
-                newReport.IsDraft = true;
                 CurrentWell.Reports.Add(newReport);
                 await SaveProject();
                 Report = newReport;
                 OnPropertyChanged(nameof(Reports));
-                ToastNotificationService.Instance.ShowSuccess("Report created from previous");
+                ToastNotificationService.Instance.ShowSuccess("Report created");
             }
             catch (Exception ex)
             {
                 ToastNotificationService.Instance.ShowError($"Error: {ex.Message}");
             }
         }
-
-
 
         private void ViewReport(object? parameter)
         {
@@ -293,7 +306,7 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private async void DuplicateReport(object? parameter)
+        private async Task DuplicateReportAsync(object? parameter)
         {
             if (parameter is Report report && CurrentWell != null)
             {
@@ -311,12 +324,10 @@ namespace ProjectReport.ViewModels
 
                     duplicate.Id = newId;
                     duplicate.ReportNumber = newNumber;
-
                     duplicate.ReportDateTime = DateTime.Now;
                     duplicate.IsDraft = true;
 
                     CurrentWell.Reports.Add(duplicate);
-
                     await SaveProject();
 
                     ToastNotificationService.Instance.ShowSuccess("Report duplicated");
@@ -327,7 +338,6 @@ namespace ProjectReport.ViewModels
                 }
             }
         }
-
 
         private bool CanInteractWithReport(object? parameter)
         {
@@ -352,15 +362,9 @@ namespace ProjectReport.ViewModels
 
         private async Task SaveProject()
         {
-            await DataPersistenceService.SaveProjectAsync(
-                _projectFilePath,
-                _project
-            );
-
+            await WellContextService.Instance.SaveCurrentWell();
             OnPropertyChanged(nameof(Reports));
         }
-
-
 
         #endregion
     }

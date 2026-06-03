@@ -3,6 +3,10 @@ using ProjectReport.Models.Inventory;
 using ProjectReport.Modules.ReportDetail.ViewModels;
 using ProjectReport.Modules.ReportDetails.Views;
 using ProjectReport.Modules.RigProfile.Views;
+using ProjectReport.Modules.VolumeBalance.Models;
+using ProjectReport.Modules.VolumeBalance.Services;
+using ProjectReport.Modules.VolumeBalance.ViewModels;
+using ProjectReport.Modules.VolumeBalance.Views;
 using ProjectReport.Services;
 using ProjectReport.Services.Inventory;
 using ProjectReport.ViewModels;
@@ -10,7 +14,7 @@ using ProjectReport.ViewModels.Geometry;
 using ProjectReport.ViewModels.Inventory;
 using ProjectReport.Views.Geometry;
 using ProjectReport.Views.Inventory;
-using ProjectReport.Views.ReportWizard; 
+using ProjectReport.Views.ReportWizard;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -18,44 +22,63 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-
-
-
 namespace ProjectReport.Views
 {
     public partial class MainWindow : Window
     {
         private readonly DatabaseService _databaseService;
 
-        private ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView? _volumeBalanceView;
-        private ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel? _volumeBalanceViewModel;
+        // INSTANCIAS VOLUMENES
+        private VolumeBalanceView? _volumeBalanceView;
+
+        private VolumeBalanceViewModel?
+            _volumeBalanceViewModel;
+
+        private VolumeBalanceEventView?
+            _volumeBalanceEventView;
+
+        private readonly VolumeBalanceNavigationService
+            _volumeNavigation;
+        //------------------------------------------------------------
+
         private int? _currentWellId;
         private Well _currentWell;
-
-
-
 
         private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
         {
             if (_volumeBalanceView == null)
             {
-                _volumeBalanceViewModel = new ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel();
-                _volumeBalanceView = new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView
-                {
-                    DataContext = _volumeBalanceViewModel
-                };
+                _volumeBalanceViewModel =
+                    new ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel(_volumeNavigation);
+
+                _volumeBalanceView =
+                    new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView
+                    {
+                        DataContext = _volumeBalanceViewModel
+                    };
             }
-            ContentTitle.Text = $"Volume Balance - {_currentWell.WellName}";
+
+            ContentTitle.Text = "Volume Balance";
+
             ContentArea.Content = _volumeBalanceView;
-            GeometrySubmenu.Visibility = Visibility.Collapsed;
-            GeometrySubmenu.Height = 0;
+        }
 
-            // Trigger data push from other modules
-            if (_geometryView?.DataContext is ProjectReport.ViewModels.Geometry.GeometryViewModel gvm)
-                gvm.RecalculateTotals();
+        private void OpenVolumeBalanceEvent(VolumeBalanceEvent evento)
+        {
+            if (_volumeBalanceEventView == null)
+            {
+                _volumeBalanceEventView = new VolumeBalanceEventView();
+            }
 
-            if (_rigProfileView?.DataContext is ProjectReport.Modules.RigProfile.ViewModels.RigProfileViewModel rvm)
-                rvm.GetType().GetMethod("PublishPits", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.Invoke(rvm, null);
+            _volumeBalanceEventView.DataContext = evento;
+
+            ContentTitle.Text = $"Volume Balance Event # - {evento.Hora}";
+            ContentArea.Content = _volumeBalanceEventView;
+        }
+
+        private void RegisterVolumeBalanceNavigation()
+        {
+            _volumeNavigation.NavigateToEventRequested += OpenVolumeBalanceEvent;
         }
 
         private GeometryView? _geometryView;
@@ -64,12 +87,16 @@ namespace ProjectReport.Views
         private Views.WellDashboardView? _wellDashboardView;
         private RigProfileView? _rigProfileView;
 
-
         public Project CurrentProject { get; set; }
 
         public MainWindow()
         {
             InitializeComponent();
+
+            _volumeNavigation = new VolumeBalanceNavigationService();
+
+            // ✅ IMPORTANTE: registrar navegación
+            RegisterVolumeBalanceNavigation();
 
             _databaseService = new DatabaseService();
             _currentWell = new Well();
@@ -81,19 +108,23 @@ namespace ProjectReport.Views
                 WellName = "Well-04"
             };
 
-            // IMPORTANTE: mantén esto por ahora
             DataContext = this;
 
             NavigationService.Instance.NavigationRequested += OnNavigationRequested;
 
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            var timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+
             timer.Tick += Timer_Tick;
             timer.Start();
 
             NavigateToHome();
         }
+    
 
-        private void SetTopMenuButtonsVisibility(Visibility visibility)
+private void SetTopMenuButtonsVisibility(Visibility visibility)
         {
             HomeButton.Visibility = visibility;
             GeometryButton.Visibility = visibility;

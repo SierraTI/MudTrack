@@ -4,6 +4,8 @@ using System.Windows.Input;
 using ProjectReport.Models.Geometry.DrillString;
 using ProjectReport.Models.Geometry.Wellbore;
 using ProjectReport.ViewModels;
+using System.Globalization;
+
 
 namespace ProjectReport.ViewModels.Geometry.Config
 {
@@ -17,7 +19,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
         private double? _weight;
         private double? _tjIDLength;
 
-        private readonly WellboreComponent? _currentWellboreComponent; // 👈 NUEVO
+        private readonly WellboreComponent? _currentWellboreComponent; 
 
         public double? TJ_OD
         {
@@ -35,7 +37,8 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_OD_String
         {
-            get => Model.TJ_OD.HasValue ? Model.TJ_OD.Value.ToString("F2") : string.Empty;
+      
+            get => Model.TJ_OD?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -44,8 +47,12 @@ namespace ProjectReport.ViewModels.Geometry.Config
                     return;
                 }
 
-                if (double.TryParse(value, out double result))
+                value = value.Replace(',', '.');
+
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
                     TJ_OD = result;
+                }
             }
         }
 
@@ -65,7 +72,8 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_ID_String
         {
-            get => Model.TJ_ID.HasValue ? Model.TJ_ID.Value.ToString("F2") : string.Empty;
+
+            get => Model.TJ_ID?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -74,8 +82,12 @@ namespace ProjectReport.ViewModels.Geometry.Config
                     return;
                 }
 
-                if (double.TryParse(value, out double result))
+                value = value.Trim().Replace(',', '.');
+
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
                     TJ_ID = result;
+                }
             }
         }
 
@@ -95,7 +107,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_Length_String
         {
-            get => Model.TJ_Length.HasValue ? Model.TJ_Length.Value.ToString("F2") : string.Empty;
+            get => Model.TJ_Length?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -104,8 +116,12 @@ namespace ProjectReport.ViewModels.Geometry.Config
                     return;
                 }
 
-                if (double.TryParse(value, out double result))
+                value = value.Trim().Replace(',', '.');
+
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
                     TJ_Length = result;
+                }
             }
         }
 
@@ -125,7 +141,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string Weight_String
         {
-            get => Model.Weight.HasValue ? Model.Weight.Value.ToString("F2") : string.Empty;
+            get => Model.Weight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -134,8 +150,12 @@ namespace ProjectReport.ViewModels.Geometry.Config
                     return;
                 }
 
-                if (double.TryParse(value, out double result))
+                value = value.Trim().Replace(',', '.');
+
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
                     Weight = result;
+                }
             }
         }
 
@@ -155,7 +175,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
 
         public string TJ_ID_Length_String
         {
-            get => Model.TJ_ID_Length.HasValue ? Model.TJ_ID_Length.Value.ToString("F2") : string.Empty;
+            get => Model.TJ_ID_Length?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -164,8 +184,12 @@ namespace ProjectReport.ViewModels.Geometry.Config
                     return;
                 }
 
-                if (double.TryParse(value, out double result))
+                value = value.Trim().Replace(',', '.');
+
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
+                {
                     TJ_ID_Length = result;
+                }
             }
         }
 
@@ -207,7 +231,7 @@ namespace ProjectReport.ViewModels.Geometry.Config
         public ToolJointConfigViewModel(
             ToolJointConfig model,
             ComponentType componentType = ComponentType.DrillPipe,
-            WellboreComponent? currentWellboreComponent = null // 👈 NUEVO
+            WellboreComponent? currentWellboreComponent = null
         )
         {
             Model = model ?? throw new ArgumentNullException(nameof(model));
@@ -230,37 +254,50 @@ namespace ProjectReport.ViewModels.Geometry.Config
             OnPropertyChanged(nameof(Grade));
             OnPropertyChanged(nameof(AvailableGrades));
 
-            // 🔥 VALIDACIÓN COMPLETA
             SaveCommand = new RelayCommand(_ =>
             {
-                // 🔴 Regla básica
+                var componentType = _currentWellboreComponent?.Component.ToString() ?? "Unknown";
+
                 if (Model.TJ_ID.HasValue && Model.TJ_OD.HasValue && Model.TJ_ID >= Model.TJ_OD)
                 {
                     MessageBox.Show(
-                        "Tool Joint ID must be less than Tool Joint OD",
+                        $"Invalid Tool Joint dimensions:\n\n" +
+                        $"- TJ ID: {Model.TJ_ID.Value}\n" +
+                        $"- TJ OD: {Model.TJ_OD.Value}\n\n" +
+                        $"TJ ID must be less than TJ OD.",
                         "Validation Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                     return;
                 }
 
-                // 🔵 Validación contra Wellbore
-                if (_currentWellboreComponent != null)
+                if (_currentWellboreComponent == null)
+                    return;
+
+                if (_currentWellboreComponent.Component == ComponentType.OpenHole)
                 {
-                    if (Model.TJ_OD.HasValue && Model.TJ_OD > _currentWellboreComponent.OD)
+                    if (Model.TJ_OD.HasValue && Model.TJ_OD.Value >= _currentWellboreComponent.OD)
                     {
                         MessageBox.Show(
-                            $"Tool Joint OD ({Model.TJ_OD}) cannot exceed Wellbore OD ({_currentWellboreComponent.OD})",
+                            $"Invalid configuration against {componentType}:\n\n" +
+                            $"- Tool Joint OD: {Model.TJ_OD.Value}\n" +
+                            $"- {componentType} OD: {_currentWellboreComponent.OD}\n\n" +
+                            $"Tool Joint OD must be less than the {componentType} OD.",
                             "Validation Error",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
                         return;
                     }
-
-                    if (Model.TJ_ID.HasValue && Model.TJ_ID > _currentWellboreComponent.ID)
+                }
+                else
+                {
+                    if (Model.TJ_OD.HasValue && Model.TJ_OD.Value >= _currentWellboreComponent.ID)
                     {
                         MessageBox.Show(
-                            $"Tool Joint ID ({Model.TJ_ID}) cannot exceed Wellbore ID ({_currentWellboreComponent.ID})",
+                            $"Invalid configuration against {componentType}:\n\n" +
+                            $"- Tool Joint OD: {Model.TJ_OD.Value}\n" +
+                            $"- {componentType} ID: {_currentWellboreComponent.ID}\n\n" +
+                            $"Tool Joint OD must be less than the {componentType} ID.",
                             "Validation Error",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
@@ -268,11 +305,11 @@ namespace ProjectReport.ViewModels.Geometry.Config
                     }
                 }
 
-                // ✅ TODO OK
                 RequestClose?.Invoke(true);
             });
 
             CancelCommand = new RelayCommand(_ => RequestClose?.Invoke(false));
         }
+
     }
 }

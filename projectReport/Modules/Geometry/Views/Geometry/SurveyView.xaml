@@ -1,0 +1,420 @@
+﻿<UserControl x:Class="ProjectReport.Modules.Geometry.Views.Geometry.SurveyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="800"
+             d:DesignWidth="1400">
+
+    <Grid Margin="18">
+
+        <!-- ===================================================== -->
+        <!-- ROWS -->
+        <!-- ===================================================== -->
+
+        <Grid.RowDefinitions>
+
+            <!-- Toolbar -->
+            <RowDefinition Height="Auto"/>
+
+            <!-- DataGrid -->
+            <RowDefinition Height="Auto"/>
+
+            <!-- Charts Title -->
+            <RowDefinition Height="Auto"/>
+
+            <!-- Charts -->
+            <RowDefinition Height="*"/>
+
+            <!-- Summary -->
+            <RowDefinition Height="Auto"/>
+
+        </Grid.RowDefinitions>
+
+        <!-- ===================================================== -->
+        <!-- TOOLBAR -->
+        <!-- ===================================================== -->
+
+        <Border Grid.Row="0"
+                Margin="0,0,0,12"
+                Padding="12"
+                CornerRadius="10"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                Background="White">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Survey points define the trajectory. Keep MD increasing."
+                           VerticalAlignment="Center"
+                           Foreground="#666666"
+                           FontSize="13"/>
+
+                <!-- LOAD EXCEL -->
+
+                <Button Grid.Column="1"
+                        Content="Load Excel"
+                        Margin="0,0,10,0"
+                        Padding="18,8"
+                        />
+
+                <!-- ADD -->
+
+                <Button Grid.Column="2"
+                        Content="Add Survey Point"
+                        Padding="18,8"
+                        />
+
+            </Grid>
+
+        </Border>
+
+        <!-- ===================================================== -->
+        <!-- DATAGRID -->
+        <!-- ===================================================== -->
+
+        <DataGrid Grid.Row="1"
+                  x:Name="SurveyDataGrid"
+                  AutoGenerateColumns="False"
+                  ItemsSource="{Binding SurveyPoints}"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="True"
+                  SelectionMode="Single"
+                  Margin="0,0,0,15"
+                  MinHeight="250"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal">
+
+            <DataGrid.Columns>
+
+                <!-- ID -->
+
+                <DataGridTextColumn Header="ID"
+                                    Binding="{Binding Id}"
+                                    Width="60"
+                                    IsReadOnly="True"/>
+
+                <!-- MD -->
+
+                <DataGridTextColumn Header="MD (ft)"
+                                    Width="130"
+                                    Binding="{Binding MD,
+                                                      UpdateSourceTrigger=PropertyChanged,
+                                                      StringFormat=F2}"/>
+
+                <!-- TVD -->
+
+                <DataGridTextColumn Header="TVD (ft)"
+                                    Width="130"
+                                    IsReadOnly="True"
+                                    Binding="{Binding TVD,
+                                                      StringFormat=F2}"/>
+
+                <!-- ANGLE -->
+
+                <DataGridTextColumn Header="Hole Angle"
+                                    Width="140"
+                                    Binding="{Binding HoleAngle,
+                                                      UpdateSourceTrigger=PropertyChanged,
+                                                      StringFormat=F2}"/>
+
+                <!-- AZIMUTH -->
+
+                <DataGridTextColumn Header="Azimuth"
+                                    Width="140"
+                                    Binding="{Binding Azimuth,
+                                                      UpdateSourceTrigger=PropertyChanged,
+                                                      StringFormat=F2}"/>
+
+                <!-- NORTH -->
+
+                <DataGridTextColumn Header="Northing"
+                                    Width="140"
+                                    IsReadOnly="True"
+                                    Binding="{Binding Northing,
+                                                      StringFormat=F2}"/>
+
+                <!-- EAST -->
+
+                <DataGridTextColumn Header="Easting"
+                                    Width="140"
+                                    IsReadOnly="True"
+                                    Binding="{Binding Easting,
+                                                      StringFormat=F2}"/>
+
+                <!-- HORIZONTAL -->
+
+                <DataGridTextColumn Header="Horiz. Disp."
+                                    Width="140"
+                                    IsReadOnly="True"
+                                    Binding="{Binding VerticalSection,
+                                                      StringFormat=F2}"/>
+
+                <!-- DLS -->
+
+                <DataGridTextColumn Header="DLS"
+                                    Width="120"
+                                    IsReadOnly="True"
+                                    Binding="{Binding DoglegSeverity,
+                                                      StringFormat=F2}"/>
+
+                <!-- ACTIONS -->
+
+                <DataGridTemplateColumn Header="Actions"
+                                        Width="170">
+
+                    <DataGridTemplateColumn.CellTemplate>
+
+                        <DataTemplate>
+
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Center">
+
+                                <!-- UP -->
+
+                                <Button Content="↑"
+                                        Width="30"
+                                        Height="28"
+                                        Margin="2"
+                            
+                                        Tag="{Binding}"/>
+
+                                <!-- DOWN -->
+
+                                <Button Content="↓"
+                                        Width="30"
+                                        Height="28"
+                                        Margin="2"
+                               
+                                        Tag="{Binding}"/>
+
+                                <!-- DELETE -->
+
+                                <Button Content="×"
+                                        Width="30"
+                                        Height="28"
+                                        Margin="2"
+                                        Foreground="Red"
+                               
+                                        Tag="{Binding}"/>
+
+                            </StackPanel>
+
+                        </DataTemplate>
+
+                    </DataGridTemplateColumn.CellTemplate>
+
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+
+        </DataGrid>
+
+        <!-- ===================================================== -->
+        <!-- TITLE -->
+        <!-- ===================================================== -->
+
+        <TextBlock Grid.Row="2"
+                   Text="Trajectory Visualization"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,10"/>
+
+        <!-- ===================================================== -->
+        <!-- CHARTS -->
+        <!-- ===================================================== -->
+
+        <Grid Grid.Row="3">
+
+            <Grid.ColumnDefinitions>
+
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="*"/>
+
+            </Grid.ColumnDefinitions>
+
+            <!-- ================================================= -->
+            <!-- PROFILE VIEW -->
+            <!-- ================================================= -->
+
+            <Border Grid.Column="0"
+                    Padding="10"
+                    CornerRadius="10"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    Background="White">
+
+                <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Profile View"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+
+                    <lvc:CartesianChart Grid.Row="1"
+                                        Series="{Binding SurveySeriesCollection}"
+                                        LegendLocation="Right">
+
+                        <!-- X -->
+
+                        <lvc:CartesianChart.AxisX>
+
+                            <lvc:Axis Title="Vertical Section (ft)"/>
+
+                        </lvc:CartesianChart.AxisX>
+
+                        <!-- Y -->
+
+                        <lvc:CartesianChart.AxisY>
+
+                            <lvc:Axis Title="TVD (ft)"/>
+
+                        </lvc:CartesianChart.AxisY>
+
+                    </lvc:CartesianChart>
+
+                </Grid>
+
+            </Border>
+
+            <!-- ================================================= -->
+            <!-- PLAN VIEW -->
+            <!-- ================================================= -->
+
+            <Border Grid.Column="2"
+                    Padding="10"
+                    CornerRadius="10"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    Background="White">
+
+                <Grid>
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Plan View"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+
+                    <lvc:CartesianChart Grid.Row="1"
+                                        Series="{Binding PlanViewSeriesCollection}"
+                                        LegendLocation="Right">
+
+                        <!-- X -->
+
+                        <lvc:CartesianChart.AxisX>
+
+                            <lvc:Axis Title="North (ft)"/>
+
+                        </lvc:CartesianChart.AxisX>
+
+                        <!-- Y -->
+
+                        <lvc:CartesianChart.AxisY>
+
+                            <lvc:Axis Title="East (ft)"/>
+
+                        </lvc:CartesianChart.AxisY>
+
+                    </lvc:CartesianChart>
+
+                </Grid>
+
+            </Border>
+
+        </Grid>
+
+        <!-- ===================================================== -->
+        <!-- SUMMARY -->
+        <!-- ===================================================== -->
+
+        <Border Grid.Row="4"
+                Margin="0,15,0,0"
+                Padding="15"
+                CornerRadius="10"
+                BorderBrush="#DDDDDD"
+                BorderThickness="1"
+                Background="White">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+
+                </Grid.ColumnDefinitions>
+
+                <!-- MAX TVD -->
+
+                <StackPanel Grid.Column="0">
+
+                    <TextBlock Text="Max TVD"
+                               FontSize="11"
+                               Foreground="#666666"/>
+
+                    <TextBlock Text="{Binding MaxSurveyTVD,
+                                              StringFormat={}{0:F0} ft}"
+                               FontSize="18"
+                               FontWeight="Bold"/>
+
+                </StackPanel>
+
+                <!-- HORIZONTAL -->
+
+                <StackPanel Grid.Column="1">
+
+                    <TextBlock Text="Horizontal Displacement"
+                               FontSize="11"
+                               Foreground="#666666"/>
+
+                    <TextBlock Text="{Binding MaxSurveyVerticalSection,
+                                              StringFormat={}{0:F0} ft}"
+                               FontSize="18"
+                               FontWeight="Bold"/>
+
+                </StackPanel>
+
+                <!-- REPORT MD -->
+
+                <StackPanel Grid.Column="2">
+
+                    <TextBlock Text="Report MD"
+                               FontSize="11"
+                               Foreground="#666666"/>
+
+                    <TextBlock Text="{Binding ReportMD,
+                                              StringFormat={}{0:F0} ft}"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="Red"/>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
+    </Grid>
+
+</UserControl>

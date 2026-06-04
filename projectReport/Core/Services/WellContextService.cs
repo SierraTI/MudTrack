@@ -6,6 +6,7 @@ using ProjectReport.Models;
 using ProjectReport.Models.Rig;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Core.Data;
+using ProjectReport.Modules.VolumeBalance.Models;
 
 namespace ProjectReport.Services
 {
@@ -64,7 +65,7 @@ namespace ProjectReport.Services
         private readonly Dictionary<string, bool> _stepCompletionStatus = new();
         private List<ChemicalItem> _currentSelectedChemicals = new();
         private IEnumerable<ProjectReport.Models.Geometry.Wellbore.WellboreComponent>? _lastGeometry;
-        private IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent>? _lastEvents;
+        private IEnumerable<VolumeBalanceEvent>? _lastEvents;
 
         public event EventHandler<Well>? WellChanged;
         public event EventHandler<double>? DepthUpdated;
@@ -77,7 +78,7 @@ namespace ProjectReport.Services
         public event Action<IEnumerable<ProjectReport.Models.Geometry.Survey.SurveyPoint>>? SurveyUpdated;
         public event Action<IEnumerable<ProjectReport.Models.Geometry.ThermalGradient.ThermalGradientPoint>>? ThermalUpdated;
         public event Action<IEnumerable<ProjectReport.Models.Geometry.WellTest.WellTest>>? WellTestsUpdated;
-        public event Action<IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent>>? VolumeEventsUpdated;
+        public event Action<IEnumerable<VolumeBalanceEvent>>? VolumeEventsUpdated;
         public event EventHandler<RigProfileUpdatedEventArgs>? RigProfileUpdated;
         public event EventHandler<ChemicalSelectionUpdatedEventArgs>? ChemicalSelectionUpdated;
 
@@ -139,7 +140,7 @@ namespace ProjectReport.Services
         }
     
         public IEnumerable<ProjectReport.Models.Geometry.Wellbore.WellboreComponent>? GetLoadedGeometry() => _lastGeometry;
-        public IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent>? GetLoadedEvents() => _lastEvents;
+        public IEnumerable<VolumeBalanceEvent>? GetLoadedEvents() => _lastEvents;
 
         public async Task SaveCurrentWell()
         {
@@ -257,7 +258,7 @@ namespace ProjectReport.Services
             WellboreComponentsUpdated?.Invoke(this, components);
         }
 
-        public void PublishVolumeEvents(IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent> events)
+        public void PublishVolumeEvents(IEnumerable<VolumeBalanceEvent> events)
         {
             _lastEvents = events;
         }

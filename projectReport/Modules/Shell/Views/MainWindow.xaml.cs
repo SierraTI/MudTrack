@@ -122,9 +122,9 @@ namespace ProjectReport.Views
 
             NavigateToHome();
         }
-    
 
-private void SetTopMenuButtonsVisibility(Visibility visibility)
+
+        private void SetTopMenuButtonsVisibility(Visibility visibility)
         {
             HomeButton.Visibility = visibility;
             GeometryButton.Visibility = visibility;

@@ -16,4 +16,39 @@ namespace ProjectReport.Modules.VolumeBalance.Models
 
         public DateTime CreatedAt { get; set; }
     }
+    public enum ActivityType
+    {
+        Drilling,
+        Tripping,
+        Mixing,
+        Cementing,
+        Displacement,
+        Circulating,
+        Other
+    }
+
+    public enum LossCategory
+    {
+        SCE,        // Surface Control Equipment: Shakers, Centrifuges, Mud Cleaners
+        Downhole,   // Filtration, Lost in Hole, Left Behind Casing
+        Misc        // Evaporation, Trips, Displacement
+    }
+
+    public enum SystemType
+    {
+        Active,
+        Reserve,
+        Other
+    }
+
+    public enum BaseFluidType
+    {
+        Water,
+        DewateringWater,
+        OsmosisWater,
+        Oil,
+        OilBased,
+        Influx,
+        Other
+    }
 }

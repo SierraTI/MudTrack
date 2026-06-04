@@ -254,7 +254,7 @@ private void SetTopMenuButtonsVisibility(Visibility visibility)
 
             _wellDashboardView = new Views.WellDashboardView();
             var vm = new ProjectReport.ViewModels.WellDashboardViewModel(CurrentProject);
-            vm.LoadWell(well);
+            _ = vm.LoadWell(well);
             _wellDashboardView.DataContext = vm;
 
             // Suscribirse al evento para abrir ReportDetails

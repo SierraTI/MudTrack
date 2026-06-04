@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using ProjectReport.Models.Geometry.DrillString;
+using ProjectReport.Modules.Geometry.Models;
 
 namespace ProjectReport.Models.Geometry.Wellbore
 {
@@ -504,6 +505,30 @@ namespace ProjectReport.Models.Geometry.Wellbore
         {
             get => _collapseRating;
             set { _collapseRating = value; OnPropertyChanged(); }
+        }
+
+        private TubularCatalogItem? _selectedCatalogItem;
+
+        [Newtonsoft.Json.JsonIgnore]
+        public TubularCatalogItem? SelectedCatalogItem
+        {
+            get => _selectedCatalogItem;
+            set
+            {
+                if (SetProperty(ref _selectedCatalogItem, value))
+                {
+                    if (value != null)
+                    {
+                        Name = value.Name;
+                        OD = value.OD;
+                        if (Component != ComponentType.OpenHole)
+                        {
+                            ID = value.ID;
+                        }
+                    }
+                    OnPropertyChanged();
+                }
+            }
         }
 
         public ComponentType? Component 

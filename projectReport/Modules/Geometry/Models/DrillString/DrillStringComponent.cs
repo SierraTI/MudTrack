@@ -40,7 +40,7 @@ namespace ProjectReport.Models.Geometry.DrillString
         public ToolJointConfig? ToolJoint { get; set; }
         public PressureDropConfigModel? PressureDropConfig { get; set; }
         public BitJetsConfigModel? BitJetsConfig { get; set; }
-        public ObservableCollection<WellboreComponent> WellboreComponents { get; set; }
+        public ObservableCollection<WellboreComponent> WellboreComponents { get; set; } = new ObservableCollection<WellboreComponent>();
 
 
 

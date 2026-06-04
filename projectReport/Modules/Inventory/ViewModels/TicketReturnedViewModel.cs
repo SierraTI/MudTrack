@@ -86,7 +86,9 @@ namespace ProjectReport.ViewModels.Inventory
         public RelayCommand LoadFromReceivedCommand { get; }
 
         public event Action? RequestClose;
+        #pragma warning disable CS0067
         public event Action? RequestSelectProducts;
+        #pragma warning restore CS0067
 
         // Nuevo: Id del ticket que se estÃ¡ editando (si aplica)
         private string? _editingTicketId;
@@ -159,8 +161,8 @@ namespace ProjectReport.ViewModels.Inventory
 
                 Lines.Add(new TicketLine
                 {
-                    ProductCode = item.Code,
-                    ProductName = item.Name ?? item.Code,
+                    ProductCode = item.Code ?? string.Empty,
+                    ProductName = item.Name ?? item.Code ?? string.Empty,
                     Unit = resolvedUnit,
                     Quantity = 1,
                     Context = Destination

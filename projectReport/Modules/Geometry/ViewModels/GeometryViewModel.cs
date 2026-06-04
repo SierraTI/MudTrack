@@ -3554,7 +3554,7 @@ namespace ProjectReport.ViewModels.Geometry
         //Metodo para validar OD ID EN EL WELLBORE
         private bool CanApplyWellboreChange(WellboreComponent section, double newRestriction, out string error)
         {
-            error = null;
+            error = string.Empty;
 
             foreach (var tool in DrillStringComponents)
             {

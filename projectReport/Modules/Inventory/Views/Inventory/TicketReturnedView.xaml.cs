@@ -87,7 +87,7 @@ namespace ProjectReport.Views.Inventory
 
             var line = e.Row.Item as TicketLine;
 
-            FrameworkElement editingElement = e.EditingElement as FrameworkElement;
+            FrameworkElement? editingElement = e.EditingElement as FrameworkElement;
             if (editingElement == null)
                 editingElement = FindVisualChild<ContentPresenter>(e.Row);
 

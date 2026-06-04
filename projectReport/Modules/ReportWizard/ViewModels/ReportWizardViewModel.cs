@@ -29,13 +29,10 @@ namespace ProjectReport.ViewModels
         private readonly HydraulicsCalculationService _hydraulicsService;
         private bool _isUpdatingSelection = false;
 
-        public ReportWizardViewModel(Well well, Project project, Report reportToEdit)
+        public ReportWizardViewModel(Well well, Project project, Report? reportToEdit)
         {
             _well = well ?? throw new ArgumentNullException(nameof(well));
             _project = project ?? throw new ArgumentNullException(nameof(project));
-
-            if (reportToEdit == null)
-                throw new ArgumentNullException(nameof(reportToEdit));
 
             _projectFilePath = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,
@@ -45,7 +42,10 @@ namespace ProjectReport.ViewModels
             _inventoryService = new InventoryService(new JsonInventoryRepository());
             _hydraulicsService = new HydraulicsCalculationService();
 
-            Report = reportToEdit;
+            Report = reportToEdit ?? new Report();
+            
+            // Sync with Context Service for SQL persistence
+            WellContextService.Instance.CurrentReport = Report;
 
             HookEvents();
             LoadHoleSizeList();
@@ -94,7 +94,7 @@ namespace ProjectReport.ViewModels
 
         public class DisplayFluid : BaseViewModel
         {
-            public WellFluid Fluid { get; set; }
+            public WellFluid Fluid { get; set; } = new WellFluid();
 
             private bool _isChecked;
             public bool IsChecked
@@ -113,7 +113,7 @@ namespace ProjectReport.ViewModels
         public ObservableCollection<DisplayFluid> FilteredFluids { get; }
             = new ObservableCollection<DisplayFluid>();
 
-        private string _selectedFluid;
+        private string _selectedFluid = string.Empty;
         public string SelectedFluid
         {
             get => _selectedFluid;
@@ -147,17 +147,21 @@ namespace ProjectReport.ViewModels
 
         private void LoadFluidTypes()
         {
-            if (_well.SelectedFluids == null)
-                return;
-
-            var types = _well.SelectedFluids
-                .Select(f => f.Type)
-                .Distinct()
-                .OrderBy(t => t);
+            // First, load from the Global Fluid Catalog synchronized with DB
+            var catalogTypes = WellContextService.Instance.FluidCatalog.ToList();
+            
+            // Also include types already selected for this well if not in catalog
+            if (_well.SelectedFluids != null)
+            {
+                var wellTypes = _well.SelectedFluids.Select(f => f.Type).Distinct();
+                foreach (var t in wellTypes)
+                {
+                    if (!catalogTypes.Contains(t)) catalogTypes.Add(t);
+                }
+            }
 
             FluidTypes.Clear();
-
-            foreach (var t in types)
+            foreach (var t in catalogTypes.OrderBy(x => x))
                 FluidTypes.Add(t);
 
             if (FluidTypes.Any())
@@ -202,7 +206,7 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private void DisplayFluid_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void DisplayFluid_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (_isUpdatingSelection || e.PropertyName != nameof(DisplayFluid.IsChecked))
                 return;
@@ -237,7 +241,7 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private void RemoveFluid(WellFluid fluid)
+        private void RemoveFluid(WellFluid? fluid)
         {
             if (fluid == null)
                 return;
@@ -505,10 +509,7 @@ namespace ProjectReport.ViewModels
 
         private async Task SaveReportAsync()
         {
-            await DataPersistenceService.SaveProjectAsync(
-                _projectFilePath,
-                _project
-            );
+            await WellContextService.Instance.SaveCurrentWell();
         }
 
         #endregion

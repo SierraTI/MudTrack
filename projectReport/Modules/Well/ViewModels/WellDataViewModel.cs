@@ -44,12 +44,25 @@ namespace ProjectReport.ViewModels
             _autoSaveTimer.Elapsed += async (s, e) => await AutoSaveAsync();
             _autoSaveTimer.AutoReset = false;
 
+            // Load Fluid Catalog from DB
+            LoadFluidCatalogFromDb();
+
             // Subscribe to property changes for auto-save
             _currentWell.PropertyChanged += (s, e) => TriggerAutoSave();
 
             // Establecer CurrentWell.LoadFluid al SelectedFluid inicial
             if (!string.IsNullOrEmpty(SelectedFluid))
                 CurrentWell.LoadFluid = SelectedFluid;
+        }
+
+        private void LoadFluidCatalogFromDb()
+        {
+            var catalog = WellContextService.Instance.FluidCatalog;
+            if (catalog.Any())
+            {
+                LoadFluid.Clear();
+                foreach (var f in catalog) LoadFluid.Add(f);
+            }
         }
 
         #region Properties
@@ -103,7 +116,7 @@ namespace ProjectReport.ViewModels
 
 
         private string? _selectedFluid;
-        public string SelectedFluid
+        public string? SelectedFluid
         {
             get => _selectedFluid;
             set
@@ -156,9 +169,9 @@ namespace ProjectReport.ViewModels
                             {
                                 Name = fluidSetName.Trim(),
                                 Type = baseFluid.Trim(),
-                                Category = category?.Trim(),
-                                System = system?.Trim(),
-                                BrineType = brineType?.Trim()
+                                Category = category?.Trim() ?? string.Empty,
+                                System = system?.Trim() ?? string.Empty,
+                                BrineType = brineType?.Trim() ?? string.Empty
                             };
 
                             fluid.PropertyChanged += Fluid_PropertyChanged;
@@ -220,8 +233,8 @@ namespace ProjectReport.ViewModels
                 {
                     var fluid = new FluidData
                     {
-                        Name = SelectedFluid,
-                        Type = SelectedFluid,
+                        Name = SelectedFluid ?? string.Empty,
+                        Type = SelectedFluid ?? string.Empty,
                         IsSelected = true
                     };
 
@@ -245,7 +258,7 @@ namespace ProjectReport.ViewModels
             }
         }
 
-        private void Fluid_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void Fluid_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(FluidData.IsSelected))
             {
@@ -416,11 +429,11 @@ namespace ProjectReport.ViewModels
 
         public class FluidData : INotifyPropertyChanged
         {
-            public string Name { get; set; }
-            public string Type { get; set; }
-            public string Category { get; set; }
-            public string System { get; set; }
-            public string BrineType { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Type { get; set; } = string.Empty;
+            public string Category { get; set; } = string.Empty;
+            public string System { get; set; } = string.Empty;
+            public string BrineType { get; set; } = string.Empty;
 
             private bool _isSelected;
             public bool IsSelected
@@ -436,7 +449,7 @@ namespace ProjectReport.ViewModels
                 }
             }
 
-            public event PropertyChangedEventHandler PropertyChanged;
+            public event PropertyChangedEventHandler? PropertyChanged;
         }
 
 
@@ -466,14 +479,13 @@ namespace ProjectReport.ViewModels
 
                 
 
-                await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
-                
+                // Update Context and navigate to Dashboard
+                await WellContextService.Instance.SaveCurrentWell();
                 _lastSaved = DateTime.Now;
                 LastSavedText = $"✓ Saved at {_lastSaved:h:mm:ss tt}";
                 
-                ToastNotificationService.Instance.ShowSuccess("Well data saved successfully");
+                ToastNotificationService.Instance.ShowSuccess("Well data saved to SQL successfully");
                 
-                // Update Context and navigate to Dashboard
                 WellContextService.Instance.CurrentWell = CurrentWell;
                 NavigationService.Instance.NavigateToWellDashboard(CurrentWell.Id);
             }
@@ -535,7 +547,7 @@ namespace ProjectReport.ViewModels
             ToastNotificationService.Instance.ShowInfo("Logo removed");
         }
 
-        private void RemoveFluid(object parameter)
+        private void RemoveFluid(object? parameter)
         {
             if (parameter is FluidData fluid)
             {
@@ -591,13 +603,13 @@ namespace ProjectReport.ViewModels
                     }
                 }
 
-                await DataPersistenceService.SaveProjectAsync(_projectFilePath, _project);
+                await WellContextService.Instance.SaveCurrentWell();
                 
                 _lastSaved = DateTime.Now;
                 // We need to dispatch this to the UI thread since it's called from a timer
                 System.Windows.Application.Current.Dispatcher.Invoke(() => 
                 {
-                    LastSavedText = $"✓ Auto-saved at {_lastSaved:h:mm:ss tt}";
+                    LastSavedText = $"✓ SQL Auto-saved at {_lastSaved:h:mm:ss tt}";
                 });
             }
             catch (Exception ex)

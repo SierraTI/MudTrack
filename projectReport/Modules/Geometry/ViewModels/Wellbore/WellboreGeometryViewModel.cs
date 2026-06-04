@@ -54,6 +54,33 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                 Enum.GetValues(typeof(WellSectionType)).Cast<WellSectionType>());
 
             WellboreComponents.CollectionChanged += OnWellboreCollectionChanged;
+
+            // Load existing data if available
+            LoadExistingGeometry();
+            
+            // Subscribe to context updates
+            WellContextService.Instance.WellboreComponentsUpdated += (s, components) => 
+            {
+                LoadExistingGeometry();
+            };
+        }
+
+        private void LoadExistingGeometry()
+        {
+            var loaded = WellContextService.Instance.GetLoadedGeometry();
+            if (loaded != null && loaded.Any())
+            {
+                _isProcessingCollectionChange = true;
+                WellboreComponents.Clear();
+                foreach (var c in loaded)
+                {
+                    c.PropertyChanged += OnWellboreComponentChanged;
+                    WellboreComponents.Add(c);
+                }
+                _isProcessingCollectionChange = false;
+                UpdateWellboreContinuity();
+                RecalculateTotals();
+            }
         }
 
         #region Commands
@@ -403,6 +430,9 @@ namespace ProjectReport.ViewModels.Geometry.Wellbore
                     TotalWellboreMD = lastComponent?.BottomMD ?? 0;
                 }
             }
+
+            // Publish components for persistence
+            WellContextService.Instance.PublishWellboreComponents(WellboreComponents);
         }
 
         #endregion

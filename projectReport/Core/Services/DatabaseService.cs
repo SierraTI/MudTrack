@@ -8,6 +8,16 @@ namespace ProjectReport.Services
     {
         private SqlConnection? _connection;
         private bool _disposed = false;
+ 
+        public DatabaseService()
+        {
+            // Auto-connect using default connection string
+            string connString = ProjectReport.Helpers.ConfigHelper.GetConnectionString();
+            if (!string.IsNullOrEmpty(connString))
+            {
+                Connect(connString, out _);
+            }
+        }
 
         public bool IsConnected => _connection?.State == ConnectionState.Open;
 
@@ -41,10 +51,26 @@ namespace ProjectReport.Services
             }
         }
 
+        private void EnsureConnection()
+        {
+            if (_connection == null || _connection.State != ConnectionState.Open)
+            {
+                string connString = ProjectReport.Helpers.ConfigHelper.GetConnectionString();
+                if (!string.IsNullOrEmpty(connString))
+                {
+                    Connect(connString, out _);
+                }
+                
+                if (_connection == null || _connection.State != ConnectionState.Open)
+                {
+                    throw new InvalidOperationException("Database connection is not open");
+                }
+            }
+        }
+
         public DataTable ExecuteQuery(string query, params SqlParameter[] parameters)
         {
-            if (_connection?.State != ConnectionState.Open)
-                throw new InvalidOperationException("Database connection is not open");
+            EnsureConnection();
 
             var dataTable = new DataTable();
             
@@ -62,8 +88,7 @@ namespace ProjectReport.Services
 
         public int ExecuteNonQuery(string query, params SqlParameter[] parameters)
         {
-            if (_connection?.State != ConnectionState.Open)
-                throw new InvalidOperationException("Database connection is not open");
+            EnsureConnection();
 
             using var command = new SqlCommand(query, _connection);
             if (parameters != null && parameters.Length > 0)
@@ -76,8 +101,7 @@ namespace ProjectReport.Services
 
         public object? ExecuteScalar(string query, params SqlParameter[] parameters)
         {
-            if (_connection?.State != ConnectionState.Open)
-                throw new InvalidOperationException("Database connection is not open");
+            EnsureConnection();
 
             using var command = new SqlCommand(query, _connection);
             if (parameters != null && parameters.Length > 0)

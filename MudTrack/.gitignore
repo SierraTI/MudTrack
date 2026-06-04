@@ -1,12 +1,14 @@
-﻿ï»¿################################################################################
-# Este archivo .gitignore ha sido creado automÃ¡ticamente por Microsoft(R) Visual Studio.
+﻿################################################################################
+# Este archivo .gitignore ha sido creado automáticamente por Microsoft(R) Visual Studio.
 ################################################################################
+
 # Visual Studio files
 .vs/
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -22,18 +24,22 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
 # Visual Studio cache/options directory
+.vs/
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
+
 # NuGet Packages
 *.nupkg
 *.snupkg
 **/packages/*
+
 # Project-specific
 project.lock.json
 project.fragment.lock.json
 artifacts/
+
 .fake
-ï»¿
-projectReport.db

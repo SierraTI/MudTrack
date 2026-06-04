@@ -1,0 +1,53 @@
+<UserControl x:Class="ProjectReport.Views.Inventory.InventoryDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ProjectReport.Views.Inventory"
+             xmlns:inv="clr-namespace:ProjectReport.Views.Inventory">
+    <UserControl.Resources>
+        <local:AlternationIndexToNumberConverter x:Key="IndexToNumberConverter"/>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <TabControl Margin="0,0,0,8">
+            <TabItem Header="Chemical List">
+                <local:ChemicalListView />
+            </TabItem>
+
+            <TabItem Header="Stock">
+                <Grid Margin="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="8"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Ticket buttons (solo para Products) -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Content="Ticket Received" Width="160" Margin="0,0,10,0" Command="{Binding OpenTicketReceivedCommand}"/>
+                        <Button Content="Ticket Returned" Width="160" Margin="0,0,10,0" Command="{Binding OpenTicketReturnedCommand}"/>
+                        <CheckBox Content="Project Filter" IsChecked="{Binding IsProjectFilterEnabled}" VerticalAlignment="Center" Margin="10,0,0,0"
+                                  ToolTip="Show only products selected for this project report"/>
+                    </StackPanel>
+
+                    <!-- Tickets -->
+                    <GroupBox Header="Tickets" Margin="0,0,0,0" Grid.Row="2">
+                        <inv:InventoryHistoryView x:Name="InventoryHistoryPanel" />
+                    </GroupBox>
+
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Usage">
+                <local:UsageView />
+            </TabItem>
+
+            <TabItem Header="Whole Fluids">
+                <local:WholeFluidsView />
+            </TabItem>
+
+            <TabItem Header="Additional Charge">
+                <local:AdditionalChargeView />
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

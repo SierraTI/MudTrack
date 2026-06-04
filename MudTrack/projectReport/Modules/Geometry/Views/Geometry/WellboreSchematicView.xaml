@@ -1,0 +1,20 @@
+<UserControl x:Class="ProjectReport.Views.Geometry.WellboreSchematicView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="300">
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Canvas x:Name="SchematicCanvas" 
+                    Background="#F9FAFB" 
+                    HorizontalAlignment="Center"
+                    Width="240" 
+                    Height="Auto" 
+                    Margin="0,20">
+                <!-- Data-driven drawing will be done in code-behind or via specialized framework -->
+            </Canvas>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -203,7 +203,7 @@ namespace ProjectReport.ViewModels
             {
                 var newWell = new Well
                 {
-                    Id = _project.Wells.Count > 0 ? _project.Wells.Max(w => w.Id) + 1 : 1,
+                    Id = 0,  // Let the DB assign the ID via AUTOINCREMENT
                     WellName = $"New Well {_project.Wells.Count + 1}",
                     Status = WellStatus.Draft,
                     CreatedDate = DateTime.Now,
@@ -211,13 +211,15 @@ namespace ProjectReport.ViewModels
                     SpudDate = DateTime.Now
                 };
 
-                _project.AddWell(newWell);
-                _project.SetActiveWell(newWell.Id);
-
+                // Save to DB first — this sets newWell.Id from the inserted row
                 WellContextService.Instance.CurrentWell = newWell;
                 await WellContextService.Instance.SaveCurrentWell();
 
-                // Navigate to Well Data (creación del pozo)
+                // Now add to in-memory project with the real DB-assigned ID
+                _project.AddWell(newWell);
+                _project.SetActiveWell(newWell.Id);
+
+                // Navigate to Well Data
                 NavigationService.Instance.NavigateToWellData(newWell.Id);
                 ToastNotificationService.Instance.ShowSuccess($"Created new well: {newWell.WellName}");
             }

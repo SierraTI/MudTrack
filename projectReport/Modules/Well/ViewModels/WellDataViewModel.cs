@@ -462,31 +462,19 @@ namespace ProjectReport.ViewModels
             try
             {
                 IsSaving = true;
-                
-                // Ensure the well is in the project
-                if (!_project.Wells.Contains(CurrentWell))
-                {
-                    if (CurrentWell.Id == 0)
-                    {
-                        CurrentWell.Id = _project.Wells.Any() ? _project.Wells.Max(w => w.Id) + 1 : 1;
-                    }
-                    
-                    if (!_project.Wells.Any(w => w.Id == CurrentWell.Id))
-                    {
-                        _project.AddWell(CurrentWell);
-                    }
-                }
 
-                
-
-                // Update Context and navigate to Dashboard
+                // Save to DB — if Id == 0, InsertWell runs and sets the real ID
+                WellContextService.Instance.CurrentWell = CurrentWell;
                 await WellContextService.Instance.SaveCurrentWell();
+
+                // Add to project with the real DB-assigned ID (if not already there)
+                if (!_project.Wells.Any(w => w.Id == CurrentWell.Id))
+                    _project.AddWell(CurrentWell);
+
                 _lastSaved = DateTime.Now;
                 LastSavedText = $"✓ Saved at {_lastSaved:h:mm:ss tt}";
-                
-                ToastNotificationService.Instance.ShowSuccess("Well data saved to SQL successfully");
-                
-                WellContextService.Instance.CurrentWell = CurrentWell;
+
+                ToastNotificationService.Instance.ShowSuccess("Well data saved successfully");
                 NavigationService.Instance.NavigateToWellDashboard(CurrentWell.Id);
             }
             catch (Exception ex)

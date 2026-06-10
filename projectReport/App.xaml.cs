@@ -10,20 +10,26 @@ namespace ProjectReport
         {
             base.OnStartup(e);
 
-            // Ensure the database schema required by the application exists
+            // Handle unhandled exceptions
+            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            // Initialize DB schema FIRST — before any window or service touches the DB
             try
             {
                 ProjectReport.Services.DatabaseInitializer.Initialize();
             }
             catch (Exception ex)
             {
-                // Log and continue — initialization failures will surface when DB is used
                 LogException(ex, "DatabaseInitializer");
+                MessageBox.Show($"Database initialization failed:\n{ex.Message}", "DB Init Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(1);
+                return;
             }
-            
-            // Handle unhandled exceptions
-            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
-            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            // Now it's safe to open the main window
+            var mainWindow = new ProjectReport.Views.MainWindow();
+            mainWindow.Show();
         }
 
         private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

@@ -205,16 +205,16 @@ namespace ProjectReport.Services
             );");
 
             // Wellbore components and drill string
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellboreComponents (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                well_id INTEGER,
-                component TEXT,
-                description TEXT,
-                top_md REAL,
-                bottom_md REAL,
-                od REAL,
-                id_col REAL,
-                washout REAL
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellboreGeometry (
+                rowId INTEGER PRIMARY KEY AUTOINCREMENT,
+                idRep INTEGER,
+                Component TEXT,
+                Description TEXT,
+                TopMD REAL,
+                BottomMD REAL,
+                OD REAL,
+                ID REAL,
+                Washout REAL
             );");
 
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS DrillString (
@@ -233,35 +233,35 @@ namespace ProjectReport.Services
             );");
 
             // Surveys and thermal gradients
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS SurveyPoints (
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellSurvey (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                well_id INTEGER,
-                md REAL,
-                inclination REAL,
-                azimuth REAL,
-                tvd REAL,
-                ns_coord REAL,
-                ew_coord REAL,
-                dogleg REAL
+                idW INTEGER,
+                MD REAL,
+                Inclination REAL,
+                Azimuth REAL,
+                TVD REAL,
+                NS_Coord REAL,
+                EW_Coord REAL,
+                Dogleg REAL
             );");
 
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS ThermalGradientPoints (
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS ThermalGradient (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                well_id INTEGER,
-                md REAL,
-                temperature REAL
+                idW INTEGER,
+                MD REAL,
+                Temperature REAL
             );");
 
             // Well tests
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellTests (
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellTest (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                well_id INTEGER,
-                section TEXT,
-                test_type TEXT,
-                md REAL,
-                tvd REAL,
-                test_value REAL,
-                test_pressure_psi REAL
+                idW INTEGER,
+                Section TEXT,
+                TestType TEXT,
+                MD REAL,
+                TVD REAL,
+                TestValue REAL,
+                TestPressurePsi REAL
             );");
 
             // Catalog, products, inventory items, tickets

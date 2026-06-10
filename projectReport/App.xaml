@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Application x:Class="ProjectReport.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             StartupUri="Modules/Shell/Views/MainWindow.xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <!-- Corporate Colors -->
         <Color x:Key="PrimaryOrange">#EE7E32</Color>

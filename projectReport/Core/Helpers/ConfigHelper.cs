@@ -1,31 +1,28 @@
-using System.Configuration;
+using System;
+using System.IO;
 
 namespace ProjectReport.Helpers
 {
     public static class ConfigHelper
     {
+        private static string? _connectionString;
+
         public static string GetConnectionString(string name = "DefaultConnection")
         {
-            return ConfigurationManager.ConnectionStrings[name]?.ConnectionString 
-                ?? string.Empty;
+            if (_connectionString != null)
+                return _connectionString;
+
+            // Build the DB path relative to the executable directory
+            string baseDir = AppContext.BaseDirectory;
+            string dbPath = Path.Combine(baseDir, "projectReport.db");
+            _connectionString = $"Data Source={dbPath};Cache=Shared";
+            return _connectionString;
         }
 
         public static void SaveConnectionString(string name, string connectionString)
         {
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            
-            if (config.ConnectionStrings.ConnectionStrings[name] != null)
-            {
-                config.ConnectionStrings.ConnectionStrings[name].ConnectionString = connectionString;
-            }
-            else
-            {
-                config.ConnectionStrings.ConnectionStrings.Add(
-                    new ConnectionStringSettings(name, connectionString));
-            }
-            
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("connectionStrings");
+            // Override the in-memory connection string
+            _connectionString = connectionString;
         }
     }
 }

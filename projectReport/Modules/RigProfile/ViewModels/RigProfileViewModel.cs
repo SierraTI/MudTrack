@@ -166,6 +166,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             ClearPumpFiltersCommand = new RelayCommand(_ => ClearPumpFilters());
             EditSelectedPumpCommand = new RelayCommand(p => EditSelectedPump(p as RigPump));
             RemoveSelectedPumpCommand = new RelayCommand(p => RemoveSelectedPump(p as RigPump));
+            AddPumpCommand = new RelayCommand(_ => AddSelectedPump(), _ => CanAddPump);
 
             // Listen for pit changes
             Pits.CollectionChanged += (s, e) => PublishPits();
@@ -555,6 +556,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             PumpValidationMessage = string.Empty;
             OnPropertyChanged(nameof(CanAddPump));
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
         }
 
         private void ApplyPumpFilters()
@@ -635,7 +637,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public ICommand AddSurfaceEquipmentCommand => new RelayCommand(_ => AddSurfaceItem());
         public ICommand RemoveSurfaceEquipmentCommand => new RelayCommand(p => RemoveSurfaceItem(p as RigSurfaceEquipment));
         public ICommand RemoveServiceLineCommand => new RelayCommand(p => RemoveServiceLineItem(p as RigSurfaceEquipment));
-        public ICommand AddPumpCommand => new RelayCommand(_ => AddSelectedPump(), _ => CanAddPump);
+        public ICommand AddPumpCommand { get; }
         public ICommand RemovePumpCommand => new RelayCommand(p => RemovePump(p as RigPump));
         public ICommand EditSelectedPumpCommand { get; }
         public ICommand RemoveSelectedPumpCommand { get; }

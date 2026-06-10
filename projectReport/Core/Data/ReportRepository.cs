@@ -142,13 +142,13 @@ namespace ProjectReport.Core.Data
 
             foreach (DataRow dr in dt.Rows)
             {
-                int idRep = (int)dr["idRep"];
+                int idRep = Convert.ToInt32(dr["idRep"]);
                 var r = new Report
                 {
                     Id = idRep,
                     IntervalNumber = dr["Interval"]?.ToString() ?? string.Empty,
                     IntervalSizeIn = dr["Interval_size"]?.ToString() ?? string.Empty,
-                    ReportDateTime = (DateTime)dr["ReportDate"],
+                    ReportDateTime = dr["ReportDate"] != DBNull.Value ? Convert.ToDateTime(dr["ReportDate"].ToString()) : DateTime.Now,
                     MD = dr["Report_MD"] != DBNull.Value ? Convert.ToDouble(dr["Report_MD"]) : null,
                     TVD = dr["Report_TVD"] != DBNull.Value ? Convert.ToDouble(dr["Report_TVD"]) : null,
                     WellSection = dr["Well_Section"]?.ToString() ?? string.Empty,
@@ -210,7 +210,7 @@ namespace ProjectReport.Core.Data
             {
                 report.Pumps.Add(new ReportPumpOperation
                 {
-                    No = (int)dr["PumpNo"],
+                    No = Convert.ToInt32(dr["PumpNo"]),
                     PumpName = dr["PumpName"]?.ToString() ?? string.Empty,
                     LinerSize = Convert.ToDouble(dr["LinerSize"]),
                     StrokeLength = Convert.ToDouble(dr["StrokeLength"]),

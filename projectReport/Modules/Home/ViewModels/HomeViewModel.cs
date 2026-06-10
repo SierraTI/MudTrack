@@ -270,12 +270,12 @@ namespace ProjectReport.ViewModels
                 try
                 {
                     var duplicate = well.Duplicate();
-                    duplicate.Id = _project.Wells.Count > 0 ? _project.Wells.Max(w => w.Id) + 1 : 1;
-                    
-                    _project.AddWell(duplicate);
-                    
+                    duplicate.Id = 0;  // DB assigns via AUTOINCREMENT
+
                     WellContextService.Instance.CurrentWell = duplicate;
-                    await WellContextService.Instance.SaveCurrentWell();
+                    await WellContextService.Instance.SaveCurrentWell();  // sets duplicate.Id from DB
+
+                    _project.AddWell(duplicate);
 
                     ToastNotificationService.Instance.ShowSuccess($"Duplicated well: {duplicate.WellName}");
                 }

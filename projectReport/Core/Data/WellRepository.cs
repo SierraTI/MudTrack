@@ -136,8 +136,7 @@ namespace ProjectReport.Core.Data
                 WellName = dr["wellName"]?.ToString() ?? string.Empty,
                 Operator = dr["Operator"]?.ToString() ?? string.Empty,
                 LoadFluid = dr["FluidType"]?.ToString() ?? string.Empty,
-                SpudDate = dr["Spud_date"] != DBNull.Value ? (DateTime)dr["Spud_date"] : null,
-                Trajectory = dr["Trajectory"]?.ToString() ?? string.Empty,
+                SpudDate = dr["Spud_date"] != DBNull.Value ? Convert.ToDateTime(dr["Spud_date"].ToString()) : null,
                 WellType = dr["Welltype"]?.ToString() ?? string.Empty,
                 RigName = dr["RigName"]?.ToString() ?? string.Empty,
                 RigType = dr["Rigtype"]?.ToString() ?? string.Empty,
@@ -170,12 +169,11 @@ namespace ProjectReport.Core.Data
             {
                 var well = new Well
                 {
-                    Id = (int)dr["idW"],
+                    Id = Convert.ToInt32(dr["idW"]),
                     WellName = dr["wellName"]?.ToString() ?? string.Empty,
                     Operator = dr["Operator"]?.ToString() ?? string.Empty,
                     LoadFluid = dr["FluidType"]?.ToString() ?? string.Empty,
-                    SpudDate = dr["Spud_date"] != DBNull.Value ? (DateTime)dr["Spud_date"] : null,
-                    Location = dr["Location"]?.ToString() ?? string.Empty,
+                    SpudDate = dr["Spud_date"] != DBNull.Value ? Convert.ToDateTime(dr["Spud_date"].ToString()) : null,
                     Basin = dr["Basin"]?.ToString() ?? string.Empty
                 };
                 results.Add(well);

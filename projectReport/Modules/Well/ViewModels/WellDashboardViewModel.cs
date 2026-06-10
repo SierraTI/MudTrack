@@ -127,44 +127,24 @@ namespace ProjectReport.ViewModels
         {
             if (well == null) return;
 
+            // Load the full well from DB (gets reports, geometry, etc.)
+            WellContextService.Instance.CurrentWell = well;
+
             CurrentWell = well;
 
-            // Inicializa la colección si es null
             if (CurrentWell.Reports == null)
                 CurrentWell.Reports = new ObservableCollection<Report>();
 
-            // Crear primer reporte si no hay ninguno
-            if (!CurrentWell.Reports.Any())
-            {
-                var firstReport = new Report
-                {
-                    Id = 1,
-                    ReportNumber = 1,
-                    IntervalNumber = "1",
-                    ReportDateTime = DateTime.Now,
-                    MD = 1000,
-                    TVD = 0,
-                    Activity = string.Empty,
-                    WellSection = string.Empty,
-                    MudDensity = 0,
-                    IsDraft = true
-                };
-
-                CurrentWell.Reports.Add(firstReport);
-                await SaveProject();
-            }
-
-            // Seleccionar el último reporte (o el recién creado)
+            // Select the latest report if any exist
             var lastReport = CurrentWell.Reports
                 .OrderByDescending(r => r.ReportNumber)
                 .FirstOrDefault();
 
             if (lastReport != null)
-            {
-                Report = lastReport; 
-            }
+                Report = lastReport;
 
             OnPropertyChanged(nameof(Reports));
+            UpdateReportsEmpty();
         }
 
         #endregion
@@ -242,7 +222,6 @@ namespace ProjectReport.ViewModels
             {
                 if (CurrentWell == null || CurrentWell.Reports == null) return;
 
-                // ✅ Tomar el último por NUMERO
                 var lastReport = CurrentWell.Reports
                     .OrderByDescending(r => r.ReportNumber)
                     .FirstOrDefault();
@@ -252,7 +231,7 @@ namespace ProjectReport.ViewModels
                 {
                     newReport = new Report
                     {
-                        Id = 1,
+                        Id = 0,  // DB assigns via AUTOINCREMENT
                         ReportNumber = 1,
                         ReportDateTime = DateTime.Now,
                         IsDraft = true
@@ -261,14 +240,14 @@ namespace ProjectReport.ViewModels
                 else
                 {
                     newReport = lastReport.Duplicate();
-                    newReport.Id = CurrentWell.Reports.Any() ? CurrentWell.Reports.Max(r => r.Id) + 1 : 1;
-                    newReport.ReportNumber = CurrentWell.Reports.Any() ? CurrentWell.Reports.Max(r => r.ReportNumber) + 1 : 1;
+                    newReport.Id = 0;  // DB assigns via AUTOINCREMENT
+                    newReport.ReportNumber = CurrentWell.Reports.Max(r => r.ReportNumber) + 1;
                     newReport.ReportDateTime = DateTime.Now;
                     newReport.IsDraft = true;
                 }
 
                 CurrentWell.Reports.Add(newReport);
-                await SaveProject();
+                await SaveProject();  // SaveReport sets newReport.Id from DB
                 Report = newReport;
                 OnPropertyChanged(nameof(Reports));
                 ToastNotificationService.Instance.ShowSuccess("Report created");
@@ -311,22 +290,15 @@ namespace ProjectReport.ViewModels
                 try
                 {
                     var duplicate = report.Duplicate();
-
-                    int newId = CurrentWell.Reports.Any()
-                        ? CurrentWell.Reports.Max(r => r.Id) + 1
-                        : 1;
-
-                    int newNumber = CurrentWell.Reports.Any()
+                    duplicate.Id = 0;  // DB assigns via AUTOINCREMENT
+                    duplicate.ReportNumber = CurrentWell.Reports.Any()
                         ? CurrentWell.Reports.Max(r => r.ReportNumber) + 1
                         : 1;
-
-                    duplicate.Id = newId;
-                    duplicate.ReportNumber = newNumber;
                     duplicate.ReportDateTime = DateTime.Now;
                     duplicate.IsDraft = true;
 
                     CurrentWell.Reports.Add(duplicate);
-                    await SaveProject();
+                    await SaveProject();  // sets duplicate.Id from DB
 
                     ToastNotificationService.Instance.ShowSuccess("Report duplicated");
                 }

@@ -204,6 +204,31 @@ namespace ProjectReport.Services
                 created_at TEXT
             );");
 
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS RigSolidsControl (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rig_profile_id INTEGER,
+                style TEXT,
+                manufacturer TEXT,
+                model TEXT,
+                number_of_screens INTEGER,
+                nominal_rpm INTEGER,
+                cap_flow_gpm REAL,
+                desilter_cones INTEGER,
+                desilter_cone_size REAL,
+                desander_cones INTEGER,
+                desander_cone_size REAL
+            );");
+
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS RigPits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                rig_profile_id INTEGER,
+                pit_name TEXT,
+                shape TEXT,
+                dimensions TEXT,
+                max_capacity REAL,
+                is_active INTEGER
+            );");
+
             // Wellbore components and drill string
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellboreGeometry (
                 rowId INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -150,10 +150,14 @@ namespace ProjectReport.Views
         {
             SaveGeometryDataIfNeeded();
 
-            var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
+            // Load full well from DB
+            var well = WellContextService.Instance.GetAllWells().FirstOrDefault(w => w.Id == wellId);
+            if (well == null)
+                well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
             if (well == null) return;
 
-            _currentWellId = wellId; // <-- guardamos el pozo actual
+            WellContextService.Instance.CurrentWell = well;
+            _currentWellId = wellId;
             _currentWell = well;
 
             _wellDataView = new WellDataView();
@@ -189,8 +193,15 @@ namespace ProjectReport.Views
 
         private void NavigateToWellDashboard(int wellId)
         {
-            var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
+            // Always load the full well from DB
+            var well = WellContextService.Instance.CurrentWell?.Id == wellId
+                ? WellContextService.Instance.CurrentWell
+                : WellContextService.Instance.GetAllWells().FirstOrDefault(w => w.Id == wellId);
+
             if (well == null) return;
+
+            // Set as current well — this triggers DB load of reports, geometry, etc.
+            WellContextService.Instance.CurrentWell = well;
 
             _currentWellId = wellId;
             _currentWell = well;
@@ -200,7 +211,6 @@ namespace ProjectReport.Views
             _ = vm.LoadWell(well);
             _wellDashboardView.DataContext = vm;
 
-            // Suscribirse al evento para abrir ReportDetails
             vm.OpenReportDetailsRequested += (selectedWell) =>
             {
                 var reportVM = new ProjectReport.Modules.ReportDetail.ViewModels.ReportDViewModel(selectedWell);
@@ -216,7 +226,6 @@ namespace ProjectReport.Views
                 ContentArea.Content = view;
                 ContentTitle.Text = $"Report Detail - {selectedWell.WellName}";
             };
-
 
             ContentTitle.Text = $"Dashboard - {well.WellName}";
             ContentArea.Content = _wellDashboardView;

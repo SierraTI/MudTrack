@@ -25,6 +25,7 @@ namespace ProjectReport.Services
         private readonly DrillStringRepository _drillStringRepo;
         private readonly SurveyRepository _surveyRepo;
         private readonly EngineeringRepository _engineeringRepo;
+        private readonly RigProfileRepository _rigProfileRepo;
         private readonly DatabaseService _db;
 
         public ObservableCollection<string> FluidCatalog { get; } = new();
@@ -39,6 +40,7 @@ namespace ProjectReport.Services
             _drillStringRepo = new DrillStringRepository(_db);
             _surveyRepo = new SurveyRepository(_db);
             _engineeringRepo = new EngineeringRepository(_db);
+            _rigProfileRepo = new RigProfileRepository(_db);
 
             LoadCatalog();
         }
@@ -161,19 +163,20 @@ namespace ProjectReport.Services
                 _surveyRepo.SaveSurvey(CurrentWell.Id, CurrentWell.SurveyPoints);
                 _engineeringRepo.SaveThermalGradient(CurrentWell.Id, CurrentWell.ThermalGradientPoints);
                 _engineeringRepo.SaveWellTests(CurrentWell.Id, CurrentWell.WellTests);
+
+                // Rig Profile
+                if (CurrentWell.RigProfile != null)
+                    _rigProfileRepo.SaveRigProfile(CurrentWell.Id, CurrentWell.RigProfile);
             }
 
             if (CurrentReport != null)
             {
-                _reportRepo.SaveReport(CurrentWell!.Id, CurrentReport); // Assuming CurrentWell is not null here
+                _reportRepo.SaveReport(CurrentWell!.Id, CurrentReport);
 
-                // Save Geometry if available
                 if (_lastGeometry != null)
-                {
                     _geometryRepo.SaveGeometry(CurrentReport.Id, _lastGeometry);
-                }
             }
-            await Task.Yield(); // Keep it async
+            await Task.Yield();
         }
 
         public double CurrentDepth
@@ -313,6 +316,11 @@ namespace ProjectReport.Services
             well.WellTests.Clear();
             foreach (var t in tests) well.WellTests.Add(t);
             WellTestsUpdated?.Invoke(well.WellTests);
+
+            // Rig Profile
+            var rigProfile = _rigProfileRepo.LoadRigProfile(well.Id);
+            if (rigProfile != null)
+                well.RigProfile = rigProfile;
         }
     }
 

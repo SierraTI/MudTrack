@@ -9,6 +9,17 @@ namespace ProjectReport
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Ensure the database schema required by the application exists
+            try
+            {
+                ProjectReport.Services.DatabaseInitializer.Initialize();
+            }
+            catch (Exception ex)
+            {
+                // Log and continue — initialization failures will surface when DB is used
+                LogException(ex, "DatabaseInitializer");
+            }
             
             // Handle unhandled exceptions
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;

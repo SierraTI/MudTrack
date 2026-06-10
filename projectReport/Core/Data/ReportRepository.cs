@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using SqlParameter = Microsoft.Data.Sqlite.SqliteParameter;
 using ProjectReport.Models;
 using ProjectReport.Models.Rig;
 using ProjectReport.Services;
@@ -36,19 +37,16 @@ namespace ProjectReport.Core.Data
         {
             // 1. Insert into Report table
             string reportQuery = @"INSERT INTO Report (idW, Interval, Interval_size, ReportDate, Report_MD, Report_TVD) 
-                                 OUTPUT INSERTED.idRep 
-                                 VALUES (@idW, @interval, @size, @date, @md, @tvd)";
+                                             VALUES (@idW, @interval, @size, @date, @md, @tvd)";
             
-            var insertedId = _db.ExecuteScalar(reportQuery,
-                new SqlParameter("@idW", idW),
-                new SqlParameter("@interval", int.TryParse(report.IntervalNumber, out int interval) ? interval : (object)DBNull.Value),
-                new SqlParameter("@size", report.IntervalSizeIn ?? (object)DBNull.Value),
-                new SqlParameter("@date", report.ReportDateTime),
-                new SqlParameter("@md", report.MD ?? (object)DBNull.Value),
-                new SqlParameter("@tvd", report.TVD ?? (object)DBNull.Value));
-            if (insertedId == null || insertedId == DBNull.Value)
-                throw new InvalidOperationException("Failed to insert report id.");
-            report.Id = Convert.ToInt32(insertedId);
+                        var insertedId = _db.ExecuteInsertAndGetId(reportQuery,
+                            new SqlParameter("@idW", idW),
+                            new SqlParameter("@interval", int.TryParse(report.IntervalNumber, out int interval) ? interval : (object)DBNull.Value),
+                            new SqlParameter("@size", report.IntervalSizeIn ?? (object)DBNull.Value),
+                            new SqlParameter("@date", report.ReportDateTime),
+                            new SqlParameter("@md", report.MD ?? (object)DBNull.Value),
+                            new SqlParameter("@tvd", report.TVD ?? (object)DBNull.Value));
+                        report.Id = insertedId;
 
             // 2. Insert into OperationalDetail
             string detailQuery = @"INSERT INTO OperationalDetail (idRep, Well_Section, Max_BHT, Present_Activity, Fluid) 

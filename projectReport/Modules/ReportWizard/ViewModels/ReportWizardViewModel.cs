@@ -39,7 +39,7 @@ namespace ProjectReport.ViewModels
                 "project_data.json"
             );
 
-            _inventoryService = new InventoryService(new JsonInventoryRepository());
+            _inventoryService = new InventoryService(new SqliteInventoryRepository());
             _hydraulicsService = new HydraulicsCalculationService();
 
             Report = reportToEdit ?? new Report();

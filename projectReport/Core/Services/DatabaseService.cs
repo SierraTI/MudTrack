@@ -1,12 +1,12 @@
 using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 
 namespace ProjectReport.Services
 {
     public class DatabaseService : IDisposable
     {
-        private SqlConnection? _connection;
+        private SqliteConnection? _connection;
         private bool _disposed = false;
  
         public DatabaseService()
@@ -25,7 +25,7 @@ namespace ProjectReport.Services
         {
             try
             {
-                _connection = new SqlConnection(connectionString);
+                _connection = new SqliteConnection(connectionString);
                 _connection.Open();
                 errorMessage = null;
                 return true;
@@ -41,7 +41,7 @@ namespace ProjectReport.Services
         {
             try
             {
-                using var connection = new SqlConnection(connectionString);
+                using var connection = new SqliteConnection(connectionString);
                 connection.Open();
                 return true;
             }
@@ -68,29 +68,29 @@ namespace ProjectReport.Services
             }
         }
 
-        public DataTable ExecuteQuery(string query, params SqlParameter[] parameters)
+        public DataTable ExecuteQuery(string query, params SqliteParameter[] parameters)
         {
             EnsureConnection();
 
             var dataTable = new DataTable();
-            
-            using var command = new SqlCommand(query, _connection);
+
+            using var command = new SqliteCommand(query, _connection);
             if (parameters != null && parameters.Length > 0)
             {
                 command.Parameters.AddRange(parameters);
             }
 
-            using var adapter = new SqlDataAdapter(command);
-            adapter.Fill(dataTable);
-            
+            using var reader = command.ExecuteReader();
+            dataTable.Load(reader);
+
             return dataTable;
         }
 
-        public int ExecuteNonQuery(string query, params SqlParameter[] parameters)
+        public int ExecuteNonQuery(string query, params SqliteParameter[] parameters)
         {
             EnsureConnection();
 
-            using var command = new SqlCommand(query, _connection);
+            using var command = new SqliteCommand(query, _connection);
             if (parameters != null && parameters.Length > 0)
             {
                 command.Parameters.AddRange(parameters);
@@ -99,17 +99,29 @@ namespace ProjectReport.Services
             return command.ExecuteNonQuery();
         }
 
-        public object? ExecuteScalar(string query, params SqlParameter[] parameters)
+        public object? ExecuteScalar(string query, params SqliteParameter[] parameters)
         {
             EnsureConnection();
 
-            using var command = new SqlCommand(query, _connection);
+            using var command = new SqliteCommand(query, _connection);
             if (parameters != null && parameters.Length > 0)
             {
                 command.Parameters.AddRange(parameters);
             }
+return command.ExecuteScalar();
+        }
 
-            return command.ExecuteScalar();
+        public int ExecuteInsertAndGetId(string insertQuery, params SqliteParameter[] parameters)
+        {
+            EnsureConnection();
+            using var transaction = _connection.BeginTransaction();
+            using var cmd = new SqliteCommand(insertQuery, _connection, transaction);
+            if (parameters != null && parameters.Length > 0) cmd.Parameters.AddRange(parameters);
+            cmd.ExecuteNonQuery();
+            using var cmd2 = new SqliteCommand("SELECT last_insert_rowid();", _connection, transaction);
+            var val = cmd2.ExecuteScalar();
+            transaction.Commit();
+            return Convert.ToInt32(val);
         }
 
         public void Disconnect()

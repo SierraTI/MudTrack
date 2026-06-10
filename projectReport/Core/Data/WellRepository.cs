@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using SqlParameter = Microsoft.Data.Sqlite.SqliteParameter;
 using ProjectReport.Models;
 using ProjectReport.Services;
 
@@ -33,11 +34,9 @@ namespace ProjectReport.Core.Data
         private void InsertWell(Well well)
         {
             // 1. Insert into Well table
-            string wellQuery = "INSERT INTO Well (wellName) OUTPUT INSERTED.idW VALUES (@name)";
-            var insertedId = _db.ExecuteScalar(wellQuery, new SqlParameter("@name", well.WellName));
-            if (insertedId == null || insertedId == DBNull.Value)
-                throw new InvalidOperationException("Failed to insert well id.");
-            well.Id = Convert.ToInt32(insertedId);
+            string wellQuery = "INSERT INTO Well (wellName) VALUES (@name)";
+                        var insertedId = _db.ExecuteInsertAndGetId(wellQuery, new SqlParameter("@name", well.WellName));
+                        well.Id = insertedId;
 
             // 2. Insert into WellInfo
             string infoQuery = @"INSERT INTO WellInfo (idW, Operator, FluidType, Spud_date) 

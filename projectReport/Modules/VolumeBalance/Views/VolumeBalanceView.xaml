@@ -1,296 +1,759 @@
-<UserControl x:Class="ProjectReport.Modules.VolumeBalance.Views.VolumeInfoTableView"
+<UserControl x:Class="ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ProjectReport.Modules.VolumeBalance.Models">
-
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:vb="clr-namespace:ProjectReport.Modules.VolumeBalance"
+             xmlns:conv="clr-namespace:ProjectReport.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1200">
     <UserControl.Resources>
 
-        <!-- 🎨 PALETA SUAVE -->
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#EE7D32"/>
-        <SolidColorBrush x:Key="SoftBg" Color="#F5F6F8"/>
-        <SolidColorBrush x:Key="TextMain" Color="#1F2937"/>
-        <SolidColorBrush x:Key="MutedBlueGray" Color="#E9EEF5"/>
-        <SolidColorBrush x:Key="HeaderSoft" Color="#F3F6FA"/>
+        <!-- Bool → Visibility -->
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <conv:StringToVisibilityConverter x:Key="StringVis"/>
+        <conv:BoolToGreenRedConverter x:Key="BoolToGateColorConverter"/>
 
-        <!-- 🌫️ SHADOW -->
-        <DropShadowEffect x:Key="SoftShadow"
-                          BlurRadius="18"
-                          ShadowDepth="2"
-                          Opacity="0.10"/>
-
-        <!-- 📦 CARD -->
-        <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="CornerRadius" Value="16"/>
-            <Setter Property="Padding" Value="14"/>
-            <Setter Property="Margin" Value="0,0,0,16"/>
-            <Setter Property="Effect" Value="{StaticResource SoftShadow}"/>
-        </Style>
-
-        <!-- 📊 DATAGRID BASE -->
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="GridLinesVisibility" Value="None"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="RowHeight" Value="38"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="CanUserResizeRows" Value="False"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-        </Style>
-
-        <!-- HEADER MODERNO SUAVE -->
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{StaticResource HeaderSoft}"/>
-            <Setter Property="Foreground" Value="#4B5563"/>
+        <!-- Inverse Bool → Visibility -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#1565C0"/>
+            <Setter Property="Margin" Value="0,12,0,6"/>
         </Style>
 
-        <!-- FILAS -->
-        <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="White"/>
-
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="RowBg"
-                                Background="{TemplateBinding Background}">
-                            <DataGridCellsPresenter/>
-                        </Border>
-
-                        <ControlTemplate.Triggers>
-
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RowBg"
-                                        Property="Background"
-                                        Value="#F3F6FA"/>
-                            </Trigger>
-
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="RowBg"
-                                        Property="Background"
-                                        Value="#FFEFE6"/>
-                            </Trigger>
-
-                        </ControlTemplate.Triggers>
-
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- CELDAS -->
-        <Style TargetType="DataGridCell">
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{StaticResource TextMain}"/>
+        <Style x:Key="LabelText" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,3"/>
         </Style>
 
+        <Style x:Key="InputBox" TargetType="TextBox">
+            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="BorderBrush" Value="#BDBDBD"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="GreenBadge" TargetType="Border">
+            <Setter Property="Background" Value="#E8F5E9"/>
+            <Setter Property="BorderBrush" Value="#A5D6A7"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,2"/>
+        </Style>
+
+        <Style x:Key="RedBadge" TargetType="Border">
+            <Setter Property="Background" Value="#FFEBEE"/>
+            <Setter Property="BorderBrush" Value="#EF9A9A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,2"/>
+        </Style>
+
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
     </UserControl.Resources>
 
-    <!-- ================= ROOT ================= -->
-    <Grid Background="{StaticResource SoftBg}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- Header + Sync bar -->
+            <RowDefinition Height="Auto"/>   <!-- Balance bar -->
+            <RowDefinition Height="*"/>      <!-- Tabs -->
+        </Grid.RowDefinitions>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <!-- ── HEADER ─────────────────────────────────────────── -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Volume Balance" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Synced: " Foreground="#666" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding LastSyncedAt}" FontWeight="SemiBold" Foreground="#333" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <Button Content="↻ Sync" Command="{Binding SyncCommand}" Style="{StaticResource ActionBtn}" Background="#E0E0E0"/>
+            </StackPanel>
+        </Grid>
 
-            <Grid MaxWidth="1200"
-                  HorizontalAlignment="Center"
-                  Margin="12">
 
-                <StackPanel>
+        <!-- ── MAIN TABS ───────────────────────────────────────── -->
+        <TabControl Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="1">
 
-                    <!-- ===================================================== -->
-                    <!-- VOLUME INFORMATION -->
-                    <!-- ===================================================== -->
-                    <Border Style="{StaticResource CardStyle}">
+            <!-- ════════════════════════════════════════════════════
+                 TAB 1 — SYSTEM VOLUME
+            ════════════════════════════════════════════════════ -->
+            <TabItem Header="System Volume" Padding="16,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                        <StackPanel>
+                            <!-- Wellbore -->
+                            <Border Grid.Column="0" Background="#F1F8E9" BorderBrush="#C5E1A5" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="Wellbore Inventory (Actuals)" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Internal String Vol:" Grid.Row="0" Style="{StaticResource LabelText}"/>
+                                        <TextBox Text="{Binding StringActual, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Style="{StaticResource InputBox}" Margin="0,2"/>
+                                        <TextBlock Text="Annular Vol:" Grid.Row="1" Style="{StaticResource LabelText}"/>
+                                        <TextBox Text="{Binding AnnulusActual, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" Style="{StaticResource InputBox}" Margin="0,2"/>
+                                        <TextBlock Text="Total Wellbore:" Grid.Row="2" FontWeight="Bold" Margin="0,6,0,0"/>
+                                        <TextBlock Text="{Binding TotalWellActual, StringFormat={}{0:F1} bbl}" Grid.Row="2" Grid.Column="1" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,6,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock Text="Volume Information (bbl)"
-                                       FontSize="17"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextMain}"
-                                       Margin="0,0,0,10"/>
+                            <!-- Density -->
+                            <Border Grid.Column="2" Background="#FFF3E0" BorderBrush="#FFCC80" BorderThickness="1" CornerRadius="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="System Density" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Actual (Avg Surface):" Grid.Row="0" Style="{StaticResource LabelText}"/>
+                                        <TextBlock Text="{Binding AverageActualSurfaceDensity, StringFormat={}{0:F2} ppg}" Grid.Row="0" Grid.Column="1" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Theoretical (w/ Chemicals):" Grid.Row="1" Style="{StaticResource LabelText}"/>
+                                        <TextBlock Text="{Binding TheoreticalSystemDensity, StringFormat={}{0:F2} ppg}" Grid.Row="1" Grid.Column="1" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
 
-                            <DataGrid>
+                        <TextBlock Text="Surface Tanks" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                        <DataGrid ItemsSource="{Binding SurfaceTanks}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" RowHeight="32">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Tank Name" Binding="{Binding Name}" Width="150" IsReadOnly="True" FontWeight="SemiBold"/>
+                                <DataGridComboBoxColumn Header="Classification" Width="110" SelectedItemBinding="{Binding Classification, UpdateSourceTrigger=PropertyChanged}">
+                                    <DataGridComboBoxColumn.ItemsSource>
+                                        <x:Array Type="{x:Type sys:String}">
+                                            <sys:String>Active</sys:String>
+                                            <sys:String>Reserve</sys:String>
+                                            <sys:String>Other</sys:String>
+                                        </x:Array>
+                                    </DataGridComboBoxColumn.ItemsSource>
+                                </DataGridComboBoxColumn>
+                                <DataGridTextColumn Header="Fluid Type" Binding="{Binding FluidType}" Width="100"/>
+                                <DataGridTemplateColumn Header="Density" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding Density, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Right"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Yest. Vol (bbl)" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding YesterdayVol, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Right" Foreground="#555"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Actual Vol (bbl)" Width="120">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding VolumeBbl, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Right" FontWeight="Bold"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Max (bbl)" Binding="{Binding MaxCapacity, StringFormat=F1}" Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                                            <Setter Property="Foreground" Value="#999"/>
+                                            <Setter Property="Margin" Value="0,0,4,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
+            <!-- ════════════════════════════════════════════════════
+                 TAB 2 — LOSSES and GAINS
+            ════════════════════════════════════════════════════ -->
+            <TabItem Header="Daily Aggregate" Padding="16,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="24"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- GAINS -->
+                        <StackPanel Grid.Column="0">
+                            <Border Background="#E8F5E9" BorderBrush="#A5D6A7" BorderThickness="1" Padding="8" CornerRadius="4" Margin="0,0,0,12">
+                                <TextBlock Text="GAINS (+ bbl)" FontWeight="Bold" Foreground="#2E7D32" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Water / Base Fluid Added:" Grid.Row="0" Style="{StaticResource LabelText}"/>
+                                <TextBox Text="{Binding WaterAdded, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Style="{StaticResource InputBox}"/>
+                                <TextBlock Text="Transferred In:" Grid.Row="1" Style="{StaticResource LabelText}"/>
+                                <TextBox Text="{Binding TransfersIn, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" Style="{StaticResource InputBox}"/>
+                            </Grid>
+                            <TextBlock Text="Chemical Details" FontWeight="Bold" Margin="0,0,0,4"/>
+                            <DataGrid ItemsSource="{Binding ChemicalUsages}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                      HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" RowHeight="28" MinHeight="80">
                                 <DataGrid.Columns>
-
-                                    <!-- PILL STYLE FIRST COLUMN -->
-                                    <DataGridTemplateColumn Header="Pit System"
-                                                            Width="3*">
-
+                                    <DataGridTextColumn Header="Product" Binding="{Binding Description}" Width="*"/>
+                                    <DataGridTextColumn Header="Qty" Binding="{Binding QtyUsed, StringFormat=N0}" Width="50"/>
+                                    <DataGridTextColumn Header="Vol (bbl)" Binding="{Binding VolumeAdded, StringFormat=F1}" Width="60" IsReadOnly="True" FontWeight="Bold"/>
+                                    <DataGridTemplateColumn Width="30">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-
-                                                <Border Background="{StaticResource MutedBlueGray}"
-                                                        CornerRadius="6"
-                                                        Padding="6"
-                                                        Margin="2">
-
-                                                    <TextBlock Text="{Binding PitSystem}"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="#374151"
-                                                               TextWrapping="Wrap"/>
-
-                                                </Border>
-
+                                                <Button Content="×" Command="{Binding DataContext.RemoveChemicalCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="Red" FontSize="14" FontWeight="Bold"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
-
                                     </DataGridTemplateColumn>
-
-                                    <DataGridTextColumn Header="Active"
-                                                        Binding="{Binding Active}" />
-
-                                    <DataGridTextColumn Header="Reserve"
-                                                        Binding="{Binding Reserve}" />
-
-                                    <DataGridTextColumn Header="Other"
-                                                        Binding="{Binding Other}" />
-
                                 </DataGrid.Columns>
-
-                                <DataGrid.Items>
-
-                                    <local:VolumeRow PitSystem="Volumen Final evento anterior"
-                                                     Active="120.00"
-                                                     Reserve="80.00"
-                                                     Other="10.00"/>
-
-                                    <local:VolumeRow PitSystem="Evento actual - Total Fluid Additions"
-                                                     Active="15.00"
-                                                     Reserve="0.00"
-                                                     Other="0.00"/>
-
-                                    <local:VolumeRow PitSystem="Water Additions"
-                                                     Active="8.00"
-                                                     Reserve="0.00"
-                                                     Other="0.00"/>
-
-                                    <local:VolumeRow PitSystem="Oil Based Additions"
-                                                     Active="4.00"
-                                                     Reserve="0.00"
-                                                     Other="0.00"/>
-
-                                    <local:VolumeRow PitSystem="Chemical Additions"
-                                                     Active="3.00"
-                                                     Reserve="0.00"
-                                                     Other="0.00"/>
-
-                                    <local:VolumeRow PitSystem="Daily Losses"
-                                                     Active="-10.00"
-                                                     Reserve="0.00"
-                                                     Other="0.00"/>
-
-                                    <local:VolumeRow PitSystem="End Volume"
-                                                     Active="125.00"
-                                                     Reserve="80.00"
-                                                     Other="10.00"/>
-
-                                </DataGrid.Items>
-
                             </DataGrid>
-
+                            <Button Content="+ Add Chemical" Command="{Binding AddChemicalCommand}" HorizontalAlignment="Left" Margin="0,4,0,12"/>
+                            <Separator Margin="0,8"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="Total Gains:" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding TotalGains, StringFormat={}{0:F1} bbl}" FontWeight="Bold" FontSize="16" Foreground="#2E7D32"/>
+                            </StackPanel>
                         </StackPanel>
 
-                    </Border>
-
-                    <!-- ===================================================== -->
-                    <!-- CHEMICAL ADDED -->
-                    <!-- ===================================================== -->
-                    <Border Style="{StaticResource CardStyle}">
-
-                        <StackPanel>
-
-                            <TextBlock Text="Chemical Added (bbl)"
-                                       FontSize="17"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource TextMain}"
-                                       Margin="0,0,0,10"/>
-
-                            <DataGrid>
-
-                                <DataGrid.Columns>
-
-                                    <DataGridTemplateColumn Header="Pit System"
-                                                            Width="2*">
-
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-
-                                                <Border Background="{StaticResource MutedBlueGray}"
-                                                        CornerRadius="6"
-                                                        Padding="6"
-                                                        Margin="2">
-
-                                                    <TextBlock Text="{Binding PitSystem}"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="#374151"/>
-
-                                                </Border>
-
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-
-                                    </DataGridTemplateColumn>
-
-                                    <DataGridTextColumn Header="Fluid Type"
-                                                        Binding="{Binding FluidType}" />
-
-                                    <DataGridTextColumn Header="Subtype"
-                                                        Binding="{Binding Subtype}" />
-
-                                    <DataGridTextColumn Header="Vol (bbl)"
-                                                        Binding="{Binding Volume}" />
-
-                                </DataGrid.Columns>
-
-                                <DataGrid.Items>
-
-                                    <local:ChemicalRow PitSystem="Active"
-                                                       FluidType="Water Based"
-                                                       Subtype="Fresh Water"
-                                                       Volume="120.00"/>
-
-                                    <local:ChemicalRow PitSystem="Reserve"
-                                                       FluidType="Water Based"
-                                                       Subtype="Brine"
-                                                       Volume="45.00"/>
-
-                                    <local:ChemicalRow PitSystem="Oil Based"
-                                                       FluidType="Oil Based"
-                                                       Subtype="Diesel"
-                                                       Volume="30.00"/>
-
-                                    <local:ChemicalRow PitSystem="Chemical"
-                                                       FluidType="Chemical"
-                                                       Subtype="Caustic Soda"
-                                                       Volume="12.00"/>
-
-                                    <local:ChemicalRow PitSystem="Other"
-                                                       FluidType="Chemical"
-                                                       Subtype="Barite"
-                                                       Volume="18.00"/>
-
-                                </DataGrid.Items>
-
-                            </DataGrid>
-
+                        <!-- LOSSES -->
+                        <StackPanel Grid.Column="2">
+                            <Border Background="#FFEBEE" BorderBrush="#EF9A9A" BorderThickness="1" Padding="8" CornerRadius="4" Margin="0,0,0,12">
+                                <TextBlock Text="LOSSES (- bbl)" FontWeight="Bold" Foreground="#C62828" HorizontalAlignment="Center"/>
+                            </Border>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Surface Losses (Shakers, etc):" Grid.Row="0" Style="{StaticResource LabelText}"/>
+                                <TextBox Text="{Binding SurfaceLosses, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Style="{StaticResource InputBox}"/>
+                                <TextBlock Text="Transferred Out:" Grid.Row="1" Style="{StaticResource LabelText}"/>
+                                <TextBox Text="{Binding TransfersOut, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" Style="{StaticResource InputBox}"/>
+                            </Grid>
+                            <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" CornerRadius="4">
+                                <StackPanel>
+                                    <TextBlock Text="Sub-Surface / Formation Losses" FontWeight="Bold" Margin="0,0,0,8"/>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Total Downhole Loss:" Style="{StaticResource LabelText}"/>
+                                        <TextBox Text="{Binding SubSurfaceLosses, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Style="{StaticResource InputBox}" FontWeight="Bold" Foreground="#C62828"/>
+                                    </Grid>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Time Elapsed (hrs):" Style="{StaticResource LabelText}"/>
+                                        <TextBox Text="{Binding HoursElapsed, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Style="{StaticResource InputBox}"/>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                                        <TextBlock Text="Rate: " FontStyle="Italic"/>
+                                        <TextBlock Text="{Binding SeepageRate, StringFormat={}{0:F2} bbl/hr}" FontStyle="Italic" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Separator Margin="0,20,0,8"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="Total Losses:" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding TotalLosses, StringFormat={}{0:F1} bbl}" FontWeight="Bold" FontSize="16" Foreground="#C62828"/>
+                            </StackPanel>
                         </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
 
+            <!-- ════════════════════════════════════════════════════
+                 TAB 3 — GRAND SUMMARY
+            ════════════════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════════════════
+                 TAB 3 — COMMAND CENTER (Organized Spec)
+            ════════════════════════════════════════════════════ -->
+            <TabItem Header="Command Center" Padding="16,8">
+                <Grid Margin="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="400"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Section A: The Event Ledger (Left Side) -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="SECTION A: EVENT LEDGER CHRONOLOGY" FontWeight="Bold" Foreground="#1565C0" Margin="0,0,0,10"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Events}" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" Background="White">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Time" Binding="{Binding TimestampLabel}" Width="100"/>
+                                <DataGridTextColumn Header="Activity" Binding="{Binding Activity}" Width="100"/>
+                                <DataGridTextColumn Header="Depth" Binding="{Binding DepthFt, StringFormat=F0}" Width="80"/>
+                                <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*"/>
+                                <DataGridTextColumn Header="Pit Vol" Binding="{Binding TotalCurrentPitVol, StringFormat=F1}" Width="80" FontWeight="Bold"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+
+                    <!-- Section B: The Summary Volume (Right Side) -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="SECTION B: SUMMARY VOLUME SNAPSHOT" FontWeight="Bold" Foreground="#1565C0" Margin="0,0,0,10"/>
+                        
+                        <!-- Hole Volumes -->
+                        <Border Background="#E3F2FD" BorderBrush="#90CAF9" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,15">
+                            <StackPanel>
+                                <TextBlock Text="HOLE VOLUMES" FontWeight="Bold" FontSize="12" Foreground="#0D47A1" Margin="0,0,0,8"/>
+                                <ItemsControl>
+                                    <Grid Margin="0,2">
+                                        <TextBlock Text="Riser Volume:"/>
+                                        <TextBlock Text="{Binding HoleRiserTheoretical, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    </Grid>
+                                    <Grid Margin="0,2">
+                                        <TextBlock Text="Casing/Liner:"/>
+                                        <TextBlock Text="{Binding HoleCasingTheoretical, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    </Grid>
+                                    <Grid Margin="0,2">
+                                        <TextBlock Text="Open Hole:"/>
+                                        <TextBlock Text="{Binding HoleOpenHoleTheoretical, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    </Grid>
+                                    <Grid Margin="0,2">
+                                        <TextBlock Text="Annular:"/>
+                                        <TextBlock Text="{Binding HoleAnnularTheoretical, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                    </Grid>
+                                    <Separator Margin="0,5"/>
+                                    <Grid>
+                                        <TextBlock Text="Total Hole Theoretical:" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding TotalHoleTheoretical, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#1565C0"/>
+                                    </Grid>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Surface Volumes -->
+                        <Border Background="#F1F8E9" BorderBrush="#C5E1A5" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,15">
+                            <StackPanel>
+                                <TextBlock Text="SURFACE VOLUMES" FontWeight="Bold" FontSize="12" Foreground="#33691E" Margin="0,0,0,8"/>
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Active System:"/>
+                                    <TextBlock Text="{Binding TotalActiveSurfaceVolume, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Reserve System:"/>
+                                    <TextBlock Text="{Binding TotalReserveSurfaceVolume, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <TextBlock Text="Other (Slug/Waste):"/>
+                                    <TextBlock Text="{Binding TotalOtherSurfaceVolume, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+                                </Grid>
+                                <Separator Margin="0,5"/>
+                                <Grid>
+                                    <TextBlock Text="Total Surface Volume:" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding TotalSurfaceVolume, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#2E7D32"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Total Fluid Loc -->
+                        <Border Background="#FFF3E0" BorderBrush="#FFCC80" BorderThickness="2" CornerRadius="4" Padding="16">
+                            <Grid>
+                                <TextBlock Text="TOTAL FLUID ON LOC" FontWeight="Bold" FontSize="14" Foreground="#E65100"/>
+                                <TextBlock Text="{Binding TotalFluidOnLocation, StringFormat={}{0:F1} bbl}" HorizontalAlignment="Right" FontWeight="Black" FontSize="20" Foreground="#BF360C"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ════════════════════════════════════════════════════
+                 TAB 4 — EVENT LEDGER
+            ════════════════════════════════════════════════════ -->
+            <TabItem Header="Event Ledger" Padding="16,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>   <!-- Toolbar -->
+                        <RowDefinition Height="*"/>      <!-- Ledger List -->
+                        <RowDefinition Height="Auto"/>   <!-- Entry Panel (collapsible) -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,8,8,4">
+                        <Button Content="➕  ADD EVENT" Command="{Binding AddEventCommand}"
+                                Background="#1565C0" Foreground="White" FontWeight="Bold"
+                                Style="{StaticResource ActionBtn}" Margin="0,0,8,0"/>
+                        <Button Content="🗑  DELETE" Command="{Binding DeleteEventCommand}"
+                                Background="#D32F2F" Foreground="White" FontWeight="Bold"
+                                Style="{StaticResource ActionBtn}"
+                                IsEnabled="{Binding HasSelectedEvent}"/>
+                    </StackPanel>
+
+                    <!-- Ledger DataGrid -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Events}"
+                              SelectedItem="{Binding SelectedEvent}"
+                              AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                              Background="White" RowHeight="34" SelectionMode="Single"
+                              BorderThickness="0" Margin="8,0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Time" Binding="{Binding TimestampLabel}" Width="100"/>
+                            <DataGridTextColumn Header="Activity" Binding="{Binding ActivityLabel}" Width="100"/>
+                            <DataGridTextColumn Header="Depth (ft)" Binding="{Binding DepthFt, StringFormat=F0}" Width="80"/>
+                            <DataGridTextColumn Header="Pit Vol (bbl)" Binding="{Binding TotalCurrentPitVol, StringFormat=F1}" Width="100" FontWeight="SemiBold"/>
+                            <DataGridTextColumn Header="Gains (bbl)" Binding="{Binding TotalLiquidAdditions, StringFormat=F1}" Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#2E7D32"/>
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                        <Setter Property="Margin" Value="0,0,4,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Losses (bbl)" Binding="{Binding TotalLosses, StringFormat=F1}" Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#C62828"/>
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                        <Setter Property="Margin" Value="0,0,4,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Balance" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding BalanceColor}" CornerRadius="3" Padding="6,2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding BalanceStatusText}" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" FontStyle="Italic" FontSize="11"/>
+                        </DataGrid.Columns>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                    </DataGrid>
+
+                    <!-- ── EVENT ENTRY PANEL (Redesigned Panels I-IV) ─────────────────────────── -->
+                    <Border Grid.Row="2" Visibility="{Binding IsEventPanelOpen, Converter={StaticResource BoolVis}}"
+                            Background="#FDFDFD" BorderBrush="#1565C0" BorderThickness="0,3,0,0"
+                            MaxHeight="600" Padding="0,0,0,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/> <!-- Header -->
+                                <RowDefinition Height="*"/>    <!-- Content -->
+                                <RowDefinition Height="Auto"/> <!-- Validation Gates -->
+                            </Grid.RowDefinitions>
+
+                            <!-- Panel Header -->
+                            <Border Grid.Row="0" Background="#F5F5F5" Padding="16,10" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                                <Grid DataContext="{Binding DraftEvent}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Activity:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" SelectedItem="{Binding Activity}" VerticalAlignment="Center">
+                                        <vb:ActivityType>Drilling</vb:ActivityType>
+                                        <vb:ActivityType>Tripping</vb:ActivityType>
+                                        <vb:ActivityType>Mixing</vb:ActivityType>
+                                        <vb:ActivityType>Cementing</vb:ActivityType>
+                                        <vb:ActivityType>Displacement</vb:ActivityType>
+                                        <vb:ActivityType>Circulating</vb:ActivityType>
+                                        <vb:ActivityType>Other</vb:ActivityType>
+                                    </ComboBox>
+                                    <TextBlock Grid.Column="3" Text="Notes:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,10,0"/>
+                                    <TextBox Grid.Column="4" Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Padding="5,4"/>
+
+                                    <Button Grid.Column="5" Content="✔ SAVE EVENT" Command="{Binding DataContext.SaveEventCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Background="#2E7D32" Foreground="White" FontWeight="Bold" Padding="20,8" BorderThickness="0" Cursor="Hand"/>
+                                    <Button Grid.Column="7" Content="Cancel" Command="{Binding DataContext.CancelEventCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Background="#757575" Foreground="White" FontWeight="SemiBold" Padding="15,8" BorderThickness="0" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <Grid Margin="16" DataContext="{Binding DraftEvent}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.2*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="20"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="20"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- PANEL I: Pit Status -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0">
+                                        <TextBlock Text="PANEL I: PIT STATUS (STATIC CHECK)" FontWeight="Bold" Foreground="#1565C0" Margin="0,0,0,10"/>
+                                        <DataGrid ItemsSource="{Binding TankSnapshots}" AutoGenerateColumns="False" CanUserAddRows="False"
+                                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeight="32" Background="White">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Name" Binding="{Binding TankName}" Width="120" IsReadOnly="True" FontWeight="SemiBold"/>
+                                                <DataGridTextColumn Header="Subtype" Binding="{Binding TankSubtype}" Width="100"/>
+                                                <DataGridTextColumn Header="Prev (bbl)" Binding="{Binding PreviousVol, StringFormat=F1}" Width="75" IsReadOnly="True" Foreground="#777"/>
+                                                <DataGridTemplateColumn Header="Curr (bbl)" Width="85">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding CurrentVol, StringFormat=F1, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" HorizontalContentAlignment="Right" BorderThickness="0"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Density" Width="70">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <TextBox Text="{Binding Density, StringFormat=F2, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Right" BorderThickness="0"/>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+
+                                    <!-- PANEL II: Liquid Additions -->
+                                    <StackPanel Grid.Row="0" Grid.Column="2">
+                                        <TextBlock Text="PANEL II: LIQUID ADDITIONS &amp; INFLUX" FontWeight="Bold" Foreground="#2E7D32" Margin="0,0,0,10"/>
+                                        <DataGrid ItemsSource="{Binding BaseFluidAdditions}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" RowHeight="32" Background="White">
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Header="Type" Width="*">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox SelectedItem="{Binding FluidType, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent">
+                                                                <vb:BaseFluidType>Water</vb:BaseFluidType>
+                                                                <vb:BaseFluidType>DewateringWater</vb:BaseFluidType>
+                                                                <vb:BaseFluidType>OsmosisWater</vb:BaseFluidType>
+                                                                <vb:BaseFluidType>Oil</vb:BaseFluidType>
+                                                                <vb:BaseFluidType>OilBased</vb:BaseFluidType>
+                                                                <vb:BaseFluidType>Influx</vb:BaseFluidType>
+                                                                <vb:BaseFluidType>Other</vb:BaseFluidType>
+                                                            </ComboBox>
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridComboBoxColumn Header="System" Width="80" SelectedItemBinding="{Binding SystemAssignment, UpdateSourceTrigger=PropertyChanged}">
+                                                    <DataGridComboBoxColumn.ItemsSource>
+                                                        <x:Array Type="{x:Type vb:SystemType}">
+                                                            <vb:SystemType>Active</vb:SystemType>
+                                                            <vb:SystemType>Reserve</vb:SystemType>
+                                                            <vb:SystemType>Other</vb:SystemType>
+                                                        </x:Array>
+                                                    </DataGridComboBoxColumn.ItemsSource>
+                                                </DataGridComboBoxColumn>
+                                                <DataGridTemplateColumn Header="Gal" Width="70">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><TextBox Text="{Binding Gallons, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" HorizontalContentAlignment="Right"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Vol (bbl)" Width="75">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><TextBox Text="{Binding VolumeBbl, UpdateSourceTrigger=PropertyChanged}" FontWeight="Bold" BorderThickness="0" HorizontalContentAlignment="Right"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Width="30">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><Button Content="×" Command="{Binding DataContext.RemoveDraftFluidCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Foreground="Red" BorderThickness="0" Background="Transparent" FontWeight="Bold"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <Button Content="+ Add Fluid" Command="{Binding DataContext.AddDraftFluidCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Left" Margin="0,5"/>
+                                    </StackPanel>
+
+                                    <!-- PANEL III: Loss Tracking -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0">
+                                        <TextBlock Text="PANEL III: LOSS TRACKING" FontWeight="Bold" Foreground="#C62828" Margin="0,0,0,10"/>
+                                        <DataGrid ItemsSource="{Binding Losses}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" Background="White">
+                                            <DataGrid.Columns>
+                                                <DataGridComboBoxColumn Header="Category" Width="90" SelectedItemBinding="{Binding Category, UpdateSourceTrigger=PropertyChanged}">
+                                                    <DataGridComboBoxColumn.ItemsSource>
+                                                        <x:Array Type="{x:Type vb:LossCategory}">
+                                                            <vb:LossCategory>SCE</vb:LossCategory>
+                                                            <vb:LossCategory>Downhole</vb:LossCategory>
+                                                            <vb:LossCategory>Misc</vb:LossCategory>
+                                                        </x:Array>
+                                                    </DataGridComboBoxColumn.ItemsSource>
+                                                </DataGridComboBoxColumn>
+                                                <DataGridTemplateColumn Header="Type" Width="*">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox ItemsSource="{Binding AvailableLossTypes}" SelectedItem="{Binding LossType, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Vol (bbl)" Width="70">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><TextBox Text="{Binding VolumeBbl, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" FontWeight="Bold" HorizontalContentAlignment="Right"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Width="30">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><Button Content="×" Command="{Binding DataContext.RemoveDraftLossCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Foreground="Red" BorderThickness="0" Background="Transparent"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <Button Content="+ Add Loss" Command="{Binding DataContext.AddDraftLossCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Left" Margin="0,5"/>
+                                    </StackPanel>
+
+                                    <!-- PANEL IV: Chemical Tracker -->
+                                    <StackPanel Grid.Row="2" Grid.Column="2">
+                                        <TextBlock Text="PANEL IV: CHEMICAL CONCENTRATION" FontWeight="Bold" Foreground="#6A1B9A" Margin="0,0,0,10"/>
+                                        <DataGrid ItemsSource="{Binding Chemicals}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" Background="White">
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Product" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
+                                                <DataGridComboBoxColumn Header="System" Width="80" SelectedItemBinding="{Binding SystemAssignment, UpdateSourceTrigger=PropertyChanged}">
+                                                    <DataGridComboBoxColumn.ItemsSource>
+                                                        <x:Array Type="{x:Type vb:SystemType}">
+                                                            <vb:SystemType>Active</vb:SystemType>
+                                                            <vb:SystemType>Reserve</vb:SystemType>
+                                                        </x:Array>
+                                                    </DataGridComboBoxColumn.ItemsSource>
+                                                </DataGridComboBoxColumn>
+                                                <DataGridTemplateColumn Header="Lbs" Width="60">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><TextBox Text="{Binding TotalLbs, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" HorizontalContentAlignment="Right"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="ppb" Binding="{Binding ConcentrationPpb, StringFormat=F2}" Width="60" IsReadOnly="True" FontWeight="Bold"/>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                    </StackPanel>
+                                    
+                                    <!-- PANEL V: Transfers -->
+                                    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,15,0,0">
+                                        <TextBlock Text="PANEL V: INTERNAL TRANSFERS" FontWeight="Bold" Foreground="#F57C00" Margin="0,0,0,10"/>
+                                        <DataGrid ItemsSource="{Binding Transfers}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" Background="White" RowHeight="32">
+                                            <DataGrid.Columns>
+                                                <DataGridTemplateColumn Header="From Pit" Width="*">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox ItemsSource="{Binding DataContext.DraftEvent.TankSnapshots, RelativeSource={RelativeSource AncestorType=UserControl}}" DisplayMemberPath="TankName" SelectedValuePath="TankName" SelectedValue="{Binding FromTank, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="To Pit" Width="*">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate>
+                                                            <ComboBox ItemsSource="{Binding DataContext.DraftEvent.TankSnapshots, RelativeSource={RelativeSource AncestorType=UserControl}}" DisplayMemberPath="TankName" SelectedValuePath="TankName" SelectedValue="{Binding ToTank, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" />
+                                                        </DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Header="Vol (bbl)" Width="100">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><TextBox Text="{Binding VolumeBbl, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" FontWeight="Bold" HorizontalContentAlignment="Right"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTemplateColumn Width="30">
+                                                    <DataGridTemplateColumn.CellTemplate>
+                                                        <DataTemplate><Button Content="×" Command="{Binding DataContext.RemoveDraftTransferCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Foreground="Red" BorderThickness="0" Background="Transparent"/></DataTemplate>
+                                                    </DataGridTemplateColumn.CellTemplate>
+                                                </DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <Button Content="+ Add Transfer" Command="{Binding DataContext.AddDraftTransferCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Left" Margin="0,5"/>
+                                        <TextBlock Text="* Transferred volumes do not affect Total Pit Variance, but user must manually adjust the 'Curr (bbl)' in Panel I accurately to maintain balance." FontStyle="Italic" Foreground="#777" FontSize="11" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                            </ScrollViewer>
+
+                            <!-- VALIDATION BAR -->
+                            <Border Grid.Row="2" Background="#F1F1F1" Padding="15,10" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+                                <StackPanel Orientation="Horizontal" DataContext="{Binding DraftEvent}">
+                                    <TextBlock Text="VOLUME GATE: " FontWeight="Bold" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <Border Background="{Binding BalanceColor}" Padding="12,2" CornerRadius="4" Margin="0,0,25,0">
+                                        <TextBlock Text="{Binding VolumeBalanceGateText}" Foreground="White" FontWeight="Bold"/>
+                                    </Border>
+
+                                    <TextBlock Text="CHEMICAL GATE: " FontWeight="Bold" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <Border Background="{Binding ChemicalBalanceGate, Converter={StaticResource BoolToGateColorConverter}}" Padding="12,2" CornerRadius="4">
+                                        <TextBlock Text="{Binding ChemicalBalanceGateText}" Foreground="White" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- ════════════════════════════════════════════════════
+                 TAB 5 — TREND CHART
+            ════════════════════════════════════════════════════ -->
+            <TabItem Header="Trend" Padding="16,8">
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Pit Volume vs. Time" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                    <!-- Chart canvas with code-behind rendering -->
+                    <Border Grid.Row="1" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Background="White">
+                        <Canvas x:Name="TrendCanvas" Margin="50,16,16,40"
+                                SizeChanged="TrendCanvas_SizeChanged"/>
                     </Border>
 
-                </StackPanel>
+                    <TextBlock Grid.Row="2" Text="Each dot represents a saved Volume Balance Event. Hover a dot to see details."
+                               FontSize="11" Foreground="#999" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                </Grid>
+            </TabItem>
 
-            </Grid>
-
-        </ScrollViewer>
-
+        </TabControl>
     </Grid>
-
 </UserControl>

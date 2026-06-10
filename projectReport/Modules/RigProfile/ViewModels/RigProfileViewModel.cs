@@ -782,12 +782,15 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 _currentWell.Contractor = CurrentRigProfile.Contractor;
                 _currentWell.RigType = CurrentRigProfile.RigType;
 
-                var projectFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
-                var project = _contextService.CurrentProject;
-                if (project != null)
+                // Persist rig profile to the database via WellContextService (SQLite)
+                if (_currentWell != null)
                 {
-                    await DataPersistenceService.SaveProjectAsync(projectFilePath, project);
-                    ToastNotificationService.Instance.ShowSuccess("Rig Profile saved successfully");
+                    // Ensure the current well contains the updated RigProfile (already set above)
+                    _currentWell.RigProfile = CurrentRigProfile;
+                    WellContextService.Instance.CurrentWell = _currentWell;
+
+                    await WellContextService.Instance.SaveCurrentWell();
+                    ToastNotificationService.Instance.ShowSuccess("Rig Profile saved to database successfully");
                     PublishPits();
                 }
                 else

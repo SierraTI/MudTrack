@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using SqlParameter = Microsoft.Data.Sqlite.SqliteParameter;
 using ProjectReport.Services;
 
 namespace ProjectReport.Core.Data

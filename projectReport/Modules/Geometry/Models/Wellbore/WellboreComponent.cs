@@ -265,7 +265,10 @@ namespace ProjectReport.Models.Geometry.Wellbore
                 // "Volume for LINER and CASING... Anular con el casing anterior"
                 // Yes.
                 
-                return _volume; 
+                if (_volume > 0)
+                    return _volume;
+
+                return (ID.GetValueOrDefault() * ID.GetValueOrDefault() / 1029.4) * Length;
             }
             set
             {
@@ -765,6 +768,10 @@ namespace ProjectReport.Models.Geometry.Wellbore
                 else if (Washout.Value < 0 || Washout.Value > 100)
                 {
                      AddError(nameof(Washout), "Washout must be between 0% and 100%.");
+                }
+                else if (Washout.Value > 0 && Washout.Value < 0.01)
+                {
+                     AddError(nameof(Washout), "Minimum washout must be >= 0.01% if specified.");
                 }
                 else
                 {

@@ -14,6 +14,7 @@ using System.Collections.ObjectModel;
 
 namespace ProjectReport.Services
 {
+    [Obsolete("DataPersistenceService is deprecated. Use database persistence via WellContextService (SQLite) instead.")]
     public class DataPersistenceService
     {
         private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -26,28 +27,7 @@ namespace ProjectReport.Services
 
         public static async Task SaveProjectAsync(string filePath, Project project)
         {
-            try
-            {
-                // Update the name to trigger LastModified update through the Name setter
-                // This is a workaround since LastModified has a private setter
-                var originalName = project.Name;
-                if (string.IsNullOrEmpty(originalName))
-                {
-                    project.Name = " "; // Set a space if empty to trigger the setter
-                    project.Name = string.Empty; // Set it back to empty
-                }
-                else
-                {
-                    project.Name = originalName; // Trigger the setter to update LastModified
-                }
-                
-                var json = JsonSerializer.Serialize(project, _jsonOptions);
-                await File.WriteAllTextAsync(filePath, json);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to save project", ex);
-            }
+            throw new NotSupportedException("Saving projects to JSON files is deprecated. Use WellContextService and the database (SQLite) for persistence.");
         }
 
         public static async Task<Project> LoadProjectAsync(string filePath)
@@ -75,18 +55,7 @@ namespace ProjectReport.Services
         
         public static async Task SaveWellboreComponentsAsync(IEnumerable<WellboreComponent> components, string filePath)
         {
-            try
-            {
-                var options = new JsonSerializerOptions(_jsonOptions);
-                options.Converters.Add(new JsonStringEnumConverter());
-                
-                var json = JsonSerializer.Serialize(components, options);
-                await File.WriteAllTextAsync(filePath, json);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to save wellbore components", ex);
-            }
+            throw new NotSupportedException("Saving wellbore components to JSON files is deprecated. Use WellContextService and the database (SQLite) for persistence.");
         }
         
         public static async Task<IEnumerable<WellboreComponent>> LoadWellboreComponentsAsync(string filePath)
@@ -111,18 +80,7 @@ namespace ProjectReport.Services
         
         public static async Task SaveDrillStringComponentsAsync(IEnumerable<DrillStringComponent> components, string filePath)
         {
-            try
-            {
-                var options = new JsonSerializerOptions(_jsonOptions);
-                options.Converters.Add(new JsonStringEnumConverter());
-                
-                var json = JsonSerializer.Serialize(components, options);
-                await File.WriteAllTextAsync(filePath, json);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to save drill string components", ex);
-            }
+            throw new NotSupportedException("Saving drill string components to JSON files is deprecated. Use WellContextService and the database (SQLite) for persistence.");
         }
         
         public static async Task<IEnumerable<DrillStringComponent>> LoadDrillStringComponentsAsync(string filePath)
@@ -147,26 +105,7 @@ namespace ProjectReport.Services
 
         public static async Task ExportToCsvAsync<T>(IEnumerable<T> data, string filePath)
         {
-            try
-            {
-                using var writer = new StreamWriter(filePath);
-                
-                // Write header
-                var properties = typeof(T).GetProperties();
-                await writer.WriteLineAsync(string.Join(",", properties.Select(p => p.Name)));
-                
-                // Write data
-                foreach (var item in data)
-                {
-                    var values = properties.Select(p => 
-                        $"\"{p.GetValue(item)?.ToString()?.Replace("\"", "\"\"") ?? string.Empty}\"");
-                    await writer.WriteLineAsync(string.Join(",", values));
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to export data to CSV", ex);
-            }
+            throw new NotSupportedException("Exporting to CSV via the legacy file service is deprecated. Use ExportService or database queries instead.");
         }
     }
 }

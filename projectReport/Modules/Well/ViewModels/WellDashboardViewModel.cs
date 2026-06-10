@@ -61,14 +61,12 @@ namespace ProjectReport.ViewModels
             NavigateToRigProfileCommand = new RelayCommand(_ => NavigateToRigProfile(), _ => CurrentWell != null);
 
             var geoService = new GeometryCalculationService();
-            var dataService = new DataPersistenceService();
             var thermalService = new ThermalGradientService();
 
             _geometryValidationService = new GeometryValidationService();
 
             GeometryViewModel = new GeometryViewModel(
                 geoService,
-                dataService,
                 thermalService
             );
         }

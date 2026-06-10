@@ -512,7 +512,7 @@ namespace ProjectReport.Views
                 var openFileDialog = new Microsoft.Win32.OpenFileDialog
                 {
                     Filter = "CSV Files (*.csv)|*.csv|Excel Files (*.xlsx)|*.xlsx|All files (*.*)|*.*",
-                    DefaultExt = ".csv|.xlsx",
+                    DefaultExt = ".csv",
                     Title = "Import Survey Data"
                 };
 

@@ -33,7 +33,6 @@ namespace ProjectReport.ViewModels.Geometry
     {
         private readonly GeometryCalculationService _geometryService;
         private readonly GeometryValidationService _validationService; // validation service
-        private readonly DataPersistenceService _dataService;
         private readonly ThermalGradientService _thermalService;
         private readonly SurveyCalculationService _surveyCalculationService; // Survey trajectory calculations
         private readonly DrillStringAutoAdjustService _autoAdjustService; // Auto-adjust drill string to bit depth
@@ -66,12 +65,11 @@ namespace ProjectReport.ViewModels.Geometry
             set => SetProperty(ref _selectedTabIndex, value);
         }
 
-        public GeometryViewModel(GeometryCalculationService geometryService, DataPersistenceService dataService, ThermalGradientService thermalService)
+        public GeometryViewModel(GeometryCalculationService geometryService, ThermalGradientService thermalService)
         {
 
             _geometryService = geometryService ?? throw new ArgumentNullException(nameof(geometryService));
             _validationService = new GeometryValidationService(); // new instance
-            _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
             _thermalService = thermalService ?? throw new ArgumentNullException(nameof(thermalService));
             _surveyCalculationService = new SurveyCalculationService(); // Initialize survey calculation service
             _autoAdjustService = new DrillStringAutoAdjustService(); // Initialize auto-adjust service
@@ -1545,27 +1543,29 @@ namespace ProjectReport.ViewModels.Geometry
                     DefaultExt = ".json"
                 };
 
-                if (saveFileDialog.ShowDialog() == true)
+                // Persist to database (SQLite) via WellContextService instead of writing JSON files
+                // Sync current report and well into the global context and persist
+                if (CurrentReport != null)
+                    WellContextService.Instance.CurrentReport = CurrentReport;
+
+                if (_currentWell != null)
                 {
-                    // Create a new project with the current data
-                    var project = new Project
-                    {
-                        Name = "Wellbore Project",
-                        WellName = WellName
-                    };
-                    
-                    // Save the project
-                    await DataPersistenceService.SaveProjectAsync(saveFileDialog.FileName, project);
-                    
-                    // Save the wellbore components
-                    var wellboreFilePath = Path.ChangeExtension(saveFileDialog.FileName, ".wellbore.json");
-                    await DataPersistenceService.SaveWellboreComponentsAsync(WellboreComponents, wellboreFilePath);
-                    
-                    // Save the drill string components
-                    var drillStringFilePath = Path.ChangeExtension(saveFileDialog.FileName, ".drillstring.json");
-                    await DataPersistenceService.SaveDrillStringComponentsAsync(DrillStringComponents, drillStringFilePath);
-                    ToastNotificationService.Instance.ShowSuccess("Project saved successfully.");
+                    // Sync collections from viewmodel to the model instance
+                    _currentWell.WellboreComponents.Clear();
+                    foreach (var c in WellboreComponents) _currentWell.WellboreComponents.Add(c);
+
+                    _currentWell.DrillStringComponents.Clear();
+                    foreach (var d in DrillStringComponents) _currentWell.DrillStringComponents.Add(d);
+
+                    WellContextService.Instance.CurrentWell = _currentWell;
                 }
+
+                // Publish geometry to ensure repositories pick it up if needed
+                WellContextService.Instance.PublishWellboreComponents(WellboreComponents);
+
+                // Save using the centralized context service which persists to the configured database (SQLite)
+                await WellContextService.Instance.SaveCurrentWell();
+                ToastNotificationService.Instance.ShowSuccess("Project saved to database successfully.");
             }
             catch (Exception ex)
             {

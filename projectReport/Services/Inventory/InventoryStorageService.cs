@@ -6,7 +6,7 @@ namespace ProjectReport.Services.Inventory
 {
     public class InventoryStorageService
     {
-        private readonly JsonInventoryRepository _repo = new JsonInventoryRepository();
+        private readonly SqliteInventoryRepository _repo = new SqliteInventoryRepository();
 
         public List<InventoryItem> Load()
         {

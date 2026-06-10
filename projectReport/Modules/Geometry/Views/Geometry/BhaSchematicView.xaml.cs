@@ -193,7 +193,7 @@ namespace ProjectReport.Views.Geometry
             // OnBottom Indicator
             if (vm.BitToBottom != null && Math.Abs(vm.BitToBottom.Value) < 0.1)
             {
-                var marker = new Path
+                var marker = new System.Windows.Shapes.Path
                 {
                     Data = System.Windows.Media.Geometry.Parse("M 0,0 L 10,10 L -10,10 Z"),
                     Fill = Brushes.Green,

@@ -125,11 +125,6 @@
                     Style="{StaticResource TopMenuButtonStyle}"
                     Click="InventoryButton_Click"/>
 
-                    <Button x:Name="VolumeBalanceButton"
-                    Content="Volume Balance"
-                    Style="{StaticResource TopMenuButtonStyle}"
-                    Click="VolumeBalanceButton_Click"/>
-
                 </WrapPanel>
 
                 <Grid Grid.Column="2" Width="12"/>

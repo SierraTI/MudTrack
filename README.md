@@ -41,3 +41,11 @@ Or open `ProjectReport.sln` in Visual Studio and press F5.
 ```powershell
 dotnet test projectReport.Tests\projectReport.Tests.csproj
 ```
+
+## Cleanup after merge
+
+If you still see a `projectReport/projectReport/` or `MudTrack/` folder (leftover from the merge), **close the running app** and delete them:
+
+```powershell
+Remove-Item -Recurse -Force projectReport\projectReport, MudTrack
+```

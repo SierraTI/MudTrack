@@ -143,36 +143,6 @@ namespace ProjectReport.Services
                 Quantity INTEGER
             );");
 
-            // Volume events
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS VolumeEvent (
-                idVE INTEGER PRIMARY KEY AUTOINCREMENT,
-                idRep INTEGER,
-                EventTime TEXT,
-                Description TEXT,
-                TotalSurfaceVol REAL,
-                HoleVol REAL,
-                TotalSystemVol REAL
-            );");
-
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS EventChemical (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                idVE INTEGER,
-                ProductName TEXT,
-                Quantity REAL,
-                Unit TEXT,
-                SG REAL,
-                VolumeBbl REAL,
-                PPB REAL
-            );");
-
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS EventTransfer (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                idVE INTEGER,
-                FromTank TEXT,
-                ToTank TEXT,
-                VolumeBbl REAL
-            );");
-
             // Users
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS Users (
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,

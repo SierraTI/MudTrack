@@ -22,7 +22,6 @@ namespace ProjectReport.Services
         private readonly ReportRepository _reportRepo;
         private readonly CatalogRepository _catalogRepo;
         private readonly WellboreGeometryRepository _geometryRepo;
-        private readonly VolumeBalanceRepository _volumeRepo;
         private readonly DrillStringRepository _drillStringRepo;
         private readonly SurveyRepository _surveyRepo;
         private readonly EngineeringRepository _engineeringRepo;
@@ -37,7 +36,6 @@ namespace ProjectReport.Services
             _reportRepo = new ReportRepository(_db);
             _catalogRepo = new CatalogRepository(_db);
             _geometryRepo = new WellboreGeometryRepository(_db);
-            _volumeRepo = new VolumeBalanceRepository(_db);
             _drillStringRepo = new DrillStringRepository(_db);
             _surveyRepo = new SurveyRepository(_db);
             _engineeringRepo = new EngineeringRepository(_db);
@@ -64,7 +62,6 @@ namespace ProjectReport.Services
         private readonly Dictionary<string, bool> _stepCompletionStatus = new();
         private List<ChemicalItem> _currentSelectedChemicals = new();
         private IEnumerable<ProjectReport.Models.Geometry.Wellbore.WellboreComponent>? _lastGeometry;
-        private IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent>? _lastEvents;
 
         public event EventHandler<Well>? WellChanged;
         public event EventHandler<double>? DepthUpdated;
@@ -77,7 +74,6 @@ namespace ProjectReport.Services
         public event Action<IEnumerable<ProjectReport.Models.Geometry.Survey.SurveyPoint>>? SurveyUpdated;
         public event Action<IEnumerable<ProjectReport.Models.Geometry.ThermalGradient.ThermalGradientPoint>>? ThermalUpdated;
         public event Action<IEnumerable<ProjectReport.Models.Geometry.WellTest.WellTest>>? WellTestsUpdated;
-        public event Action<IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent>>? VolumeEventsUpdated;
         public event EventHandler<RigProfileUpdatedEventArgs>? RigProfileUpdated;
         public event EventHandler<ChemicalSelectionUpdatedEventArgs>? ChemicalSelectionUpdated;
 
@@ -138,11 +134,9 @@ namespace ProjectReport.Services
                         {
                             // Load technical details from SQL
                             _lastGeometry = _geometryRepo.LoadGeometry(_currentReport.Id);
-                            _lastEvents = _volumeRepo.LoadEvents(_currentReport.Id);
                             
                             // Notify observers if necessary (ViewModels should re-sync when report changes)
                             if (_lastGeometry != null) WellboreComponentsUpdated?.Invoke(this, _lastGeometry);
-                            if (_lastEvents != null) VolumeEventsUpdated?.Invoke(_lastEvents);
                         }
                         catch (Exception ex)
                         {
@@ -155,7 +149,6 @@ namespace ProjectReport.Services
         }
     
         public IEnumerable<ProjectReport.Models.Geometry.Wellbore.WellboreComponent>? GetLoadedGeometry() => _lastGeometry;
-        public IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent>? GetLoadedEvents() => _lastEvents;
 
         public async Task SaveCurrentWell()
         {
@@ -178,12 +171,6 @@ namespace ProjectReport.Services
                 if (_lastGeometry != null)
                 {
                     _geometryRepo.SaveGeometry(CurrentReport.Id, _lastGeometry);
-                }
-
-                // Save Volume Events if available
-                if (_lastEvents != null)
-                {
-                    _volumeRepo.SaveEvents(CurrentReport.Id, _lastEvents);
                 }
             }
             await Task.Yield(); // Keep it async
@@ -271,11 +258,6 @@ namespace ProjectReport.Services
         {
             _lastGeometry = components;
             WellboreComponentsUpdated?.Invoke(this, components);
-        }
-
-        public void PublishVolumeEvents(IEnumerable<ProjectReport.Modules.VolumeBalance.VolumeBalanceEvent> events)
-        {
-            _lastEvents = events;
         }
 
         public void PublishRigProfilePits(IList<RigPit> activePits)

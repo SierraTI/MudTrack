@@ -27,36 +27,11 @@ namespace ProjectReport.Views
     {
         private readonly DatabaseService _databaseService;
 
-        private ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView? _volumeBalanceView;
-        private ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel? _volumeBalanceViewModel;
         private int? _currentWellId;
         private Well _currentWell;
 
 
 
-
-        private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (_volumeBalanceView == null)
-            {
-                _volumeBalanceViewModel = new ProjectReport.Modules.VolumeBalance.ViewModels.VolumeBalanceViewModel();
-                _volumeBalanceView = new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView
-                {
-                    DataContext = _volumeBalanceViewModel
-                };
-            }
-            ContentTitle.Text = $"Volume Balance - {_currentWell.WellName}";
-            ContentArea.Content = _volumeBalanceView;
-            GeometrySubmenu.Visibility = Visibility.Collapsed;
-            GeometrySubmenu.Height = 0;
-
-            // Trigger data push from other modules
-            if (_geometryView?.DataContext is ProjectReport.ViewModels.Geometry.GeometryViewModel gvm)
-                gvm.RecalculateTotals();
-
-            if (_rigProfileView?.DataContext is ProjectReport.Modules.RigProfile.ViewModels.RigProfileViewModel rvm)
-                rvm.GetType().GetMethod("PublishPits", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)?.Invoke(rvm, null);
-        }
 
         private GeometryView? _geometryView;
         private HomeView? _homeView;
@@ -99,7 +74,6 @@ namespace ProjectReport.Views
             GeometryButton.Visibility = visibility;
             InventoryButton.Visibility = visibility;
             ReportDetailButton.Visibility = visibility;
-            VolumeBalanceButton.Visibility = visibility;
             ContentTitle.Visibility = visibility;
 
             if (ContentIndicator != null)

@@ -46,14 +46,22 @@ namespace ProjectReport.Views
 
         private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
         {
-            // Mostrar directamente la vista de detalle de evento de Balance de Volumen
-            if (_volumeBalanceEventView == null)
+            // Mostrar la vista principal de Volume Balance
+            if (_volumeBalanceView == null)
             {
-                _volumeBalanceEventView = new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceEventView();
+                _volumeBalanceView = new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView();
             }
 
+            // Crear o reutilizar el ViewModel y asignarlo como DataContext
+            if (_volumeBalanceViewModel == null)
+            {
+                _volumeBalanceViewModel = new VolumeBalanceViewModel(_volumeNavigation);
+            }
+
+            _volumeBalanceView.DataContext = _volumeBalanceViewModel;
+
             ContentTitle.Text = "Volume Balance";
-            ContentArea.Content = _volumeBalanceEventView;
+            ContentArea.Content = _volumeBalanceView;
         }
 
         private void OpenVolumeBalanceEvent(VolumeBalanceEvent evento)

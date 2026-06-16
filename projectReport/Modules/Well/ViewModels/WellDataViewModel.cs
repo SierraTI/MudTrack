@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using ProjectReport.Models;
 using ProjectReport.Services;
+using ProjectReport.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,10 +10,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using ClosedXML.Excel; // <-- ClosedXML
+using ClosedXML.Excel;
 
 namespace ProjectReport.ViewModels
 {
+    /// <summary>
+    /// ViewModel for the Well Data module, handling well creation and editing.
+    /// </summary>
     public class WellDataViewModel : BaseViewModel
     {
         private readonly Project _project;
@@ -31,13 +35,12 @@ namespace ProjectReport.ViewModels
             LoadFluidsFromExcel();
             InitializeDropdownOptions();
 
-            // Inicializa comandos
+            // Initialize commands
             SaveAndOpenDashboardCommand = new RelayCommand(async _ => await SaveAndOpenDashboardAsync());
             CancelCommand = new RelayCommand(_ => Cancel());
             UploadLogoCommand = new RelayCommand(_ => UploadLogo());
             RemoveLogoCommand = new RelayCommand(_ => RemoveLogo(), _ => !string.IsNullOrEmpty(CurrentWell.OperatorLogoPath));
             RemoveFluidCommand = new RelayCommand(RemoveFluid);
-
 
             // Setup auto-save timer (500ms debounce)
             _autoSaveTimer = new System.Timers.Timer(500);
@@ -50,7 +53,7 @@ namespace ProjectReport.ViewModels
             // Subscribe to property changes for auto-save
             _currentWell.PropertyChanged += (s, e) => TriggerAutoSave();
 
-            // Establecer CurrentWell.LoadFluid al SelectedFluid inicial
+            // Set initial selected fluid
             if (!string.IsNullOrEmpty(SelectedFluid))
                 CurrentWell.LoadFluid = SelectedFluid;
         }
@@ -79,6 +82,7 @@ namespace ProjectReport.ViewModels
                     OnPropertyChanged(nameof(IsSection3Complete));
                     OnPropertyChanged(nameof(ValidationSummary));
 
+                    // Update auto-save subscription
                     _currentWell.PropertyChanged -= (s, e) => TriggerAutoSave();
                     _currentWell.PropertyChanged += (s, e) => TriggerAutoSave();
                 }
@@ -114,7 +118,6 @@ namespace ProjectReport.ViewModels
 
         public ObservableCollection<FluidData> SelectedFluids { get; } = new ObservableCollection<FluidData>();
 
-
         private string? _selectedFluid;
         public string? SelectedFluid
         {
@@ -130,8 +133,6 @@ namespace ProjectReport.ViewModels
             }
         }
 
-      
-
         #endregion
 
         #region Excel Loading with ClosedXML
@@ -144,7 +145,7 @@ namespace ProjectReport.ViewModels
 
                 if (!File.Exists(filePath))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Excel no encontrado en: {filePath}");
+                    System.Diagnostics.Debug.WriteLine($"Excel file not found at: {filePath}");
                     return;
                 }
 
@@ -153,7 +154,7 @@ namespace ProjectReport.ViewModels
                 using (var workbook = new XLWorkbook(filePath))
                 {
                     var worksheet = workbook.Worksheet(1);
-                    foreach (var row in worksheet.RowsUsed().Skip(1)) // saltamos encabezado
+                    foreach (var row in worksheet.RowsUsed().Skip(1)) // Skip header
                     {
                         var fluidSetName = row.Cell(1).GetValue<string>();
                         var baseFluid = row.Cell(2).GetValue<string>();
@@ -161,7 +162,7 @@ namespace ProjectReport.ViewModels
                         var system = row.Cell(4).GetValue<string>();
                         var brineType = row.Cell(5).GetValue<string>();
 
-                        System.Diagnostics.Debug.WriteLine($"Fila {row.RowNumber()}: '{fluidSetName}' | '{baseFluid}' | '{category}' | '{system}' | '{brineType}'");
+                        System.Diagnostics.Debug.WriteLine($"Row {row.RowNumber()}: '{fluidSetName}' | '{baseFluid}' | '{category}' | '{system}' | '{brineType}'");
 
                         if (!string.IsNullOrWhiteSpace(fluidSetName) && !string.IsNullOrWhiteSpace(baseFluid))
                         {
@@ -177,7 +178,6 @@ namespace ProjectReport.ViewModels
                             fluid.PropertyChanged += Fluid_PropertyChanged;
 
                             _allFluidData.Add(fluid);
-
                         }
                     }
                 }
@@ -187,7 +187,7 @@ namespace ProjectReport.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error cargando fluidos desde Excel: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error loading fluids from Excel: {ex.Message}");
             }
         }
 
@@ -206,14 +206,14 @@ namespace ProjectReport.ViewModels
             {
                 foreach (var item in filtered)
                 {
-                    // Marcar si ya está seleccionado en CurrentWell
+                    // Mark if already selected in CurrentWell
                     item.IsSelected = CurrentWell.SelectedFluids.Any(f => f.Name == item.Name);
 
-                    // Agregar a FilteredFluids
+                    // Add to FilteredFluids if not already present
                     if (!FilteredFluids.Contains(item))
                         FilteredFluids.Add(item);
 
-                    // Sincronizar CurrentWell.SelectedFluids
+                    // Synchronize CurrentWell.SelectedFluids
                     if (item.IsSelected && !CurrentWell.SelectedFluids.Any(f => f.Name == item.Name))
                     {
                         CurrentWell.SelectedFluids.Add(new Well.WellFluid
@@ -226,7 +226,7 @@ namespace ProjectReport.ViewModels
             }
             else
             {
-                // Si no hay stock en Excel, crear fluido dinámicamente
+                // If no match in Excel, create a dynamic fluid
                 var existingFluid = _allFluidData.FirstOrDefault(f => f.Name == SelectedFluid);
 
                 if (existingFluid == null)
@@ -240,12 +240,12 @@ namespace ProjectReport.ViewModels
 
                     fluid.PropertyChanged += Fluid_PropertyChanged;
 
-                    // Agregar a todas las listas
+                    // Add to all lists
                     _allFluidData.Add(fluid);
                     SelectedFluids.Add(fluid);
                     FilteredFluids.Add(fluid);
 
-                    // 🔹 Agregar siempre a CurrentWell.SelectedFluids
+                    // Ensure it's added to CurrentWell.SelectedFluids
                     if (!CurrentWell.SelectedFluids.Any(f => f.Name == fluid.Name))
                     {
                         CurrentWell.SelectedFluids.Add(new Well.WellFluid
@@ -290,6 +290,9 @@ namespace ProjectReport.ViewModels
             }
         }
 
+        #endregion
+
+        #region Standard Options
 
         public ObservableCollection<string> TrajectoryTypes { get; } = new ObservableCollection<string>
         {
@@ -303,7 +306,7 @@ namespace ProjectReport.ViewModels
 
         public ObservableCollection<string> RigTypes { get; } = new ObservableCollection<string>
         {
-            "Land","Workover","Coiled Tubing"
+            "Land", "Workover", "Coiled Tubing"
         };
 
         public ObservableCollection<string> LocationTypes { get; } = new ObservableCollection<string>
@@ -320,8 +323,8 @@ namespace ProjectReport.ViewModels
 
         public ObservableCollection<string> Basins { get; } = new ObservableCollection<string>
         {
-            "Llanos Orientales","Valle Superior del Magdalena","Valle Medio del Magdalena","Valle Inferior del Magdalena",
-            "Caguan-Putumayo","Catatumbo","Guajira"
+            "Llanos Orientales", "Valle Superior del Magdalena", "Valle Medio del Magdalena", "Valle Inferior del Magdalena",
+            "Caguan-Putumayo", "Catatumbo", "Guajira"
         };
 
         public List<string> ColombianStates { get; } = new List<string>
@@ -412,7 +415,7 @@ namespace ProjectReport.ViewModels
                 var missing = CurrentWell.GetMissingRequiredFields();
                 if (missing.Count == 0)
                     return "✓ All required fields complete";
-                
+
                 return $"⚠ {missing.Count} required field{(missing.Count > 1 ? "s" : "")} incomplete: {string.Join(", ", missing)}";
             }
         }
@@ -451,7 +454,6 @@ namespace ProjectReport.ViewModels
 
             public event PropertyChangedEventHandler? PropertyChanged;
         }
-
 
         #endregion
 
@@ -506,7 +508,7 @@ namespace ProjectReport.ViewModels
                 if (openFileDialog.ShowDialog() == true)
                 {
                     var fileInfo = new FileInfo(openFileDialog.FileName);
-                    
+
                     // Validate file size (max 2MB)
                     if (fileInfo.Length > 2 * 1024 * 1024)
                     {
@@ -517,7 +519,7 @@ namespace ProjectReport.ViewModels
                     // In a real app, we'd copy this to a local assets folder
                     // For now, we'll just use the path
                     CurrentWell.OperatorLogoPath = openFileDialog.FileName;
-                    
+
                     OnPropertyChanged(nameof(CurrentWell));
                     ToastNotificationService.Instance.ShowSuccess("Logo uploaded successfully");
                 }
@@ -550,9 +552,6 @@ namespace ProjectReport.ViewModels
             }
         }
 
-
-
-
         #endregion
 
         #region Auto-Save
@@ -580,11 +579,11 @@ namespace ProjectReport.ViewModels
                 // Ensure the well is in the project before auto-saving
                 if (!_project.Wells.Contains(CurrentWell))
                 {
-                     if (CurrentWell.Id == 0)
+                    if (CurrentWell.Id == 0)
                     {
                         CurrentWell.Id = _project.Wells.Any() ? _project.Wells.Max(w => w.Id) + 1 : 1;
                     }
-                    
+
                     if (!_project.Wells.Any(w => w.Id == CurrentWell.Id))
                     {
                         _project.AddWell(CurrentWell);
@@ -592,10 +591,10 @@ namespace ProjectReport.ViewModels
                 }
 
                 await WellContextService.Instance.SaveCurrentWell();
-                
+
                 _lastSaved = DateTime.Now;
-                // We need to dispatch this to the UI thread since it's called from a timer
-                System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                // Update UI on the dispatcher thread
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     LastSavedText = $"✓ SQL Auto-saved at {_lastSaved:h:mm:ss tt}";
                 });
@@ -620,13 +619,13 @@ namespace ProjectReport.ViewModels
 
             CurrentWell = well;
 
-            // Restaurar tipo de fluido
+            // Restore fluid type
             SelectedFluid = CurrentWell.LoadFluid;
 
-            // Limpiar SelectedFluids local
+            // Clear local SelectedFluids
             SelectedFluids.Clear();
 
-            // Recorrer todos los fluidos en _allFluidData y marcar como seleccionados si están en CurrentWell.SelectedFluids
+            // Mark fluids in _allFluidData as selected if they are in CurrentWell.SelectedFluids
             foreach (var fluid in _allFluidData)
             {
                 fluid.IsSelected = CurrentWell.SelectedFluids.Any(f => f.Name == fluid.Name);
@@ -637,7 +636,7 @@ namespace ProjectReport.ViewModels
                 }
             }
 
-            // Asegurar que todos los fluidos en CurrentWell.SelectedFluids que no existan en _allFluidData se agreguen
+            // Ensure all fluids in CurrentWell.SelectedFluids that are not in _allFluidData are added
             foreach (var wellFluid in CurrentWell.SelectedFluids)
             {
                 if (!_allFluidData.Any(f => f.Name == wellFluid.Name))
@@ -657,11 +656,9 @@ namespace ProjectReport.ViewModels
                 }
             }
 
-            // Actualizar dropdown filtrado
+            // Update filtered dropdown
             FilterFluids();
         }
-
-
 
         /// <summary>
         /// Creates a new well
@@ -676,8 +673,6 @@ namespace ProjectReport.ViewModels
             };
             SelectedFluid = LoadFluid.FirstOrDefault();
         }
-    
-
 
         #endregion
 

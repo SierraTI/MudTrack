@@ -1,8 +1,9 @@
-﻿using ClosedXML.Excel;
+using ClosedXML.Excel;
 using ProjectReport.Models;
 using ProjectReport.Models.Geometry.Wellbore;
 using ProjectReport.Models.Rig;
 using ProjectReport.Services;
+using ProjectReport.ViewModels; // Added for RelayCommand
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,6 +16,9 @@ using static ProjectReport.Models.Well;
 
 namespace ProjectReport.Modules.ReportDetail.ViewModels
 {
+    /// <summary>
+    /// ViewModel for the Report Details module, handling report creation and editing.
+    /// </summary>
     internal class ReportDViewModel : INotifyPropertyChanged
     {
         private Report _report = new Report();
@@ -182,7 +186,6 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
         }
 
 
-
         private void LoadFluidTypes()
         {
             if (_currentWell.SelectedFluids == null || !_currentWell.SelectedFluids.Any())
@@ -200,7 +203,6 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             if (FluidTypes.Any())
                 SelectedFluid = FluidTypes.First();
         }
-
 
 
         private void CreateReportFromPrevious()
@@ -347,7 +349,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             }
         }
 
-        private void SaveNewReport()
+        private async void SaveNewReport()
         {
             if (!ValidateReport())
                 return;
@@ -394,7 +396,12 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             if (!Reports.Contains(Report))
                 Reports.Add(Report);
 
-            ToastNotificationService.Instance.ShowSuccess("Report saved");
+            // Persist to database
+            WellContextService.Instance.CurrentWell = _currentWell;
+            WellContextService.Instance.CurrentReport = Report;
+            await WellContextService.Instance.SaveCurrentWell();
+
+            ToastNotificationService.Instance.ShowSuccess("Report saved to database");
             OnReportSaved?.Invoke(this, Report);
         }
 
@@ -501,64 +508,5 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
                 new PropertyChangedEventArgs(propertyName));
         }
         #endregion
-
-        private class RelayCommand : ICommand
-        {
-            private readonly Action _execute;
-            private readonly Func<bool>? _canExecute;
-
-            public RelayCommand(Action execute, Func<bool>? canExecute = null)
-            {
-                _execute = execute;
-                _canExecute = canExecute;
-            }
-
-            public bool CanExecute(object? parameter) => _canExecute == null || _canExecute();
-            public void Execute(object? parameter) => _execute();
-
-            public event EventHandler? CanExecuteChanged
-            {
-                add => CommandManager.RequerySuggested += value;
-                remove => CommandManager.RequerySuggested -= value;
-            }
-        }
-
-        private class RelayCommand<T> : ICommand
-        {
-            private readonly Action<T> _execute;
-            private readonly Func<T, bool>? _canExecute;
-
-            public RelayCommand(Action<T> execute, Func<T, bool>? canExecute = null)
-            {
-                _execute = execute;
-                _canExecute = canExecute;
-            }
-
-            public bool CanExecute(object? parameter)
-            {
-                if (_canExecute == null) return true;
-                if (parameter is T value) return _canExecute(value);
-                if (parameter == null && default(T) == null) return _canExecute((T)(object?)null);
-                return _canExecute(default!);
-            }
-
-            public void Execute(object? parameter)
-            {
-                if (parameter is T value)
-                {
-                    _execute(value);
-                }
-                else if (parameter == null && default(T) == null)
-                {
-                    _execute((T)(object?)null);
-                }
-            }
-
-            public event EventHandler? CanExecuteChanged
-            {
-                add => CommandManager.RequerySuggested += value;
-                remove => CommandManager.RequerySuggested -= value;
-            }
-        }
     }
 }

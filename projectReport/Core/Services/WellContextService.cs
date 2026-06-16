@@ -211,6 +211,11 @@ namespace ProjectReport.Services
             _wellRepo.DeleteWell(id);
         }
 
+        public void DeleteReport(int reportId)
+        {
+            _reportRepo.DeleteReport(reportId);
+        }
+
         public void UpdateMudDensity(double density)
         {
             MudDensityUpdated?.Invoke(this, density);

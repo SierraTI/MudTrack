@@ -9,24 +9,32 @@ using System.Windows.Data;
 using System.Windows.Input;
 using ProjectReport.Models;
 using ProjectReport.Services;
+using ProjectReport.ViewModels;
 
 namespace ProjectReport.ViewModels
 {
+    /// <summary>
+    /// ViewModel for the Home (Dashboard) module, displaying well list and statistics.
+    /// </summary>
     public class HomeViewModel : BaseViewModel
     {
         private readonly Project _project;
         private ICollectionView _wellsView;
         private readonly string _projectFilePath;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HomeViewModel"/> class.
+        /// </summary>
+        /// <param name="project">The current project.</param>
         public HomeViewModel(Project project)
         {
             _project = project ?? throw new ArgumentNullException(nameof(project));
             _projectFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project_data.json");
-            
-            // Load Wells from SQL
+
+            // Load wells from the database
             LoadWellsFromDb();
-            
-            // Initialize collection view for filtering/sorting
+
+            // Initialize collection view for filtering and sorting
             _wellsView = CollectionViewSource.GetDefaultView(_project.Wells);
             _wellsView.Filter = FilterWells;
 
@@ -40,10 +48,10 @@ namespace ProjectReport.ViewModels
             ClearFiltersCommand = new RelayCommand(_ => ClearFilters());
             ToggleViewCommand = new RelayCommand(_ => ToggleView());
 
-            // Calculate dashboard statistics
+            // Calculate initial dashboard statistics
             UpdateDashboardStatistics();
 
-            // Subscribe to collection changes
+            // Subscribe to collection changes to update statistics
             _project.Wells.CollectionChanged += (s, e) => UpdateDashboardStatistics();
         }
 
@@ -170,6 +178,9 @@ namespace ProjectReport.ViewModels
             set => SetProperty(ref _activeOperators, value);
         }
 
+        /// <summary>
+        /// Updates all dashboard statistics based on the current well collection.
+        /// </summary>
         private void UpdateDashboardStatistics()
         {
             TotalWells = _project.Wells.Count;
@@ -234,7 +245,7 @@ namespace ProjectReport.ViewModels
             if (parameter is Well well)
             {
                 _project.SetActiveWell(well.Id);
-                
+
                 // Navigate to Well Dashboard
                 NavigationService.Instance.NavigateToWellDashboard(well.Id);
                 ToastNotificationService.Instance.ShowInfo($"Opening well dashboard: {well.WellName}");
@@ -251,7 +262,7 @@ namespace ProjectReport.ViewModels
             if (parameter is Well well)
             {
                 _project.SetActiveWell(well.Id);
-                
+
                 // Navigate to Well Data module
                 NavigationService.Instance.NavigateToWellData(well.Id);
                 ToastNotificationService.Instance.ShowInfo($"Editing well data: {well.WellName}");
@@ -298,13 +309,13 @@ namespace ProjectReport.ViewModels
                 try
                 {
                     well.Status = WellStatus.Archived;
-                    
+
                     WellContextService.Instance.CurrentWell = well;
                     await WellContextService.Instance.SaveCurrentWell();
-                    
+
                     _wellsView.Refresh();
                     UpdateDashboardStatistics();
-                    
+
                     ToastNotificationService.Instance.ShowInfo($"Archived well: {well.WellName}");
                 }
                 catch (Exception ex)
@@ -337,11 +348,11 @@ namespace ProjectReport.ViewModels
                     }
 
                     _project.RemoveWell(well.Id);
-                    
+
                     WellContextService.Instance.DeleteWell(well.Id);
-                    
+
                     UpdateDashboardStatistics();
-                    
+
                     ToastNotificationService.Instance.ShowSuccess($"Deleted well: {well.WellName}");
                 }
                 catch (Exception ex)
@@ -361,7 +372,7 @@ namespace ProjectReport.ViewModels
             SearchText = string.Empty;
             SelectedStatuses.Clear();
             _wellsView.Refresh();
-            
+
             ToastNotificationService.Instance.ShowInfo("Filters cleared");
         }
 

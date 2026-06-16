@@ -28,6 +28,31 @@ namespace ProjectReport.Core.Data
             return results;
         }
 
+        public List<string> GetFluidsByWell(int wellId)
+        {
+            var results = new List<string>();
+            var dt = _db.ExecuteQuery("SELECT FluidName FROM WellFluids WHERE idW=@id ORDER BY FluidName", new SqlParameter("@id", wellId));
+            foreach (DataRow r in dt.Rows)
+            {
+                results.Add(r["FluidName"]?.ToString() ?? string.Empty);
+            }
+            return results;
+        }
+
+        public void AddFluidToWell(int wellId, string fluidName)
+        {
+            if (string.IsNullOrWhiteSpace(fluidName)) return;
+            _db.ExecuteNonQuery("INSERT INTO WellFluids (idW, FluidName) VALUES (@id, @f)", new SqlParameter("@id", wellId), new SqlParameter("@f", fluidName));
+        }
+
+        public void EnsureFluidExists(string fluidName)
+        {
+            if (string.IsNullOrWhiteSpace(fluidName)) return;
+            var dt = _db.ExecuteQuery("SELECT 1 FROM FluidCatalog WHERE FluidName=@f", new SqlParameter("@f", fluidName));
+            if (dt.Rows.Count == 0)
+                _db.ExecuteNonQuery("INSERT INTO FluidCatalog (FluidName) VALUES (@f)", new SqlParameter("@f", fluidName));
+        }
+
         public void AddFluidName(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return;

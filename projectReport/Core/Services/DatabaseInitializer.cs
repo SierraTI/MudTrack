@@ -315,6 +315,18 @@ namespace ProjectReport.Services
                 supplier_name TEXT
             );");
 
+            // Fluid catalog (master list of fluid names)
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS FluidCatalog (
+                FluidName TEXT PRIMARY KEY
+            );");
+
+            // WellFluids: many-to-many / one-to-many mapping between wells and fluid names
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellFluids (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                idW INTEGER NOT NULL,
+                FluidName TEXT NOT NULL
+            );");
+
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS TicketLines (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ticket_id INTEGER,

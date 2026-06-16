@@ -17,6 +17,7 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
         public ICommand AddEventCommand { get; }
         public ICommand ViewEventCommand { get; }
+        public ICommand ExportEventCommand { get; }
 
         public VolumeBalanceViewModel(
             VolumeBalanceNavigationService navigation)
@@ -30,6 +31,8 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
 
             ViewEventCommand =
                 new RelayCommand<VolumeBalanceEvent>(ViewEvent);
+
+            ExportEventCommand = new RelayCommand<VolumeBalanceEvent>(ExportEvent);
         }
 
         private void AddEvent()
@@ -51,6 +54,15 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
                 return;
 
             _navigation.NavigateToEvent(evento);
+        }
+
+        private void ExportEvent(VolumeBalanceEvent? evento)
+        {
+            if (evento == null)
+                return;
+
+            // TODO: Implement export logic. For now just simulate.
+            System.Diagnostics.Debug.WriteLine($"Exporting event {evento.Hora} - {evento.Description}");
         }
     }
 }

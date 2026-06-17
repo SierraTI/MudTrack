@@ -469,6 +469,7 @@ namespace ProjectReport.Modules.ReportDetail.ViewModels
             {
                 string filePath = Path.Combine(
                     AppDomain.CurrentDomain.BaseDirectory,
+                    "Assets",
                     "Data",
                     "HoleSizeList.xlsx"
                 );

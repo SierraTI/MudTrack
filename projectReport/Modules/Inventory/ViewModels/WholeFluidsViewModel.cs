@@ -134,7 +134,7 @@ namespace ProjectReport.ViewModels.Inventory
             try
             {
                 // Search fluid list file in Data (accept legacy and English naming variants).
-                var dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
+                var dataDir = Path.Combine(AppContext.BaseDirectory, "Assets", "Data");
                 var candidates = new[]
                 {
                     Path.Combine(dataDir, "listFluids.xlsx"),

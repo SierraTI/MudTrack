@@ -114,16 +114,16 @@ namespace ProjectReport.ViewModels.Inventory
 
             var candidates = new[]
             {
-                Path.Combine(AppContext.BaseDirectory, "Data", "ListFluids.xlsx"),
-                Path.Combine(AppContext.BaseDirectory, "Data", "ListFluids.xls"),
-                Path.Combine(AppContext.BaseDirectory, "ListFluids.xlsx"),
-                Path.Combine(AppContext.BaseDirectory, "ListFluids.xls"),
-                Path.Combine(AppContext.BaseDirectory, "Data", "ListaFluidos.xlsx"),
-                Path.Combine(AppContext.BaseDirectory, "Data", "ListaFluidos.xls"),
-                Path.Combine(AppContext.BaseDirectory, "ListaFluidos.xlsx"),
-                Path.Combine(AppContext.BaseDirectory, "ListaFluidos.xls"),
-                Path.Combine(AppContext.BaseDirectory, "Data", "Lista.xlsx"),
-                Path.Combine(AppContext.BaseDirectory, "Lista.xlsx")
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListFluids.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListFluids.xls"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListFluids.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListFluids.xls"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListaFluidos.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListaFluidos.xls"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListaFluidos.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "ListaFluidos.xls"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "Lista.xlsx"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "Data", "Lista.xlsx")
             };
 
             var excelPath = candidates.FirstOrDefault(File.Exists) ?? string.Empty;

@@ -167,7 +167,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             ClearPumpFiltersCommand = new RelayCommand(_ => ClearPumpFilters());
             EditSelectedPumpCommand = new RelayCommand(p => EditSelectedPump(p as RigPump));
             RemoveSelectedPumpCommand = new RelayCommand(p => RemoveSelectedPump(p as RigPump));
-            AddPumpCommand = new RelayCommand(_ => AddSelectedPump(), _ => CanAddPump);
+            AddPumpCommand = new RelayCommand(_ => AddSelectedPump());
 
             // Listen for pit changes
             Pits.CollectionChanged += (s, e) => PublishPits();
@@ -214,16 +214,16 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             if (Pits != null)
             {
-                _contextService.PublishProjectReport.Models.Rig.RigProfilePits(Pits.Where(p => p.IsActive).ToList());
+                _contextService.PublishRigProfilePits(Pits.Where(p => p.IsActive).ToList());
             }
         }
 
         // Collection wrappers
-        public ObservableCollection<RigSurfaceEquipment> SurfaceEquipment => CurrentProjectReport.Models.Rig.RigProfile?.SurfaceEquipment ?? new ObservableCollection<RigSurfaceEquipment>();
-        public ObservableCollection<RigSurfaceEquipment> ServiceLine => CurrentProjectReport.Models.Rig.RigProfile?.ServiceLine ?? new ObservableCollection<RigSurfaceEquipment>();
-        public ObservableCollection<RigPump> Pumps => CurrentProjectReport.Models.Rig.RigProfile?.Pumps ?? new ObservableCollection<RigPump>();
-        public ObservableCollection<RigSolidsControl> SolidsControl => CurrentProjectReport.Models.Rig.RigProfile?.SolidsControl ?? new ObservableCollection<RigSolidsControl>();
-        public ObservableCollection<RigPit> Pits => CurrentProjectReport.Models.Rig.RigProfile?.Pits ?? new ObservableCollection<RigPit>();
+        public ObservableCollection<RigSurfaceEquipment> SurfaceEquipment => _currentRigProfile?.SurfaceEquipment ?? new ObservableCollection<RigSurfaceEquipment>();
+        public ObservableCollection<RigSurfaceEquipment> ServiceLine => _currentRigProfile?.ServiceLine ?? new ObservableCollection<RigSurfaceEquipment>();
+        public ObservableCollection<RigPump> Pumps => _currentRigProfile?.Pumps ?? new ObservableCollection<RigPump>();
+        public ObservableCollection<RigSolidsControl> SolidsControl => _currentRigProfile?.SolidsControl ?? new ObservableCollection<RigSolidsControl>();
+        public ObservableCollection<RigPit> Pits => _currentRigProfile?.Pits ?? new ObservableCollection<RigPit>();
         public ObservableCollection<RigPump> SelectedPumps => Pumps;
 
         private ObservableCollection<RigPump> _filteredPumpCatalog = new();
@@ -344,7 +344,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 { "Type 2", (3.5, 40, 2.5, 55, 5, 2.25, 40, 3.25) },
 
                 // Type 3: Stand Pipe(ID=4", Len=45"), Drilling Hose(ID=3", Len=55"), Swivel(ID=5", Len=2.25"), Kelly(ID=40", Len=3.25")
-                { "Type 3", (4, 45, 3, 55, 5, 2.25, 5, 2.25, 40, 3.25) },
+                { "Type 3", (4, 45, 3, 55, 5, 2.25, 40, 3.25) },
 
                 // Type 4: Stand Pipe(ID=4", Len=45"), Drilling Hose(ID=3", Len=65"), Swivel(ID=6", Len=3"), Kelly(ID=40", Len=4")
                 { "Type 4", (4, 45, 3, 65, 6, 3, 40, 4) }
@@ -430,8 +430,8 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             get
             {
-                if (_currentWell?.ProjectReport.Models.Rig.RigProfile == null) return 0;
-                return _hydraulicsService.CalculateTotalSurfacePressureLoss(_currentWell.ProjectReport.Models.Rig.RigProfile, TestDensity, TestGpm);
+                if (_currentWell?.RigProfile == null) return 0;
+                return _hydraulicsService.CalculateTotalSurfacePressureLoss(_currentWell.RigProfile, TestDensity, TestGpm);
             }
         }
 
@@ -440,7 +440,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             try
             {
-                var excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Lista.xlsx");
+                var excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Data", "Lista.xlsx");
                 if (!File.Exists(excelPath)) { LoadDefaultCatalog(); return; }
 
                 using var wb = new XLWorkbook(excelPath);
@@ -540,7 +540,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
         private void InitializePumpCatalog()
         {
-            EditPump = new RigPump();
+            EditPump = new RigPump { MaxLinerSize = 7.0 }; // Default to 7.0
             HookEditPump();
             ApplyPumpFilters();
         }
@@ -585,7 +585,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             var maxLiner = EditPump?.MaxLinerSize ?? 0;
             EditPump = ClonePump(selected);
-            EditPump.MaxLinerSize = maxLiner;
+            EditPump.MaxLinerSize = maxLiner > 0 ? maxLiner : 7.0; // Default to 7.0 if not set
         }
 
         private static RigPump ClonePump(RigPump source)
@@ -679,11 +679,15 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
         private void AddSelectedPump()
         {
-            if (!CanAddPump)
+            if (string.IsNullOrWhiteSpace(EditPump.Model))
             {
-                PumpValidationMessage = "Max Liner Size is required.";
+                PumpValidationMessage = "Please enter or select a pump model.";
                 return;
             }
+
+            // Default MaxLinerSize if not set
+            if (EditPump.MaxLinerSize <= 0)
+                EditPump.MaxLinerSize = 7.0;
 
             int nextNo = (SelectedPumps?.Count ?? 0) + 1;
             var toAdd = ClonePump(EditPump);
@@ -779,28 +783,19 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                     ToastNotificationService.Instance.ShowWarning("Some pumps are missing efficiency values. Please complete all pump data.");
                 }
 
-                _currentWell.ProjectReport.Models.Rig.RigProfile = CurrentProjectReport.Models.Rig.RigProfile;
+                // Update the well's rig profile
+                _currentWell.RigProfile = _currentRigProfile;
 
-                _currentWell.RigName = CurrentProjectReport.Models.Rig.RigProfile.RigName;
-                _currentWell.Contractor = CurrentProjectReport.Models.Rig.RigProfile.Contractor;
-                _currentWell.RigType = CurrentProjectReport.Models.Rig.RigProfile.RigType;
+                // Synchronize rig profile properties to the well
+                _currentWell.RigName = _currentRigProfile.RigName;
+                _currentWell.Contractor = _currentRigProfile.Contractor;
+                _currentWell.RigType = _currentRigProfile.RigType;
 
-                // Persist rig profile to the database via WellContextService (SQLite)
-                if (_currentWell != null)
-                {
-                    // Ensure the current well contains the updated ProjectReport.Models.Rig.RigProfile (already set above)
-                    _currentWell.ProjectReport.Models.Rig.RigProfile = CurrentProjectReport.Models.Rig.RigProfile;
-                    _currentWell.ContextService = WellContextService.Instance;
-                    WellContextService.Instance.CurrentWell = _currentWell;
-
-                    await WellContextService.Instance.SaveCurrentWell();
-                    ToastNotificationService.Instance.ShowSuccess("Rig Profile saved to database successfully");
-                    PublishPits();
-                }
-                else
-                {
-                    ToastNotificationService.Instance.ShowWarning("No project context available. Changes may not be persisted.");
-                }
+                // Persist to database via WellContextService (SQLite)
+                WellContextService.Instance.CurrentWell = _currentWell;
+                await WellContextService.Instance.SaveCurrentWell();
+                ToastNotificationService.Instance.ShowSuccess("Rig Profile saved to database successfully");
+                PublishPits();
             }
             catch (Exception ex)
             {
@@ -860,11 +855,11 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 ApplySolidControlModelSelection(defaultItem);
             }
 
-            CurrentProjectReport.Models.Rig.RigProfile.RigName = string.Empty;
-            CurrentProjectReport.Models.Rig.RigProfile.Contractor = string.Empty;
-            CurrentProjectReport.Models.Rig.RigProfile.RigType = string.Empty;
-            CurrentProjectReport.Models.Rig.RigProfile.RkbElevation = 0;
-            CurrentProjectReport.Models.Rig.RigProfile.CasingHeadElevation = 0;
+            _currentRigProfile.RigName = string.Empty;
+            _currentRigProfile.Contractor = string.Empty;
+            _currentRigProfile.RigType = string.Empty;
+            _currentRigProfile.RkbElevation = 0;
+            _currentRigProfile.CasingHeadElevation = 0;
 
             SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
 

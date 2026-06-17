@@ -141,7 +141,7 @@ namespace ProjectReport.ViewModels
         {
             try
             {
-                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "ListaFluidos.xlsx");
+                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Data", "ListaFluidos.xlsx");
 
                 if (!File.Exists(filePath))
                 {

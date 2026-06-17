@@ -221,7 +221,7 @@
         <!-- ========================= -->
 
         <Grid Grid.Column="0"
-              Margin="20">
+      Margin="20">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -229,41 +229,35 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- ADD -->
-
+            <!-- ADD BUTTON -->
             <Border Grid.Row="0"
-                    Background="White"
-                    CornerRadius="12"
-                    Padding="15"
-                    BorderBrush="#E5E7EB"
-                    BorderThickness="1">
+            Background="White"
+            CornerRadius="12"
+            Padding="15"
+            BorderBrush="#E5E7EB"
+            BorderThickness="1">
 
                 <DockPanel>
                     <Button Content="+ ADD EVENT"
-                            Width="170"
-                            DockPanel.Dock="Right"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            Command="{Binding AddEventCommand}"/>
+                    Width="170"
+                    DockPanel.Dock="Right"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Command="{Binding AddEventCommand}"/>
                 </DockPanel>
 
             </Border>
 
-            <!-- EVENTOS -->
-
+            <!-- TABLE -->
             <Border Grid.Row="2"
-                    Background="White"
-                    CornerRadius="12"
-                    Padding="20"
-                    BorderBrush="#E5E7EB"
-                    BorderThickness="1">
+            Background="White"
+            CornerRadius="12"
+            Padding="20"
+            BorderBrush="#E5E7EB"
+            BorderThickness="1">
 
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="12*"/>
-                        <ColumnDefinition Width="799*"/>
-                    </Grid.ColumnDefinitions>
 
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -272,80 +266,82 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Text="EVENTOS DURANTE EL DÍA"
-                               FontSize="20"
-                               FontWeight="SemiBold"
-                               Foreground="#374151" Grid.ColumnSpan="2" Margin="0,0,0,15" Grid.RowSpan="2"/>
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="#374151"
+                       Margin="0,0,0,15"/>
 
                     <DataGrid Grid.Row="2"
-          Grid.ColumnSpan="2"
-          ItemsSource="{Binding Events}"
-          AutoGenerateColumns="False"
-          CanUserAddRows="False"
-          IsReadOnly="False"
-          BorderThickness="0"
-          HeadersVisibility="Column"
-          ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}"
-          CellStyle="{StaticResource CenteredCellStyle}"
-          RowStyle="{StaticResource ModernRowStyle}"
-          RowBackground="White"
-          AlternatingRowBackground="#F8FAFC"
-          GridLinesVisibility="Horizontal"
-          HorizontalGridLinesBrush="#E5E7EB"
-          VerticalGridLinesBrush="#E5E7EB"
-          RowHeight="42"
-          SelectionUnit="Cell"
-          SelectionMode="Extended">
+                      ItemsSource="{Binding Events}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="False"
+                      BorderThickness="0"
+                      HeadersVisibility="Column"
+                      ColumnHeaderStyle="{StaticResource CenteredHeaderStyle}"
+                      CellStyle="{StaticResource CenteredCellStyle}"
+                      RowStyle="{StaticResource ModernRowStyle}"
+                      RowBackground="White"
+                      AlternatingRowBackground="#F8FAFC"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#E5E7EB"
+                      VerticalGridLinesBrush="#E5E7EB"
+                      RowHeight="42"
+                      SelectionUnit="Cell"
+                      SelectionMode="Extended"
+
+                      CellEditEnding="DataGrid_CellEditEnding">
 
                         <DataGrid.Columns>
 
                             <DataGridTextColumn Header="Hora"
-                            Width="120"
-                            IsReadOnly="True"
-                            Binding="{Binding Hora}" />
+                                        Width="120"
+                                        IsReadOnly="True"
+                                        Binding="{Binding EventTime}" />
 
                             <DataGridTextColumn Header="Descripción"
-                            Width="*"
-                            Binding="{Binding Description,
-                                              Mode=TwoWay,
-                                              UpdateSourceTrigger=PropertyChanged}" />
+                                        Width="*"
+                                        Binding="{Binding Description,
+                                                  Mode=TwoWay,
+                                                  UpdateSourceTrigger=PropertyChanged}" />
 
                             <DataGridTextColumn Header="Current Depth"
-                            Width="140"
-                            Binding="{Binding CurrentDepth,
-                                              Mode=TwoWay,
-                                              UpdateSourceTrigger=PropertyChanged}" />
+                                        Width="140"
+                                        Binding="{Binding CurrentDepth,
+                                                  Mode=TwoWay,
+                                                  UpdateSourceTrigger=PropertyChanged}" />
 
                             <DataGridTextColumn Header="Actividad"
-                            Width="150"
-                            Binding="{Binding Activity,
-                                              Mode=TwoWay,
-                                              UpdateSourceTrigger=PropertyChanged}" />
+                                        Width="150"
+                                        Binding="{Binding Activity,
+                                                  Mode=TwoWay,
+                                                  UpdateSourceTrigger=PropertyChanged}" />
 
                             <DataGridTemplateColumn Header="Acciones"
-                                Width="220">
+                                            Width="220">
 
                                 <DataGridTemplateColumn.CellTemplate>
 
                                     <DataTemplate>
 
                                         <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center">
+                                            HorizontalAlignment="Center">
 
                                             <Button Content="👁 View"
-                                Width="90"
-                                Background="#EE7D32"
-                                Style="{StaticResource ActionButtonStyle}"
-                                Command="{Binding DataContext.ViewEventCommand,
-                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                CommandParameter="{Binding}" />
+                                            Width="90"
+                                            Background="#EE7D32"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Command="{Binding DataContext.ViewEventCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
 
                                             <Button Content="📄 Export"
-                                Width="90"
-                                Background="#10B981"
-                                Style="{StaticResource ActionButtonStyle}"
-                                Command="{Binding DataContext.ExportEventCommand,
-                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                CommandParameter="{Binding}" />
+                                            Width="90"
+                                            Background="#10B981"
+                                            Style="{StaticResource ActionButtonStyle}"
+                                            Command="{Binding DataContext.ExportEventCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
 
                                         </StackPanel>
 

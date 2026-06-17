@@ -46,21 +46,25 @@ namespace ProjectReport.Views
 
         private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
         {
-            // Mostrar la vista principal de Volume Balance
-            if (_volumeBalanceView == null)
+            if (_currentWellId == null || _currentWell == null)
             {
-                _volumeBalanceView = new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView();
+                System.Windows.MessageBox.Show("Debe seleccionar un Well primero.");
+                return;
             }
 
-            // Crear o reutilizar el ViewModel y asignarlo como DataContext
-            if (_volumeBalanceViewModel == null)
+            if (_volumeBalanceView == null)
             {
-                _volumeBalanceViewModel = new VolumeBalanceViewModel(_volumeNavigation);
+                _volumeBalanceView =
+                    new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView();
             }
+
+            // 🔥 SIEMPRE sincroniza el contexto del well (IMPORTANTE)
+            _volumeBalanceViewModel =
+                new VolumeBalanceViewModel(_volumeNavigation, _currentWellId.Value);
 
             _volumeBalanceView.DataContext = _volumeBalanceViewModel;
 
-            ContentTitle.Text = "Volume Balance";
+            ContentTitle.Text = $"Volume Balance - {_currentWell.WellName}";
             ContentArea.Content = _volumeBalanceView;
         }
 
@@ -73,7 +77,7 @@ namespace ProjectReport.Views
 
             _volumeBalanceEventView.DataContext = evento;
 
-            ContentTitle.Text = $"Volume Balance Event # - {evento.Hora}";
+            ContentTitle.Text = $"Volume Balance Event # - {evento.EventTime}";
             ContentArea.Content = _volumeBalanceEventView;
         }
 

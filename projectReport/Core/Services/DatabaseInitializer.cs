@@ -73,7 +73,7 @@ namespace ProjectReport.Services
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellInfo (
                 idW INTEGER,
                 Operator TEXT,
-                FluidType TEXT,
+ FluidType TEXT,
                 Spud_date TEXT
             );");
 
@@ -107,6 +107,25 @@ namespace ProjectReport.Services
                 Report_MD REAL,
                 Report_TVD REAL
             );");
+
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS ReportFluids (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    idRep INTEGER NOT NULL,
+    idWellFluid INTEGER NOT NULL,
+
+    -- snapshot histórico del fluido
+    FluidName TEXT NOT NULL,
+    FluidType TEXT NOT NULL,
+
+    FOREIGN KEY (idRep)
+        REFERENCES Report(idRep),
+
+    FOREIGN KEY (idWellFluid)
+        REFERENCES WellFluids(id)
+);
+");
 
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS OperationalDetail (
                 idRep INTEGER PRIMARY KEY,
@@ -317,15 +336,45 @@ namespace ProjectReport.Services
 
             // Fluid catalog (master list of fluid names)
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS FluidCatalog (
-                FluidName TEXT PRIMARY KEY
-            );");
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    FluidName TEXT NOT NULL UNIQUE,
+    FluidType TEXT NOT NULL
+);");
+
+
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('WEL-GEL','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('G-GEL','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('G-GEL MAX','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('WEL-DRIL RDF','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('WEL-DRIL','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('KCL BRINE','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('Na FORMATE BRINE','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('K FORMATE BRINE','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('NaCl BRINE','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('CaCl2 BRINE','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('G-DRILL REL','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('G-DRILL RDF','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('AGUA','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('AGUA INHIBIDA','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('APHRON ULTRASEAL® ICS','WBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('DIESEL','OBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('SBM','SBM');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('BRINE','BRINE');");
+            db.ExecuteNonQuery("INSERT OR IGNORE INTO FluidCatalog (FluidName, FluidType) VALUES ('OTHER','OTHER');");
 
             // WellFluids: many-to-many / one-to-many mapping between wells and fluid names
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS WellFluids (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                idW INTEGER NOT NULL,
-                FluidName TEXT NOT NULL
-            );");
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    idW INTEGER NOT NULL,
+    FluidCatalogId INTEGER NOT NULL,
+
+    FOREIGN KEY (idW)
+        REFERENCES Well(idW),
+
+    FOREIGN KEY (FluidCatalogId)
+        REFERENCES FluidCatalog(id)
+);");
 
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS TicketLines (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -336,6 +385,37 @@ namespace ProjectReport.Services
                 unit TEXT,
                 unit_price REAL
             );");
+
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS VolumeBalanceEvent (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_time TEXT,
+    description TEXT,
+    current_depth REAL,
+    activity TEXT,
+    idW INTEGER,
+    FOREIGN KEY (idW) REFERENCES Well(idW)
+);");
+            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS VolSystem (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    idVolumeBalanceEvent INTEGER NOT NULL,
+    idPitName INTEGER NOT NULL,
+
+    idWellFluid INTEGER NOT NULL,
+
+    previousVolume REAL,
+    currentVolume REAL,
+    density REAL,
+
+    FOREIGN KEY (idVolumeBalanceEvent)
+        REFERENCES VolumeBalanceEvent(id),
+
+    FOREIGN KEY (idPitName)
+        REFERENCES RigPits(id),
+
+    FOREIGN KEY (idWellFluid)
+        REFERENCES WellFluids(id)
+);");
 
         }
     }

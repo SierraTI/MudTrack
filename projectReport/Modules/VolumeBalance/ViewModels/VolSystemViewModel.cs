@@ -59,16 +59,16 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
                 // include well default fluid from WellInfo if present and not already in list
                 try
                 {
-                    var dt = db.ExecuteQuery("SELECT FluidType FROM WellInfo WHERE idW=@id", new Microsoft.Data.Sqlite.SqliteParameter("@id", well.Id));
-                    if (dt.Rows.Count > 0)
-                    {
-                        var wellDefault = dt.Rows[0]["FluidType"]?.ToString();
-                        if (!string.IsNullOrEmpty(wellDefault) && !list.Contains(wellDefault))
-                        {
-                            // place at beginning so it's easy to see
-                            list.Insert(0, wellDefault);
-                        }
-                    }
+                    var dt = "" ;
+                    //if (dt.Rows.Count > 0)
+                    //{
+                    //    //var wellDefault = dt.Rows[0]["FluidType"]?.ToString();
+                    //    //if (!string.IsNullOrEmpty(wellDefault) && !list.Contains(wellDefault))
+                    //    //{
+                    //    //    // place at beginning so it's easy to see
+                    //    //    list.Insert(0, wellDefault);
+                    //    //}
+                    //}
                 }
                 catch { }
             }
@@ -111,11 +111,11 @@ namespace ProjectReport.Modules.VolumeBalance.ViewModels
                 string? wellDefaultFluid = null;
                 try
                 {
-                    var dt = db.ExecuteQuery("SELECT FluidType FROM WellInfo WHERE idW=@id", new SqliteParameter("@id", well.Id));
-                    if (dt.Rows.Count > 0)
-                    {
-                        wellDefaultFluid = dt.Rows[0]["FluidType"]?.ToString();
-                    }
+                    var dt = "";
+                    //if (dt.Rows.Count > 0)
+                    //{
+                    //    wellDefaultFluid = dt.Rows[0]["FluidType"]?.ToString();
+                    //}
                 }
                 catch { }
 

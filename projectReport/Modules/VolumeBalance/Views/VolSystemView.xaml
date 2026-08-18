@@ -4,6 +4,7 @@
           xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
           xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
           xmlns:vm="clr-namespace:ProjectReport.Modules.VolumeBalance.ViewModels"
+          xmlns:conv="clr-namespace:ProjectReport.Converters"
           mc:Ignorable="d"
           d:DesignHeight="450"
           d:DesignWidth="800">
@@ -13,6 +14,7 @@
     </UserControl.DataContext>
 
     <UserControl.Resources>
+        <conv:SmartNumberConverter x:Key="SmartNumberConverter"/>
 
         <!-- ========================= -->
         <!-- COLORS -->
@@ -53,50 +55,43 @@
 
         <Style TargetType="DataGrid">
 
-            <Setter Property="Background"
-                Value="White"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="BorderThickness" Value="1"/>
 
-            <Setter Property="BorderBrush"
-                Value="#E5E7EB"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
 
-            <Setter Property="BorderThickness"
-                Value="1"/>
+            <!-- Mostrar líneas horizontales y verticales -->
+            <Setter Property="GridLinesVisibility" Value="All"/>
 
-            <Setter Property="HeadersVisibility"
-                Value="Column"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#D1D5DB"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#D1D5DB"/>
 
-            <Setter Property="GridLinesVisibility"
-                Value="None"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
 
-            <Setter Property="AutoGenerateColumns"
-                Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
 
-            <Setter Property="CanUserAddRows"
-                Value="False"/>
+            <Setter Property="RowHeight" Value="25"/>
+            <Setter Property="ColumnHeaderHeight" Value="22"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
 
-            <Setter Property="CanUserDeleteRows"
-                Value="False"/>
+        </Style>
 
-            <Setter Property="CanUserResizeRows"
-                Value="False"/>
+        <Style x:Key="ReadOnlyCellStyle"
+       TargetType="TextBlock">
 
-            <Setter Property="SelectionMode"
-                Value="Single"/>
-
-            <Setter Property="SelectionUnit"
-                Value="Cell"/>
-
-            <Setter Property="RowHeight"
-                Value="44"/>
-
-            <Setter Property="ColumnHeaderHeight"
-                Value="42"/>
-
-            <Setter Property="RowHeaderWidth"
-                Value="0"/>
-
-            <Setter Property="HorizontalGridLinesBrush"
-                Value="#F3F4F6"/>
+            <Setter Property="Background" Value="#E5E7EB"/>
+            <Setter Property="Foreground" Value="#6B7280"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
 
         </Style>
 
@@ -175,87 +170,172 @@
 
         <Style TargetType="DataGridCell">
 
-            <Setter Property="Padding"
-                Value="8,4"/>
+            <Setter Property="Padding" Value="4,2"/>
 
-            <Setter Property="BorderThickness"
-                Value="0"/>
+            <!-- Delineado de cada celda -->
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="0.5"/>
 
-            <Setter Property="FocusVisualStyle"
-                Value="{x:Null}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
 
-            <Setter Property="TextBlock.TextAlignment"
-                Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
 
-            <Setter Property="HorizontalContentAlignment"
-                Value="Center"/>
-
-            <Setter Property="VerticalContentAlignment"
-                Value="Center"/>
+            <Setter Property="Background" Value="White"/>
 
             <Style.Triggers>
 
-                <Trigger Property="IsSelected"
-                     Value="True">
-
-                    <Setter Property="Background"
-                        Value="#FFE9D5"/>
-
-                    <Setter Property="Foreground"
-                        Value="#111827"/>
-
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#FFE9D5"/>
+                    <Setter Property="Foreground" Value="#111827"/>
                 </Trigger>
 
             </Style.Triggers>
 
         </Style>
 
-        <!-- Text inside grid cells -->
-        <Style x:Key="GridCellTextStyle" TargetType="TextBlock">
-            <Setter Property="TextWrapping" Value="NoWrap" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            <Setter Property="TextAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="13" />
+        <Style x:Key="GridCellTextStyleFluidSubtype" TargetType="TextBlock">
+
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+
+            <Style.Triggers>
+
+                <DataTrigger Binding="{Binding IsFluidSubtypeModified}" Value="False">
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="#1E40AF"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsFluidSubtypeModified}" Value="True">
+                    <Setter Property="Background" Value="White"/>
+                    <Setter Property="Foreground" Value="#111827"/>
+                </DataTrigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <Style x:Key="GridCellTextStyleCurrentVolume" TargetType="TextBlock">
+
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+
+            <Style.Triggers>
+
+                <DataTrigger Binding="{Binding IsCurrentVolumeModified}" Value="False">
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="#1E40AF"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsCurrentVolumeModified}" Value="True">
+                    <Setter Property="Background" Value="White"/>
+                    <Setter Property="Foreground" Value="#111827"/>
+                </DataTrigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <Style x:Key="GridCellTextStyleDensity" TargetType="TextBlock">
+
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+
+            <Style.Triggers>
+
+                <DataTrigger Binding="{Binding IsDensityModified}" Value="False">
+                    <Setter Property="Background" Value="#DBEAFE"/>
+                    <Setter Property="Foreground" Value="#1E40AF"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding IsDensityModified}" Value="True">
+                    <Setter Property="Background" Value="White"/>
+                    <Setter Property="Foreground" Value="#111827"/>
+                </DataTrigger>
+
+            </Style.Triggers>
+
+        </Style>
+
+        <Style x:Key="GridCellTextStylePreviousVolume"
+       TargetType="TextBlock">
+
+            <Setter Property="Background" Value="#E5E7EB"/>
+            <Setter Property="Foreground" Value="#6B7280"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+
         </Style>
 
         <!-- ========================= -->
         <!-- COMBOBOX -->
         <!-- ========================= -->
-
         <Style x:Key="GridComboStyle"
        TargetType="ComboBox">
 
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Padding" Value="6,0"/>
-            <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#D1D5DB"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="OverridesDefaultStyle"
+            Value="True"/>
+
+            <Setter Property="FocusVisualStyle"
+            Value="{x:Null}"/>
+
+            <Setter Property="Height"
+            Value="24"/>
+
+            <Setter Property="Margin"
+            Value="2"/>
+
+            <Setter Property="Padding"
+            Value="4,0"/>
+
+            <Setter Property="Background"
+            Value="White"/>
+
+            <Setter Property="Foreground"
+            Value="#111827"/>
+
+            <Setter Property="BorderBrush"
+            Value="#D1D5DB"/>
+
+            <Setter Property="BorderThickness"
+            Value="1"/>
+
+            <Setter Property="HorizontalContentAlignment"
+            Value="Left"/>
+
+            <Setter Property="VerticalContentAlignment"
+            Value="Center"/>
 
             <Setter Property="Template">
+
                 <Setter.Value>
+
                     <ControlTemplate TargetType="ComboBox">
 
                         <Grid>
 
-                            <!-- Border -->
                             <Border x:Name="Border"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6"/>
 
-                            <!-- Contenido seleccionado (ESTO ARREGLA EL BLANCO) -->
                             <ContentPresenter Margin="8,0,30,0"
                                       VerticalAlignment="Center"
-                                      HorizontalAlignment="Left"
+                                      HorizontalAlignment="Center"
                                       Content="{TemplateBinding SelectionBoxItem}"
                                       ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>
 
-                            <!-- FLECHA (IMPORTANTE para UX) -->
                             <TextBlock Text="▼"
                                FontSize="10"
                                Foreground="#6B7280"
@@ -264,14 +344,23 @@
                                Margin="0,0,10,0"
                                IsHitTestVisible="False"/>
 
-                            <!-- Botón invisible que abre dropdown -->
-                            <ToggleButton IsChecked="{Binding IsDropDownOpen,
-                                    RelativeSource={RelativeSource TemplatedParent},
-                                    Mode=TwoWay}"
-                                  Background="Transparent"
-                                  BorderThickness="0"/>
+                            <ToggleButton
+                        Focusable="False"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        IsChecked="{Binding IsDropDownOpen,
+                        RelativeSource={RelativeSource TemplatedParent},
+                        Mode=TwoWay}">
 
-                            <!-- LISTA -->
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+
+                            </ToggleButton>
+
                             <Popup IsOpen="{TemplateBinding IsDropDownOpen}"
                            Placement="Bottom"
                            AllowsTransparency="True"
@@ -294,8 +383,84 @@
 
                         </Grid>
 
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsKeyboardFocusWithin"
+                             Value="True">
+
+                                <Setter TargetName="Border"
+                                Property="BorderBrush"
+                                Value="#D1D5DB"/>
+
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+
                     </ControlTemplate>
+
                 </Setter.Value>
+
+            </Setter>
+
+        </Style>
+        <Style TargetType="ComboBoxItem">
+
+            <Setter Property="Background"
+            Value="White"/>
+
+            <Setter Property="Foreground"
+            Value="#111827"/>
+
+            <Setter Property="Padding"
+            Value="8,4"/>
+
+            <Setter Property="FocusVisualStyle"
+            Value="{x:Null}"/>
+
+            <Setter Property="Template">
+
+                <Setter.Value>
+
+                    <ControlTemplate TargetType="ComboBoxItem">
+
+                        <Border x:Name="Bd"
+                        Background="White"
+                        Padding="{TemplateBinding Padding}">
+
+                            <ContentPresenter
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"/>
+
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <!-- Sin azul al pasar el mouse -->
+                            <Trigger Property="IsMouseOver"
+                             Value="True">
+
+                                <Setter TargetName="Bd"
+                                Property="Background"
+                                Value="#F9FAFB"/>
+
+                            </Trigger>
+
+                            <!-- Seleccionado -->
+                            <Trigger Property="IsSelected"
+                             Value="True">
+
+                                <Setter TargetName="Bd"
+                                Property="Background"
+                                Value="#F3F4F6"/>
+
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+
+                </Setter.Value>
+
             </Setter>
 
         </Style>
@@ -303,165 +468,417 @@
 
     <Grid Background="{StaticResource BackgroundBrush}">
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-            <StackPanel>
 
-                <!-- TITLE -->
+        <!-- ========================================================= -->
+        <!-- PITS -->
+        <!-- ========================================================= -->
 
-                <Border Background="White"
-                    CornerRadius="12"
-                    Margin="20,20,20,10"
-                    Padding="14"
-                    BorderBrush="#E5E7EB"
-                    BorderThickness="1">
+        <Border
+        Grid.Row="0"
+        Style="{StaticResource CardStyle}">
 
-                    <TextBlock Text="VOLUME SYSTEM"
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Foreground="#111827"/>
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+
+                <!-- ================================================= -->
+                <!-- TÍTULO -->
+                <!-- ================================================= -->
+
+                <TextBlock
+                Grid.Row="0"
+                Text="PITS VOLUME (bbl)"
+                FontSize="14"
+                FontWeight="SemiBold"
+                Margin="0,0,0,10"
+                Foreground="#111827"/>
+
+
+                <!-- ================================================= -->
+                <!-- TABLA -->
+                <!-- ================================================= -->
+
+                <DataGrid
+                Grid.Row="1"
+                x:Name="PitsDataGrid"
+                ItemsSource="{Binding Pits}"
+                ColumnWidth="*"
+                MinColumnWidth="60"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                VerticalAlignment="Stretch"
+                CanUserResizeColumns="True"
+                IsReadOnly="False"
+                CanUserAddRows="False"
+                CanUserDeleteRows="False"
+                SelectionMode="Single"
+                SelectionUnit="FullRow"
+                FocusVisualStyle="{x:Null}"
+                IsSynchronizedWithCurrentItem="False">
+
+
+                    <!-- ================================================= -->
+                    <!-- ESCALA -->
+                    <!-- ================================================= -->
+
+                    <DataGrid.LayoutTransform>
+
+                        <ScaleTransform
+                        x:Name="GridScale"
+                        ScaleX="1"
+                        ScaleY="1"/>
+
+                    </DataGrid.LayoutTransform>
+
+
+                    <!-- ================================================= -->
+                    <!-- COLUMNAS -->
+                    <!-- ================================================= -->
+
+                    <DataGrid.Columns>
+
+
+                        <!-- ================================================= -->
+                        <!-- PIT SYSTEM -->
+                        <!-- ================================================= -->
+
+                        <DataGridTemplateColumn
+                        Header="Pit System"
+                        Width="*">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <ComboBox
+    ItemsSource="{Binding DataContext.PitSystemOptions,
+        RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+    DisplayMemberPath="Name"
+    SelectedValuePath="PitSystemId"
+    SelectedValue="{Binding PitSystemId,
+        Mode=TwoWay,
+        UpdateSourceTrigger=Explicit}"
+    SelectionChanged="PitSystemComboBox_SelectionChanged"
+    HorizontalAlignment="Center"
+    VerticalAlignment="Center"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+
+                        <!-- ================================================= -->
+                        <!-- PIT SYSTEM ID - TEMPORAL PARA PRUEBAS -->
+                        <!-- ================================================= -->
+
+                        <!--<DataGridTextColumn
+                        Header="Pit System ID"
+                        Binding="{Binding PitSystemId}"
+                        Width="100"
+                        IsReadOnly="True"/>-->
+
+
+                        <!-- ================================================= -->
+                        <!-- PIT NAME -->
+                        <!-- ================================================= -->
+
+                        <DataGridTextColumn
+                        Header="Pit Name"
+                        Binding="{Binding PitName}"
+                        IsReadOnly="True">
+
+                            <DataGridTextColumn.ElementStyle>
+
+                                <Style TargetType="TextBlock">
+
+                                    <Setter
+                                    Property="HorizontalAlignment"
+                                    Value="Center"/>
+
+                                    <Setter
+                                    Property="TextAlignment"
+                                    Value="Center"/>
+
+                                    <Setter
+                                    Property="VerticalAlignment"
+                                    Value="Center"/>
+
+                                </Style>
+
+                            </DataGridTextColumn.ElementStyle>
+
+
+                            <DataGridTextColumn.CellStyle>
+
+                                <Style TargetType="DataGridCell">
+
+                                    <Setter
+                                    Property="Background"
+                                    Value="#E5E7EB"/>
+
+                                    <Setter
+                                    Property="BorderThickness"
+                                    Value="0"/>
+
+                                </Style>
+
+                            </DataGridTextColumn.CellStyle>
+
+                        </DataGridTextColumn>
+
+
+                        <!-- ================================================= -->
+                        <!-- FLUID TYPE -->
+                        <!-- ================================================= -->
+
+
+                        <DataGridTemplateColumn
+    Header="Fluid Type"
+    Width="200">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <ComboBox
+                ItemsSource="{Binding DataContext.FluidTypeOptions,
+                    RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+
+                SelectedValuePath="Id"
+
+                SelectedValue="{Binding FluidTypeId,
+                    Mode=TwoWay,
+                    UpdateSourceTrigger=PropertyChanged}"
+
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+                                        <!-- ============================================= -->
+                                        <!-- TEXTO QUE SE MUESTRA EN LA LISTA -->
+                                        <!-- ============================================= -->
+
+                                        <ComboBox.ItemTemplate>
+
+                                            <DataTemplate>
+
+                                                <TextBlock
+                            Text="{Binding DisplayName}"
+                            HorizontalAlignment="Center"/>
+
+                                            </DataTemplate>
+
+                                        </ComboBox.ItemTemplate>
+
+                                    </ComboBox>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+
+                        <!-- ================================================= -->
+                        <!-- FLUID SUBTYPE -->
+                        <!-- ================================================= -->
+
+                        <DataGridTextColumn
+                        Header="Fluid Subtype"
+                        Binding="{Binding FluidSubtype,
+                            Mode=TwoWay,
+                            UpdateSourceTrigger=LostFocus}"
+                        ElementStyle="{StaticResource GridCellTextStyleFluidSubtype}" />
+
+
+                        <!-- ================================================= -->
+                        <!-- PREVIOUS VOLUME -->
+                        <!-- ================================================= -->
+
+                        <DataGridTemplateColumn
+    Header="Previous Volume">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <TextBlock
+    Text="{Binding PreviousVolumeText}"
+    Style="{StaticResource GridCellTextStylePreviousVolume}"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+                        </DataGridTemplateColumn>
+
+
+                        <!-- ================================================= -->
+                        <!-- CURRENT VOLUME -->
+                        <!-- ================================================= -->
+
+                        <DataGridTemplateColumn
+                        Header="Current Volume">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <TextBlock
+                                    Text="{Binding CurrentVolumeText}"
+                                    Style="{StaticResource GridCellTextStyleCurrentVolume}"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+
+                            <DataGridTemplateColumn.CellEditingTemplate>
+
+                                <DataTemplate>
+
+                                    <TextBox
+                                    Text="{Binding CurrentVolumeText,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=LostFocus}"
+                                    PreviewTextInput="NumericOnly_PreviewTextInput"
+                                    DataObject.Pasting="NumericOnly_Pasting"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellEditingTemplate>
+
+                        </DataGridTemplateColumn>
+
+
+                        <!-- ================================================= -->
+                        <!-- DENSITY -->
+                        <!-- ================================================= -->
+
+                        <DataGridTemplateColumn
+                        Header="Density">
+
+                            <DataGridTemplateColumn.CellTemplate>
+
+                                <DataTemplate>
+
+                                    <TextBlock
+                                    Text="{Binding DensityText}"
+                                    Style="{StaticResource GridCellTextStyleDensity}"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellTemplate>
+
+
+                            <DataGridTemplateColumn.CellEditingTemplate>
+
+                                <DataTemplate>
+
+                                    <TextBox
+                                    Text="{Binding DensityText,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=LostFocus}"
+                                    PreviewTextInput="NumericOnly_PreviewTextInput"
+                                    DataObject.Pasting="NumericOnly_Pasting"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"/>
+
+                                </DataTemplate>
+
+                            </DataGridTemplateColumn.CellEditingTemplate>
+
+                        </DataGridTemplateColumn>
+
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+            </Grid>
+
+        </Border>
+
+
+        <!-- ========================================================= -->
+        <!-- HOLE VOLUME -->
+        <!-- ========================================================= -->
+
+        <Border
+        Grid.Row="1"
+        Style="{StaticResource CardStyle}"
+        Margin="20,0,20,20">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="*" />
+
+                    <ColumnDefinition Width="Auto" />
+
+                </Grid.ColumnDefinitions>
+
+
+                <!-- ================================================= -->
+                <!-- LABEL -->
+                <!-- ================================================= -->
+
+                <StackPanel
+                Orientation="Horizontal"
+                VerticalAlignment="Center">
+
+                    <TextBlock
+                    Text="🕳"
+                    FontSize="16"
+                    Margin="0,0,8,0"
+                    VerticalAlignment="Center"/>
+
+                    <TextBlock
+                    Text="Hole Volume"
+                    FontSize="13"
+                    FontWeight="SemiBold"
+                    Foreground="#374151"
+                    VerticalAlignment="Center"/>
+
+                </StackPanel>
+
+
+                <!-- ================================================= -->
+                <!-- VALOR -->
+                <!-- ================================================= -->
+
+                <Border
+                Grid.Column="1"
+                Background="#DBEAFE"
+                CornerRadius="14"
+                Padding="12,4">
+
+                    <TextBlock
+                    Text="0.0"
+                    FontSize="13"
+                    FontWeight="Bold"
+                    Foreground="#1D4ED8"/>
 
                 </Border>
 
-                <!-- PITS -->
+            </Grid>
 
-                <Border Style="{StaticResource CardStyle}">
-
-                    <StackPanel>
-
-                        <TextBlock Text="PITS VOLUME (bbl)"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,10"
-                               Foreground="#111827"/>
-
-                        <DataGrid x:Name="PitsDataGrid"
-                              ItemsSource="{Binding Pits}"
-                              Height="300"
-                              ColumnWidth="*"
-                              MinColumnWidth="60"
-                              HorizontalScrollBarVisibility="Disabled"
-                              VerticalScrollBarVisibility="Auto"
-                              CanUserResizeColumns="True"
-                              IsReadOnly="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False">
-
-                            <DataGrid.LayoutTransform>
-                                <ScaleTransform x:Name="GridScale" ScaleX="1" ScaleY="1" />
-                            </DataGrid.LayoutTransform>
-
-                            <DataGrid.Columns>
-
-                                <DataGridTemplateColumn Header="Pit System"
-                                                    Width="*">
-
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-
-                                            <ComboBox Style="{StaticResource GridComboStyle}"
-                  SelectedValue="{Binding PitSystem, Mode=TwoWay}"
-                  SelectedValuePath="Content">
-
-                                                <ComboBoxItem Content="Activo"/>
-                                                <ComboBoxItem Content="Reserva"/>
-                                                <ComboBoxItem Content="Otro"/>
-
-                                            </ComboBox>
-
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <DataGridTextColumn Header="Pit Name"
-                                                Binding="{Binding PitName}"
-                                                ElementStyle="{StaticResource GridCellTextStyle}" />
-
-                                <DataGridTemplateColumn Header="Fluid Type" Width="200">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox SelectedItem="{Binding FluidType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      Loaded="FluidCombo_Loaded"
-                                                      Style="{StaticResource GridComboStyle}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-
-                                <DataGridTextColumn Header="Fluid Subtype"
-                                                Binding="{Binding FluidSubtype, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                ElementStyle="{StaticResource GridCellTextStyle}"
-                                                IsReadOnly="False" />
-
-                                <DataGridTextColumn Header="Previous Volume"
-                                                Binding="{Binding PreviousVolume, StringFormat=N2}"
-                                                ElementStyle="{StaticResource GridCellTextStyle}" />
-
-                                <DataGridTextColumn Header="Current Volume"
-                                                Binding="{Binding CurrentVolume, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
-                                                ElementStyle="{StaticResource GridCellTextStyle}"
-                                                IsReadOnly="False" />
-
-                                <DataGridTextColumn Header="Density"
-                                                Binding="{Binding Density, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=N2}"
-                                                ElementStyle="{StaticResource GridCellTextStyle}"
-                                                IsReadOnly="False" />
-
-                            </DataGrid.Columns>
-
-                        </DataGrid>
-
-                    </StackPanel>
-
-                </Border>
-
-                <!-- HOLE VOLUME -->
-
-                <Border Style="{StaticResource CardStyle}">
-
-                    <StackPanel>
-
-                        <TextBlock Text="HOLE VOLUME (bbl)"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,10"
-                               Foreground="#111827"/>
-
-                        <Grid>
-
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Hole Volume"
-                                   VerticalAlignment="Center"
-                                   FontSize="13"
-                                   Foreground="#6B7280"/>
-
-                            <Border Grid.Column="1"
-                                Background="#F9FAFB"
-                                CornerRadius="8"
-                                Padding="8"
-                                BorderBrush="#E5E7EB"
-                                BorderThickness="1">
-
-                                <TextBlock Text="0.00"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-
-                            </Border>
-
-                        </Grid>
-
-                    </StackPanel>
-
-                </Border>
-
-            </StackPanel>
-
-        </ScrollViewer>
+        </Border>
 
     </Grid>
 

@@ -1,0 +1,437 @@
+﻿<UserControl x:Class="ProjectReport.Modules.VolumeBalance.Views.Additions.AdditionsChemicalVolumeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:ProjectReport.Modules.VolumeBalance.Views.Additions"
+             xmlns:vm="clr-namespace:ProjectReport.Modules.VolumeBalance.ViewModels"
+             mc:Ignorable="d"
+             d:DesignHeight="450"
+             d:DesignWidth="800">
+
+    <UserControl.DataContext>
+        <vm:AdditionsChemicalVolViewModel/>
+    </UserControl.DataContext>
+
+    <UserControl.Resources>
+
+        <!-- CARD -->
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,18"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- HEADER -->
+        <Style x:Key="HeaderCellStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#EE7D32"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <!-- CELDAS -->
+        <Style x:Key="CenteredCellStyle" TargetType="DataGridCell">
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextBlock.TextAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="BorderBrush" Value="#E5E7EB"/>
+        </Style>
+
+        <Style x:Key="ReadOnlyCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource CenteredCellStyle}">
+            <Setter Property="Background" Value="#F3F4F6"/>
+            <Setter Property="Foreground" Value="#374151"/>
+        </Style>
+
+        <!-- 🔥 BOTÓN ADD -->
+        <Style x:Key="AddButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#EE7D32"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                             CornerRadius="8"
+                             Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#D96B22"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#B85A1C"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 🗑 DELETE BUTTON -->
+        <Style x:Key="DeleteButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#DC2626"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                             CornerRadius="8"
+                             Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#B91C1C"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#7F1D1D"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <!-- ========================= -->
+    <!-- CARD - ADDITIONS CHEMICAL -->
+    <!-- ========================= -->
+    <!-- ========================= -->
+    <!-- CARD - ADDITIONS CHEMICAL -->
+    <!-- ========================= -->
+    <Border Style="{StaticResource CardStyle}">
+
+        <Grid Margin="20">
+
+            <Grid.RowDefinitions>
+
+                <!-- ========================= -->
+                <!-- TÍTULO -->
+                <!-- ========================= -->
+                <RowDefinition Height="Auto"/>
+
+                <!-- ========================= -->
+                <!-- CONTROLES -->
+                <!-- ========================= -->
+                <RowDefinition Height="Auto"/>
+
+                <!-- ========================= -->
+                <!-- TABLA -->
+                <!-- ========================= -->
+                <RowDefinition Height="Auto"/>
+
+            </Grid.RowDefinitions>
+
+
+            <!-- ===================================================== -->
+            <!-- TÍTULO -->
+            <!-- ===================================================== -->
+            <TextBlock Grid.Row="0"
+                   Text="ADDITIONS CHEMICAL VOLUME (bbl)"
+                   FontSize="16"
+                   FontWeight="SemiBold"
+                   Foreground="#1F2937"
+                   Margin="0,0,0,15"
+                   VerticalAlignment="Center"/>
+
+
+            <!-- ===================================================== -->
+            <!-- BARRA DE CONTROLES -->
+            <!-- ===================================================== -->
+            <Border Grid.Row="1"
+                Background="White"
+                CornerRadius="12"
+                Padding="14"
+                Margin="0,0,0,15"
+                BorderBrush="#E5E7EB"
+                BorderThickness="1">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+
+                        <!-- Selector -->
+                        <ColumnDefinition Width="*"/>
+
+                        <!-- Botón -->
+                        <ColumnDefinition Width="Auto"/>
+
+                    </Grid.ColumnDefinitions>
+
+
+                    <!-- ============================================= -->
+                    <!-- SELECT FLUID COMBINATION -->
+                    <!-- ============================================= -->
+                    <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+
+                        <TextBlock Text="Select Fluid Combination:"
+                               Margin="0,0,10,0"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="#6B7280"
+                               VerticalAlignment="Center"/>
+
+
+                        <ComboBox Width="250"
+                              Height="25"
+                              Margin="0,0,15,0"
+                              VerticalAlignment="Center"
+                              ItemsSource="{Binding FluidCombinations}"
+                              SelectedItem="{Binding SelectedFluidCombination}"
+                              DisplayMemberPath="FluidDisplay"/>
+
+                    </StackPanel>
+
+
+                    <!-- ============================================= -->
+                    <!-- ADD BUTTON -->
+                    <!-- ============================================= -->
+                    <Button Grid.Column="1"
+                        Width="100"
+                        Height="32"
+                        Content="Add"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource AddButtonStyle}"
+                        Command="{Binding AddCommand}"/>
+
+                </Grid>
+
+            </Border>
+
+
+            <!-- ===================================================== -->
+            <!-- TABLA -->
+            <!-- ===================================================== -->
+            <DataGrid Grid.Row="2"
+                  Height="300"
+
+                  ItemsSource="{Binding AdditionsChemicalVolumes}"
+
+                  AutoGenerateColumns="False"
+
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="False"
+
+                  IsReadOnly="False"
+
+                  SelectionUnit="CellOrRowHeader"
+                  SelectionMode="Extended"
+
+                  HeadersVisibility="Column"
+
+                  GridLinesVisibility="Horizontal"
+
+                  RowBackground="White"
+                  AlternatingRowBackground="#FAFAFA"
+
+                  BorderBrush="#E5E7EB"
+                  HorizontalGridLinesBrush="#E5E7EB"
+                  VerticalGridLinesBrush="#E5E7EB"
+
+                  ColumnHeaderStyle="{StaticResource HeaderCellStyle}"
+                  CellStyle="{StaticResource CenteredCellStyle}"
+
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+
+                <!-- ================================================= -->
+                <!-- COLUMNAS -->
+                <!-- ================================================= -->
+                <DataGrid.Columns>
+
+
+                    <!-- ============================================= -->
+                    <!-- COD -->
+                    <!-- ============================================= -->
+                    <DataGridTextColumn
+        Header="COD"
+        Binding="{Binding Cod}"
+        IsReadOnly="True"
+        CellStyle="{StaticResource ReadOnlyCellStyle}"
+        Width="100"/>
+
+
+                    <!-- ============================================= -->
+                    <!-- CHEMICAL -->
+                    <!-- ============================================= -->
+                    <DataGridTemplateColumn
+        Header="Chemical"
+        Width="2*">
+
+
+                        <!-- ========================================= -->
+                        <!-- MOSTRAR CHEMICAL -->
+                        <!-- ========================================= -->
+                        <DataGridTemplateColumn.CellTemplate>
+
+                            <DataTemplate>
+
+                                <TextBlock
+                    Text="{Binding Chemical}"
+                    VerticalAlignment="Center"/>
+
+                            </DataTemplate>
+
+                        </DataGridTemplateColumn.CellTemplate>
+
+
+                        <!-- ========================================= -->
+                        <!-- EDITAR CHEMICAL -->
+                        <!-- ========================================= -->
+                        <DataGridTemplateColumn.CellEditingTemplate>
+
+                            <DataTemplate>
+
+                                <ComboBox
+                    ItemsSource="{Binding DataContext.InventoryProducts,
+                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
+
+                    SelectedItem="{Binding SelectedProduct,
+                        Mode=TwoWay,
+                        UpdateSourceTrigger=PropertyChanged}"
+
+                    DisplayMemberPath="Name"
+
+                    HorizontalAlignment="Stretch"/>
+
+                            </DataTemplate>
+
+                        </DataGridTemplateColumn.CellEditingTemplate>
+
+                    </DataGridTemplateColumn>
+
+
+                    <!-- ============================================= -->
+                    <!-- USED -->
+                    <!-- ============================================= -->
+                    <DataGridTextColumn
+        Header="Used"
+
+        Binding="{Binding Used,
+                          Mode=TwoWay,
+                          UpdateSourceTrigger=PropertyChanged}"
+
+        Width="*"/>
+
+
+                    <!-- ============================================= -->
+                    <!-- FLUID TYPE -->
+                    <!-- SOLO LECTURA -->
+                    <!-- ============================================= -->
+                    <DataGridTextColumn
+        Header="Fluid Type"
+
+        Binding="{Binding FluidType}"
+
+        IsReadOnly="True"
+
+        CellStyle="{StaticResource ReadOnlyCellStyle}"
+
+        Width="*"/>
+
+
+                    <!-- ============================================= -->
+                    <!-- FLUID SUBTYPE -->
+                    <!-- SOLO LECTURA -->
+                    <!-- ============================================= -->
+                    <DataGridTextColumn
+        Header="Fluid Subtype"
+
+        Binding="{Binding FluidSubtype}"
+
+        IsReadOnly="True"
+
+        CellStyle="{StaticResource ReadOnlyCellStyle}"
+
+        Width="1.5*"/>
+
+
+                    <!-- ============================================= -->
+                    <!-- VOLUME -->
+                    <!-- ============================================= -->
+                    <DataGridTextColumn
+    Header="Volume"
+    Binding="{Binding Volume, StringFormat={}{0:F4}}"
+    IsReadOnly="True"
+    CellStyle="{StaticResource ReadOnlyCellStyle}"
+    Width="*"/>
+
+
+                    <!-- ============================================= -->
+                    <!-- DELETE -->
+                    <!-- ============================================= -->
+                    <DataGridTemplateColumn
+        Header=""
+        Width="90">
+
+
+                        <DataGridTemplateColumn.CellTemplate>
+
+                            <DataTemplate>
+
+                                <Button
+                    Content="Delete"
+
+                    Style="{StaticResource DeleteButtonStyle}"
+
+                    Padding="7,2"
+
+                    Margin="1"
+
+                    Command="{Binding DataContext.DeleteCommand,
+                        RelativeSource={RelativeSource AncestorType=DataGrid}}"
+
+                    CommandParameter="{Binding}"/>
+
+                            </DataTemplate>
+
+                        </DataGridTemplateColumn.CellTemplate>
+
+
+                    </DataGridTemplateColumn>
+
+
+                </DataGrid.Columns>
+
+            </DataGrid>
+
+
+        </Grid>
+
+    </Border>
+</UserControl>

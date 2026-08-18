@@ -108,7 +108,8 @@ namespace ProjectReport.Services
             {
                 command.Parameters.AddRange(parameters);
             }
-return command.ExecuteScalar();
+
+return command.ExecuteScalar();
         }
 
         public int ExecuteInsertAndGetId(string insertQuery, params SqliteParameter[] parameters)

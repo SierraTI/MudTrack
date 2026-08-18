@@ -105,6 +105,8 @@
 
     <Folder Include="Modules\Inventory\Legacy\ViewModels\" />
 
+    <Folder Include="Resources\Templates\" />
+
     <Folder Include="Views\Geometry\Modals\" />
 
     <Folder Include="Views\Geometry\ThermalGradient\" />
@@ -116,7 +118,9 @@
   <!-- Exclude nested duplicate from failed merge (delete projectReport/projectReport/ when app is closed) -->
   <ItemGroup>
     <Compile Remove="projectReport\**\*.cs" />
+    <Compile Remove="Resources\Styles\**" />
     <Page Remove="projectReport\**\*.xaml" />
+    <Page Remove="Resources\Styles\**" />
     <ApplicationDefinition Remove="projectReport\**\*.xaml" />
     <EmbeddedResource Remove="projectReport\**\*" />
     <Content Remove="projectReport\**\*" />
@@ -131,7 +135,11 @@
 
     <Content Remove="Tools\**\*" />
 
+    <None Remove="Resources\Styles\**" />
+
     <None Remove="Tools\**\*" />
+
+    <EmbeddedResource Remove="Resources\Styles\**" />
 
     <EmbeddedResource Remove="Tools\**\*" />
 

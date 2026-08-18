@@ -1,9 +1,7 @@
 using ProjectReport.Models;
-using ProjectReport.Models.Inventory;
 using ProjectReport.Modules.ReportDetail.ViewModels;
 using ProjectReport.Modules.ReportDetails.Views;
 using ProjectReport.Modules.RigProfile.Views;
-using ProjectReport.Modules.VolumeBalance.Models;
 using ProjectReport.Modules.VolumeBalance.Services;
 using ProjectReport.Modules.VolumeBalance.ViewModels;
 using ProjectReport.Modules.VolumeBalance.Views;
@@ -44,41 +42,91 @@ namespace ProjectReport.Views
         private int? _currentWellId;
         private Well _currentWell;
 
-        private void VolumeBalanceButton_Click(object sender, RoutedEventArgs e)
+        private void VolumeBalanceButton_Click(
+      object sender,
+      RoutedEventArgs e)
         {
             if (_currentWellId == null || _currentWell == null)
             {
-                System.Windows.MessageBox.Show("Debe seleccionar un Well primero.");
+                MessageBox.Show(
+                    "Debe seleccionar un Well primero.");
+
                 return;
             }
 
             if (_volumeBalanceView == null)
             {
                 _volumeBalanceView =
-                    new ProjectReport.Modules.VolumeBalance.Views.VolumeBalanceView();
+                    new VolumeBalanceView();
             }
 
-            // 🔥 SIEMPRE sincroniza el contexto del well (IMPORTANTE)
             _volumeBalanceViewModel =
-                new VolumeBalanceViewModel(_volumeNavigation, _currentWellId.Value);
+                new VolumeBalanceViewModel(
+                    _volumeNavigation,
+                    _currentWellId.Value,
+                    DateTime.Now.ToString("yyyy-MM-dd"),
+                    "Day");
 
-            _volumeBalanceView.DataContext = _volumeBalanceViewModel;
+            _volumeBalanceView.DataContext =
+                _volumeBalanceViewModel;
 
-            ContentTitle.Text = $"Volume Balance - {_currentWell.WellName}";
-            ContentArea.Content = _volumeBalanceView;
+            ContentTitle.Text =
+                $"Volume Balance - {_currentWell.WellName}";
+
+            ContentArea.Content =
+                _volumeBalanceView;
         }
 
-        private void OpenVolumeBalanceEvent(VolumeBalanceEvent evento)
+        private void OpenVolumeBalanceEvent(
+      VolumeBalanceEvent evento)
         {
-            if (_volumeBalanceEventView == null)
-            {
-                _volumeBalanceEventView = new VolumeBalanceEventView();
-            }
+            if (evento == null)
+                return;
 
-            _volumeBalanceEventView.DataContext = evento;
+            Debug.WriteLine(
+                "========================================");
 
-            ContentTitle.Text = $"Volume Balance Event # - {evento.EventTime}";
-            ContentArea.Content = _volumeBalanceEventView;
+            Debug.WriteLine(
+                "[MainWindow] OPEN VOLUME BALANCE EVENT");
+
+            Debug.WriteLine(
+                $"EventNo = {evento.EventNo}");
+
+            Debug.WriteLine(
+                $"EventId = {evento.VolumeBalanceEventId}");
+
+            Debug.WriteLine(
+                $"VolumeBalanceId = {evento.VolumeBalanceId}");
+
+            Debug.WriteLine(
+                $"EventDateTime = {evento.EventDateTime}");
+
+            Debug.WriteLine(
+                "========================================");
+
+            // ============================================================
+            // CREAR UNA NUEVA VISTA PARA CADA EVENTO
+            // ============================================================
+
+            _volumeBalanceEventView =
+                new VolumeBalanceEventView();
+
+            // ============================================================
+            // ASIGNAR EL EVENTO SELECCIONADO
+            // ============================================================
+
+            _volumeBalanceEventView.DataContext =
+                evento;
+
+            // ============================================================
+            // MOSTRAR
+            // ============================================================
+
+            ContentTitle.Text =
+                $"Volume Balance Event #{evento.EventNo}";
+
+            ContentArea.Content =
+                _volumeBalanceEventView;
         }
 
         private void RegisterVolumeBalanceNavigation()

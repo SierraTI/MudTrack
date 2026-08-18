@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.Sqlite;
-using ProjectReport.Modules.VolumeBalance.Models;
+using ProjectReport.Models;
 using ProjectReport.Services;
 
 namespace ProjectReport.Modules.VolumeBalance.Data
@@ -16,95 +16,253 @@ namespace ProjectReport.Modules.VolumeBalance.Data
             _db = new DatabaseService();
         }
 
-        public List<VolumeBalanceEvent> GetAllByWell(int idW)
+        // ============================================================
+        // OBTENER TODOS LOS EVENTOS DE UN BALANCE
+        // ============================================================
+        public List<VolumeBalanceEvent> GetAllByVolumeBalance(int volumeBalanceId)
         {
             var events = new List<VolumeBalanceEvent>();
 
             DataTable table = _db.ExecuteQuery(@"
                 SELECT
-                    id,
-                    event_time,
-                    description,
-                    current_depth,
+                    volume_balance_event_id,
+                    volume_balance_id,
+                    event_no,
+                    event_date_time,
                     activity,
-                    idW
-                FROM VolumeBalanceEvent
-                WHERE idW = @idW
-                ORDER BY id DESC",
-                new SqliteParameter("@idW", idW)
+                    current_depth,
+                    description,
+                    remarks,
+                    created_by,
+                    created_date,
+                    modified_by,
+                    modified_date
+                FROM volume_balance_event
+                WHERE volume_balance_id = @volume_balance_id
+                ORDER BY event_no ASC",
+                new SqliteParameter("@volume_balance_id", volumeBalanceId)
             );
 
             foreach (DataRow row in table.Rows)
             {
                 events.Add(new VolumeBalanceEvent
                 {
-                    Id = Convert.ToInt32(row["id"]),
-                    EventTime = row["event_time"]?.ToString(),
-                    Description = row["description"]?.ToString(),
+                    VolumeBalanceEventId = Convert.ToInt32(
+                        row["volume_balance_event_id"]),
+
+                    VolumeBalanceId = Convert.ToInt32(
+                        row["volume_balance_id"]),
+
+                    EventNo = Convert.ToInt32(
+                        row["event_no"]),
+
+                    EventDateTime = Convert.ToDateTime(
+                        row["event_date_time"]),
+
+                    Activity = row["activity"]?.ToString() ?? "",
+
                     CurrentDepth = row["current_depth"] == DBNull.Value
-                        ? 0
+                        ? null
                         : Convert.ToDouble(row["current_depth"]),
-                    Activity = row["activity"]?.ToString(),
-                    IdW = Convert.ToInt32(row["idW"])
+
+                    Description = row["description"]?.ToString() ?? "",
+
+                    Remarks = row["remarks"]?.ToString() ?? "",
+
+                    CreatedBy = row["created_by"]?.ToString() ?? "",
+
+                    CreatedDate = Convert.ToDateTime(
+                        row["created_date"]),
+
+                    ModifiedBy = row["modified_by"]?.ToString(),
+
+                    ModifiedDate = row["modified_date"] == DBNull.Value
+                        ? null
+                        : Convert.ToDateTime(row["modified_date"])
                 });
             }
 
             return events;
         }
 
-        // 🔹 INSERT (SIEMPRE asociado al well)
+
+        // ============================================================
+        // INSERTAR EVENTO
+        // ============================================================
         public int Insert(VolumeBalanceEvent evento)
         {
             return _db.ExecuteInsertAndGetId(@"
-                INSERT INTO VolumeBalanceEvent
+                INSERT INTO volume_balance_event
                 (
-                    event_time,
-                    description,
-                    current_depth,
+                    volume_balance_id,
+                    event_no,
+                    event_date_time,
                     activity,
-                    idW
+                    current_depth,
+                    description,
+                    remarks,
+                    created_by,
+                    created_date,
+                    modified_by,
+                    modified_date
                 )
                 VALUES
                 (
-                    @event_time,
-                    @description,
-                    @current_depth,
+                    @volume_balance_id,
+                    @event_no,
+                    @event_date_time,
                     @activity,
-                    @idW
+                    @current_depth,
+                    @description,
+                    @remarks,
+                    @created_by,
+                    @created_date,
+                    @modified_by,
+                    @modified_date
                 )",
-                new SqliteParameter("@event_time", evento.EventTime),
-                new SqliteParameter("@description", evento.Description ?? ""),
-                new SqliteParameter("@current_depth", evento.CurrentDepth),
-                new SqliteParameter("@activity", evento.Activity ?? ""),
-                new SqliteParameter("@idW", evento.IdW)
+
+                new SqliteParameter(
+                    "@volume_balance_id",
+                    evento.VolumeBalanceId),
+
+                new SqliteParameter(
+                    "@event_no",
+                    evento.EventNo),
+
+                new SqliteParameter(
+                    "@event_date_time",
+                    evento.EventDateTime),
+
+                new SqliteParameter(
+                    "@activity",
+                    evento.Activity ?? ""),
+
+                new SqliteParameter(
+                    "@current_depth",
+                    evento.CurrentDepth.HasValue
+                        ? evento.CurrentDepth.Value
+                        : DBNull.Value),
+
+                new SqliteParameter(
+                    "@description",
+                    evento.Description ?? ""),
+
+                new SqliteParameter(
+                    "@remarks",
+                    evento.Remarks ?? ""),
+
+                new SqliteParameter(
+                    "@created_by",
+                    evento.CreatedBy ?? ""),
+
+                new SqliteParameter(
+                    "@created_date",
+                    evento.CreatedDate),
+
+                new SqliteParameter(
+                    "@modified_by",
+                    string.IsNullOrEmpty(evento.ModifiedBy)
+                        ? DBNull.Value
+                        : evento.ModifiedBy),
+
+                new SqliteParameter(
+                    "@modified_date",
+                    evento.ModifiedDate.HasValue
+                        ? evento.ModifiedDate.Value
+                        : DBNull.Value)
             );
         }
 
+
+        // ============================================================
+        // ACTUALIZAR EVENTO
+        // ============================================================
         public void Update(VolumeBalanceEvent evento)
         {
             _db.ExecuteNonQuery(@"
-                UPDATE VolumeBalanceEvent
+                UPDATE volume_balance_event
                 SET
-                    description = @description,
+                    event_no = @event_no,
+                    event_date_time = @event_date_time,
+                    activity = @activity,
                     current_depth = @current_depth,
-                    activity = @activity
-                WHERE id = @id AND idW = @idW",
-                new SqliteParameter("@description", evento.Description ?? ""),
-                new SqliteParameter("@current_depth", evento.CurrentDepth),
-                new SqliteParameter("@activity", evento.Activity ?? ""),
-                new SqliteParameter("@id", evento.Id),
-                new SqliteParameter("@idW", evento.IdW)
+                    description = @description,
+                    remarks = @remarks,
+                    modified_by = @modified_by,
+                    modified_date = @modified_date
+                WHERE volume_balance_event_id = @volume_balance_event_id
+                  AND volume_balance_id = @volume_balance_id",
+
+                new SqliteParameter(
+                    "@event_no",
+                    evento.EventNo),
+
+                new SqliteParameter(
+                    "@event_date_time",
+                    evento.EventDateTime),
+
+                new SqliteParameter(
+                    "@activity",
+                    evento.Activity ?? ""),
+
+                new SqliteParameter(
+                    "@current_depth",
+                    evento.CurrentDepth.HasValue
+                        ? evento.CurrentDepth.Value
+                        : DBNull.Value),
+
+                new SqliteParameter(
+                    "@description",
+                    evento.Description ?? ""),
+
+                new SqliteParameter(
+                    "@remarks",
+                    evento.Remarks ?? ""),
+
+                new SqliteParameter(
+                    "@modified_by",
+                    string.IsNullOrEmpty(evento.ModifiedBy)
+                        ? DBNull.Value
+                        : evento.ModifiedBy),
+
+                new SqliteParameter(
+                    "@modified_date",
+                    evento.ModifiedDate.HasValue
+                        ? evento.ModifiedDate.Value
+                        : DBNull.Value),
+
+                new SqliteParameter(
+                    "@volume_balance_event_id",
+                    evento.VolumeBalanceEventId),
+
+                new SqliteParameter(
+                    "@volume_balance_id",
+                    evento.VolumeBalanceId)
             );
         }
 
-        public void Delete(int id, int idW)
+
+        // ============================================================
+        // ELIMINAR EVENTO
+        // ============================================================
+        public void Delete(
+            int volumeBalanceEventId,
+            int volumeBalanceId)
         {
             _db.ExecuteNonQuery(@"
-                DELETE FROM VolumeBalanceEvent
-                WHERE id = @id AND idW = @idW",
-                new SqliteParameter("@id", id),
-                new SqliteParameter("@idW", idW)
+                DELETE FROM volume_balance_event
+                WHERE volume_balance_event_id = @volume_balance_event_id
+                  AND volume_balance_id = @volume_balance_id",
+
+                new SqliteParameter(
+                    "@volume_balance_event_id",
+                    volumeBalanceEventId),
+
+                new SqliteParameter(
+                    "@volume_balance_id",
+                    volumeBalanceId)
             );
         }
+     
     }
 }

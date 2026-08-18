@@ -170,9 +170,9 @@ namespace ProjectReport.Core.Data
 
             var profile = new RigProfile
             {
-                RigName    = row["rig_name"]?.ToString()   ?? string.Empty,
+                RigName = row["rig_name"]?.ToString() ?? string.Empty,
                 Contractor = row["contractor"]?.ToString() ?? string.Empty,
-                RigType    = row["rig_type"]?.ToString()   ?? string.Empty,
+                RigType = row["rig_type"]?.ToString() ?? string.Empty,
             };
 
             LoadSurfaceEquipment(rigProfileId, profile);
@@ -195,15 +195,15 @@ namespace ProjectReport.Core.Data
                 int lineType = r["sequence_no"] != DBNull.Value ? Convert.ToInt32(r["sequence_no"]) : 0;
                 var item = new RigSurfaceEquipment
                 {
-                    No                = lineType == 0 ? surfaceNo++ : serviceNo++,
-                    Component         = r["component_name"]?.ToString() ?? string.Empty,
-                    InternalDiameter  = r["internal_diameter"] != DBNull.Value ? Convert.ToDouble(r["internal_diameter"]) : 0,
-                    Length            = r["length"] != DBNull.Value ? Convert.ToDouble(r["length"]) : 0,
-                    Description       = r["description"]?.ToString() ?? string.Empty,
+                    No = lineType == 0 ? surfaceNo++ : serviceNo++,
+                    Component = r["component_name"]?.ToString() ?? string.Empty,
+                    InternalDiameter = r["internal_diameter"] != DBNull.Value ? Convert.ToDouble(r["internal_diameter"]) : 0,
+                    Length = r["length"] != DBNull.Value ? Convert.ToDouble(r["length"]) : 0,
+                    Description = r["description"]?.ToString() ?? string.Empty,
                 };
 
                 if (lineType == 0) profile.SurfaceEquipment.Add(item);
-                else               profile.ServiceLine.Add(item);
+                else profile.ServiceLine.Add(item);
             }
         }
 
@@ -218,11 +218,11 @@ namespace ProjectReport.Core.Data
             {
                 profile.Pumps.Add(new RigPump
                 {
-                    No           = no++,
-                    PumpName     = r["pump_name"]?.ToString() ?? string.Empty,
-                    MaxLinerSize = r["liner_size"]    != DBNull.Value ? Convert.ToDouble(r["liner_size"])    : 0,
+                    No = no++,
+                    PumpName = r["pump_name"]?.ToString() ?? string.Empty,
+                    MaxLinerSize = r["liner_size"] != DBNull.Value ? Convert.ToDouble(r["liner_size"]) : 0,
                     StrokeLength = r["stroke_length"] != DBNull.Value ? Convert.ToDouble(r["stroke_length"]) : 0,
-                    Efficiency   = r["efficiency"]    != DBNull.Value ? Convert.ToDouble(r["efficiency"])    : 0,
+                    Efficiency = r["efficiency"] != DBNull.Value ? Convert.ToDouble(r["efficiency"]) : 0,
                 });
             }
         }
@@ -238,40 +238,67 @@ namespace ProjectReport.Core.Data
             {
                 profile.SolidsControl.Add(new RigSolidsControl
                 {
-                    No                   = no++,
-                    Style                = r["style"]?.ToString()        ?? string.Empty,
-                    Manufacturer         = r["manufacturer"]?.ToString() ?? string.Empty,
-                    Model                = r["model"]?.ToString()        ?? string.Empty,
-                    NumberOfScreens      = r["number_of_screens"] != DBNull.Value ? Convert.ToInt32(r["number_of_screens"])  : 0,
-                    NominalRpm           = r["nominal_rpm"]        != DBNull.Value ? Convert.ToInt32(r["nominal_rpm"])       : 0,
-                    CapFlowGpm           = r["cap_flow_gpm"]       != DBNull.Value ? Convert.ToDouble(r["cap_flow_gpm"])     : 0,
-                    DesilterNumberOfCones= r["desilter_cones"]     != DBNull.Value ? Convert.ToInt32(r["desilter_cones"])    : 0,
-                    DesilterConeSize     = r["desilter_cone_size"]  != DBNull.Value ? Convert.ToDouble(r["desilter_cone_size"]): 0,
-                    DesanderNumberOfCones= r["desander_cones"]     != DBNull.Value ? Convert.ToInt32(r["desander_cones"])    : 0,
-                    DesanderConeSize     = r["desander_cone_size"]  != DBNull.Value ? Convert.ToDouble(r["desander_cone_size"]): 0,
+                    No = no++,
+                    Style = r["style"]?.ToString() ?? string.Empty,
+                    Manufacturer = r["manufacturer"]?.ToString() ?? string.Empty,
+                    Model = r["model"]?.ToString() ?? string.Empty,
+                    NumberOfScreens = r["number_of_screens"] != DBNull.Value ? Convert.ToInt32(r["number_of_screens"]) : 0,
+                    NominalRpm = r["nominal_rpm"] != DBNull.Value ? Convert.ToInt32(r["nominal_rpm"]) : 0,
+                    CapFlowGpm = r["cap_flow_gpm"] != DBNull.Value ? Convert.ToDouble(r["cap_flow_gpm"]) : 0,
+                    DesilterNumberOfCones = r["desilter_cones"] != DBNull.Value ? Convert.ToInt32(r["desilter_cones"]) : 0,
+                    DesilterConeSize = r["desilter_cone_size"] != DBNull.Value ? Convert.ToDouble(r["desilter_cone_size"]) : 0,
+                    DesanderNumberOfCones = r["desander_cones"] != DBNull.Value ? Convert.ToInt32(r["desander_cones"]) : 0,
+                    DesanderConeSize = r["desander_cone_size"] != DBNull.Value ? Convert.ToDouble(r["desander_cone_size"]) : 0,
                 });
             }
         }
 
-        private void LoadPits(int rigProfileId, RigProfile profile)
+        private void LoadPits(
+     int rigProfileId,
+     RigProfile profile)
         {
             var dt = _db.ExecuteQuery(
                 "SELECT * FROM RigPits WHERE rig_profile_id=@id ORDER BY id",
                 new SqlParameter("@id", rigProfileId));
 
             int no = 1;
+
             foreach (DataRow r in dt.Rows)
             {
-                profile.Pits.Add(new RigPit
-                {
-                    No          = no++,
-                    PitName     = r["pit_name"]?.ToString()  ?? string.Empty,
-                    Shape       = r["shape"]?.ToString()     ?? string.Empty,
-                    Dimensions  = r["dimensions"]?.ToString() ?? string.Empty,
-                    MaxCapacity = r["max_capacity"] != DBNull.Value ? Convert.ToDouble(r["max_capacity"]) : 0,
-                    IsActive    = r["is_active"]    != DBNull.Value && Convert.ToInt32(r["is_active"]) == 1,
-                });
+                profile.Pits.Add(
+                    new RigPit
+                    {
+                        Id =
+                            Convert.ToInt32(
+                                r["id"]),
+
+                        No =
+                            no++,
+
+                        PitName =
+                            r["pit_name"]?.ToString()
+                            ?? string.Empty,
+
+                        Shape =
+                            r["shape"]?.ToString()
+                            ?? string.Empty,
+
+                        Dimensions =
+                            r["dimensions"]?.ToString()
+                            ?? string.Empty,
+
+                        MaxCapacity =
+                            r["max_capacity"] != DBNull.Value
+                                ? Convert.ToDouble(
+                                    r["max_capacity"])
+                                : 0,
+
+                        IsActive =
+                            r["is_active"] != DBNull.Value &&
+                            Convert.ToInt32(
+                                r["is_active"]) == 1,
+                    });
             }
         }
     }
-}
+    }

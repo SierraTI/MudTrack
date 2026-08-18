@@ -1,5 +1,6 @@
-using System;
 using Microsoft.Data.Sqlite;
+using ProjectReport.Core.Seeders;
+using System;
 
 namespace ProjectReport.Services
 {
@@ -11,6 +12,27 @@ namespace ProjectReport.Services
         public static void Initialize()
         {
             using var db = new DatabaseService();
+
+
+            //PRODUCTOS EN INVENTARIO
+            db.ExecuteNonQuery(@"
+    CREATE TABLE IF NOT EXISTS inventory_product (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        description TEXT,
+        physical_state TEXT NOT NULL,
+        presentation TEXT NOT NULL,
+        package_quantity REAL NOT NULL,
+        package_unit TEXT NOT NULL,
+        sg REAL,
+        category TEXT NOT NULL,
+        status INTEGER NOT NULL DEFAULT 1,
+        is_selected_for_report INTEGER NOT NULL DEFAULT 0
+    );
+");
+
+            InventoryProductSeeder.Seed(db);
 
             // Inventory tables (kept in sync with SqliteInventoryRepository)
             db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS InventoryProduct (
@@ -386,36 +408,311 @@ CREATE TABLE IF NOT EXISTS ReportFluids (
                 unit_price REAL
             );");
 
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS VolumeBalanceEvent (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_time TEXT,
-    description TEXT,
-    current_depth REAL,
-    activity TEXT,
-    idW INTEGER,
-    FOREIGN KEY (idW) REFERENCES Well(idW)
+
+
+
+            //----------------------------
+            //Tablas Volumenes
+            //---------------------------------
+
+            //Volumen Balance
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS volume_balance (
+    volume_balance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    well_id INTEGER NOT NULL,
+    report_date TEXT NOT NULL,
+    shift TEXT NOT NULL,
+    status TEXT NOT NULL,
+    engineer TEXT,
+    remarks TEXT,
+    created_by TEXT NOT NULL,
+    created_date DATETIME NOT NULL,
+    modified_by TEXT,
+    modified_date DATETIME,
+    FOREIGN KEY (well_id) REFERENCES Well(idW)
 );");
-            db.ExecuteNonQuery(@"CREATE TABLE IF NOT EXISTS VolSystem (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    idVolumeBalanceEvent INTEGER NOT NULL,
-    idPitName INTEGER NOT NULL,
+            //Volumen Balance Evento
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS volume_balance_event (
+    volume_balance_event_id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    idWellFluid INTEGER NOT NULL,
+    volume_balance_id INTEGER NOT NULL,
 
-    previousVolume REAL,
-    currentVolume REAL,
-    density REAL,
+    event_no INTEGER NOT NULL,
 
-    FOREIGN KEY (idVolumeBalanceEvent)
-        REFERENCES VolumeBalanceEvent(id),
+    event_date_time DATETIME NOT NULL,
 
-    FOREIGN KEY (idPitName)
+    activity TEXT NOT NULL,
+
+    current_depth REAL,
+
+    description TEXT,
+
+    remarks TEXT,
+
+    created_by TEXT NOT NULL,
+
+    created_date DATETIME NOT NULL,
+
+    modified_by TEXT,
+
+    modified_date DATETIME,
+
+    FOREIGN KEY (volume_balance_id)
+        REFERENCES volume_balance(volume_balance_id),
+
+    UNIQUE (
+        volume_balance_id,
+        event_no
+    )
+);");
+
+            //Sistemas de pits
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS pit_system_options (
+    pit_system_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);");
+            PitSystemSeeder.Seed(db);
+
+
+            // Configuración de fluidos por evento
+
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS event_fluid_system (
+    event_fluid_system_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    volume_balance_event_id INTEGER NOT NULL,
+
+    pit_name_id INTEGER NOT NULL,
+
+    pit_system_id INTEGER NOT NULL,
+
+    fluid_type_id INTEGER,
+
+    fluid_sub_type TEXT,
+
+    FOREIGN KEY (volume_balance_event_id)
+        REFERENCES volume_balance_event(volume_balance_event_id),
+
+    FOREIGN KEY (pit_name_id)
         REFERENCES RigPits(id),
 
-    FOREIGN KEY (idWellFluid)
-        REFERENCES WellFluids(id)
+    FOREIGN KEY (pit_system_id)
+        REFERENCES pit_system_options(pit_system_id),
+
+    FOREIGN KEY (fluid_type_id)
+        REFERENCES ReportFluids(id),
+
+    UNIQUE (
+        volume_balance_event_id,
+        pit_name_id
+    )
 );");
+            //Hay que normalizar la tabla de reportsfluids
+
+
+            // Volumen Sistema
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS vol_system (
+    vol_system_id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    event_fluid_system_id INTEGER NOT NULL,
+
+    previous_volume REAL,
+
+    current_volume REAL,
+
+    density REAL,
+
+    remarks TEXT,
+
+    FOREIGN KEY (event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id),
+
+    UNIQUE (
+        event_fluid_system_id
+    )
+);");
+
+            // Adiciones
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS addition (
+    addition_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    volume_balance_event_id INTEGER NOT NULL,
+    remarks TEXT,
+
+    FOREIGN KEY (volume_balance_event_id)
+        REFERENCES volume_balance_event(volume_balance_event_id)
+);");
+
+
+            // Adición Volumen Líquido
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS additions_liquid_volume (
+    additions_liquid_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    addition_id INTEGER NOT NULL,
+    event_fluid_system_id INTEGER NOT NULL,
+    water REAL,
+    dewatering_water REAL,
+    osmosis_water REAL,
+    oil_based REAL,
+    iflux REAL,
+
+    FOREIGN KEY (addition_id)
+        REFERENCES addition(addition_id),
+
+    FOREIGN KEY (event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id)
+);");
+
+            // Adición Volumen Fluido
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS additions_fluid_volume (
+    additions_fluid_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    addition_id INTEGER NOT NULL,
+    event_fluid_system_id INTEGER NOT NULL,
+    fluid_name TEXT NOT NULL,
+    volume REAL,
+    concentration REAL,
+
+    FOREIGN KEY (addition_id)
+        REFERENCES addition(addition_id),
+
+    FOREIGN KEY (event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id)
+);");
+
+            // Adición Volumen Quimica
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS additions_chemical_volume (
+    additions_chemical_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    addition_id INTEGER NOT NULL,
+    event_fluid_system_id INTEGER NOT NULL,
+    chemical_id INTEGER NOT NULL,
+    volume REAL,
+    used_quantity REAL,
+
+    FOREIGN KEY (addition_id)
+        REFERENCES addition(addition_id),
+
+    FOREIGN KEY (event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id),
+
+    FOREIGN KEY (chemical_id)
+        REFERENCES InventoryProduct(Code)
+
+);");
+            //Toca revisar la tabla de inventarios para ver como se esta manejando
+
+            // Transferencias
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS transfers (
+    transfer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_event_fluid_system_id INTEGER NOT NULL,
+    to_event_fluid_system_id INTEGER NOT NULL,
+    volume REAL,
+    remarks TEXT,
+
+    CHECK (from_event_fluid_system_id <> to_event_fluid_system_id),
+
+    FOREIGN KEY (from_event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id),
+
+    FOREIGN KEY (to_event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id)
+);");
+
+            // LossesType
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS losses_type
+(
+    losses_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1
+);
+");
+
+            db.ExecuteNonQuery(@"
+INSERT OR IGNORE INTO losses_type (losses_type_id, name)
+VALUES
+    (1, 'SCE'),
+    (2, 'MISCELANEOUS'),
+    (3, 'DOWN HOLE');
+");
+
+            // LossesSubType
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS losses_subtype
+(
+    losses_subtype_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    losses_type_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY(losses_type_id) REFERENCES losses_type(losses_type_id)
+);
+");
+
+            db.ExecuteNonQuery(@"
+INSERT OR IGNORE INTO losses_subtype (losses_subtype_id, losses_type_id, name)
+VALUES
+    -- SCE (Id = 1)
+    (1, 1, 'SHAKERS'),
+    (2, 1, 'SHAKERS LOST OF CUTTINGS'),
+    (3, 1, 'MUD CLEANER'),
+    (4, 1, 'CENTRIFUGES'),
+    (5, 1, 'OTHER SCE'),
+
+    -- MISCELANEOUS (Id = 2)
+    (6, 2, 'EVAPORATION'),
+    (7, 2, 'TRIPS'),
+    (8, 2, 'OTHERS IF'),
+    (9, 2, 'DISPLACEMENT'),
+    (10, 2, 'CONTAMINED'),
+    (11, 2, 'LEFT BEHIND CSG'),
+    (12, 2, 'RESIDUAL TANK'),
+
+    -- DOWN HOLE (Id = 3)
+    (13, 3, 'FILTRATION'),
+    (14, 3, 'LOST IN HOLE');
+");
+
+            // Perdidas Losses
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS losses
+(
+    losses_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_fluid_system_id INTEGER NOT NULL,
+    losses_subtype_id INTEGER NOT NULL,
+    volume REAL NOT NULL,
+    remarks TEXT,
+
+    FOREIGN KEY (event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id),
+
+    FOREIGN KEY (losses_subtype_id)
+        REFERENCES losses_subtype(losses_subtype_id)
+);");
+
+            // Concentraciones
+            db.ExecuteNonQuery(@"
+CREATE TABLE IF NOT EXISTS concentration
+(
+    concentration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_fluid_system_id INTEGER NOT NULL,
+    chemical_id INTEGER NOT NULL,
+    concentration REAL,
+
+    FOREIGN KEY (event_fluid_system_id)
+        REFERENCES event_fluid_system(event_fluid_system_id),
+
+    FOREIGN KEY (chemical_id)
+        REFERENCES InventoryProduct(Code)
+);");
+            //Toca revisar bien como se esta manejando la quimica
 
         }
     }

@@ -1,5 +1,5 @@
 ﻿using System;
-using ProjectReport.Modules.VolumeBalance.Models;
+using ProjectReport.Models;
 
 namespace ProjectReport.Modules.VolumeBalance.Services
 {

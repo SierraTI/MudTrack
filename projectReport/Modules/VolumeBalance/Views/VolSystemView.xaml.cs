@@ -1,107 +1,382 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Data;
+using ProjectReport.Modules.VolumeBalance.Models;
+using ProjectReport.Modules.VolumeBalance.ViewModels;
 
 namespace ProjectReport.Modules.VolumeBalance.Views
 {
-    /// <summary>
-    /// Lógica de interacción para VolSystemView.xaml
-    /// </summary>
     public partial class VolSystemView : UserControl
     {
+        // ============================================================
+        // VALIDACIÓN NUMÉRICA
+        // ============================================================
+
+        private static readonly Regex _regex =
+            new Regex(@"^[0-9]+(\.[0-9]*)?$");
+
+
+        // ============================================================
+        // VIEWMODEL
+        // ============================================================
+
+        private VolSystemViewModel? _vm;
+
+
+        // ============================================================
+        // EXPONER VIEWMODEL
+        // ============================================================
+
+        public VolSystemViewModel? ViewModel =>
+            _vm;
+
+
+        // ============================================================
+        // CONTROL PARA EVITAR REENTRADA
+        // ============================================================
+
+        private bool _isRestoringPitSystem;
+
+
+        // ============================================================
+        // CONSTRUCTOR NORMAL
+        // ============================================================
+
         public VolSystemView()
         {
             InitializeComponent();
-            Loaded += VolSystemView_Loaded;
-            Unloaded += VolSystemView_Unloaded;
-            DataContextChanged += VolSystemView_DataContextChanged;
-            SizeChanged += VolSystemView_SizeChanged;
+
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+            SizeChanged += OnSizeChanged;
+            DataContextChanged += OnDataContextChanged;
         }
 
-        private void FluidCombo_Loaded(object sender, RoutedEventArgs e)
+
+        // ============================================================
+        // CONSTRUCTOR CON EVENT ID
+        // ============================================================
+
+        public VolSystemView(
+            int volumeBalanceEventId)
+            : this()
         {
-            try
+            // --------------------------------------------------------
+            // CREAR VIEWMODEL
+            // --------------------------------------------------------
+
+            var vm =
+                new VolSystemViewModel();
+
+            // --------------------------------------------------------
+            // ASIGNAR EVENT ID
+            // --------------------------------------------------------
+
+            vm.VolumeBalanceEventId =
+                volumeBalanceEventId;
+
+            // --------------------------------------------------------
+            // GUARDAR REFERENCIA LOCAL
+            // --------------------------------------------------------
+
+            _vm =
+                vm;
+
+            // --------------------------------------------------------
+            // ASIGNAR DATACONTEXT
+            // --------------------------------------------------------
+
+            DataContext =
+                vm;
+        }
+
+
+        // ============================================================
+        // CAMBIO DE DATACONTEXT
+        // ============================================================
+
+        private void OnDataContextChanged(
+            object sender,
+            DependencyPropertyChangedEventArgs e)
+        {
+            _vm =
+                e.NewValue as VolSystemViewModel;
+        }
+
+
+        // ============================================================
+        // LOADED
+        // ============================================================
+
+        private void OnLoaded(
+            object sender,
+            RoutedEventArgs e)
+        {
+            _vm ??=
+                DataContext as VolSystemViewModel;
+        }
+
+
+        // ============================================================
+        // UNLOADED
+        // ============================================================
+
+        private void OnUnloaded(
+            object sender,
+            RoutedEventArgs e)
+        {
+            // --------------------------------------------------------
+            // NO HACER DISPOSE AQUÍ.
+            // --------------------------------------------------------
+
+            // Intencionalmente vacío.
+        }
+
+
+        // ============================================================
+        // CAMBIO DE PIT SYSTEM
+        // ============================================================
+
+        private void PitSystemComboBox_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (_isRestoringPitSystem)
+                return;
+
+            if (sender is not ComboBox comboBox)
+                return;
+
+            if (comboBox.DataContext
+                is not VolSystemPit pit)
             {
-                if (sender is ComboBox cb && cb.DataContext is ProjectReport.Modules.VolumeBalance.Models.VolSystemPit vsPit)
+                return;
+            }
+
+            if (_vm == null)
+            {
+                _vm =
+                    DataContext as VolSystemViewModel;
+            }
+
+            if (_vm == null)
+                return;
+
+            // ========================================================
+            // OBTENER BINDING
+            // ========================================================
+
+            BindingExpression?
+                binding =
+                    comboBox.GetBindingExpression(
+                        ComboBox.SelectedValueProperty);
+
+            if (binding == null)
+                return;
+
+            // ========================================================
+            // OBTENER VALOR NUEVO
+            // ========================================================
+
+            int? newSystemId =
+                null;
+
+            if (comboBox.SelectedValue != null &&
+                comboBox.SelectedValue !=
+                    DependencyProperty.UnsetValue)
+            {
+                try
                 {
-                    if (DataContext is ProjectReport.Modules.VolumeBalance.ViewModels.VolSystemViewModel vm)
-                    {
-                        // Get options from VM for the well (includes WellFluids + master list)
-                        var options = vm.GetFluidOptionsForPit(vsPit.SourcePit) ?? new List<string>();
-                        // If no options were returned, but the pit already has a FluidType (from WellInfo), ensure it's shown
-                        if (options.Count == 0 && !string.IsNullOrEmpty(vsPit.FluidType))
-                        {
-                            options.Add(vsPit.FluidType);
-                        }
-
-                        cb.ItemsSource = options;
-
-                        // select current fluid if present
-                        if (!string.IsNullOrEmpty(vsPit.FluidType) && options.Contains(vsPit.FluidType))
-                            cb.SelectedItem = vsPit.FluidType;
-                        else if (options.Count > 0)
-                            cb.SelectedItem = options[0];
-                    }
+                    newSystemId =
+                        Convert.ToInt32(
+                            comboBox.SelectedValue);
+                }
+                catch
+                {
+                    newSystemId = null;
                 }
             }
-            catch { }
+
+            // ========================================================
+            // VALOR ANTERIOR
+            // ========================================================
+
+            int? previousSystemId =
+                pit.PitSystemId;
+
+            // ========================================================
+            // SI NO HAY CAMBIO REAL
+            // ========================================================
+
+            if (newSystemId ==
+                previousSystemId)
+            {
+                return;
+            }
+
+            // ========================================================
+            // VALIDAR
+            // ========================================================
+
+            bool allowed =
+                _vm.TryChangePitSystem(
+                    pit,
+                    newSystemId);
+
+            // ========================================================
+            // CAMBIO NO PERMITIDO
+            // ========================================================
+
+            if (!allowed)
+            {
+                try
+                {
+                    _isRestoringPitSystem = true;
+
+                    // ------------------------------------------------
+                    // IMPORTANTE:
+                    //
+                    // NO modificamos el modelo.
+                    //
+                    // Solamente hacemos que el ComboBox vuelva a
+                    // mostrar el valor que tenía anteriormente.
+                    // ------------------------------------------------
+
+                    binding.UpdateTarget();
+                }
+                finally
+                {
+                    _isRestoringPitSystem = false;
+                }
+
+                return;
+            }
+
+            // ========================================================
+            // CAMBIO PERMITIDO
+            // ========================================================
+
+            // --------------------------------------------------------
+            // Ahora sí actualizamos el Source.
+            //
+            // Como el Binding usa UpdateSourceTrigger=Explicit,
+            // hasta este punto PitSystemId NO se ha modificado.
+            // --------------------------------------------------------
+
+            binding.UpdateSource();
         }
 
-        private void VolSystemView_Loaded(object sender, RoutedEventArgs e)
+
+        // ============================================================
+        // VALIDACIÓN NUMÉRICA
+        // ============================================================
+
+        private void NumericOnly_PreviewTextInput(
+            object sender,
+            TextCompositionEventArgs e)
         {
-            if (DataContext is ProjectReport.Modules.VolumeBalance.ViewModels.VolSystemViewModel vm)
+            if (sender is not TextBox tb)
+                return;
+
+            string fullText =
+                GetFullTextAfterInput(
+                    tb,
+                    e.Text);
+
+            e.Handled =
+                !_regex.IsMatch(fullText);
+        }
+
+
+        // ============================================================
+        // OBTENER TEXTO DESPUÉS DE LA ENTRADA
+        // ============================================================
+
+        private string GetFullTextAfterInput(
+            TextBox textBox,
+            string input)
+        {
+            string text =
+                textBox.Text;
+
+            if (textBox.SelectionLength > 0)
             {
-                vm.Refresh();
+                text =
+                    text.Remove(
+                        textBox.SelectionStart,
+                        textBox.SelectionLength);
+            }
+
+            text =
+                text.Insert(
+                    textBox.SelectionStart,
+                    input);
+
+            return text;
+        }
+
+
+        // ============================================================
+        // PEGADO
+        // ============================================================
+
+        private void NumericOnly_Pasting(
+            object sender,
+            DataObjectPastingEventArgs e)
+        {
+            if (!e.DataObject.GetDataPresent(
+                typeof(string)))
+            {
+                e.CancelCommand();
+                return;
+            }
+
+            string text =
+                (string)e.DataObject.GetData(
+                    typeof(string));
+
+            if (string.IsNullOrWhiteSpace(text) ||
+                !_regex.IsMatch(text))
+            {
+                e.CancelCommand();
             }
         }
 
-        private void VolSystemView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
-            if (e.NewValue is ProjectReport.Modules.VolumeBalance.ViewModels.VolSystemViewModel vm)
-            {
-                // Ensure viewmodel refreshes when assigned
-                vm.Refresh();
-            }
-        }
 
-        private void VolSystemView_Unloaded(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is IDisposable d)
-            {
-                d.Dispose();
-            }
-        }
+        // ============================================================
+        // RESPONSIVE SCALE
+        // ============================================================
 
-        private void VolSystemView_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void OnSizeChanged(
+            object sender,
+            SizeChangedEventArgs e)
         {
             try
             {
-                double width = e.NewSize.Width;
-                double scale = 1.0;
-                if (width < 560) scale = 0.78;
-                else if (width < 720) scale = 0.88;
-                else if (width < 900) scale = 0.96;
-                else scale = 1.0;
+                double width =
+                    e.NewSize.Width;
 
-                // Apply ScaleTransform to DataGrid to shrink contents proportionally
-                if (FindName("GridScale") is ScaleTransform st)
+                double scale =
+                    width < 560 ? 0.78 :
+                    width < 720 ? 0.88 :
+                    width < 900 ? 0.96 :
+                    1.0;
+
+                if (FindName("GridScale")
+                    is ScaleTransform st)
                 {
                     st.ScaleX = scale;
                     st.ScaleY = scale;
                 }
             }
-            catch { }
+            catch
+            {
+                // No interrumpir la interfaz.
+            }
         }
     }
 }

@@ -1,28 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using ProjectReport.Modules.VolumeBalance.ViewModels;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ProjectReport.Modules.VolumeBalance.Views
 {
-    /// <summary>
-    /// Lógica de interacción para VolumeInfoTableView.xaml
-    /// </summary>
     public partial class VolumeInfoTableView : UserControl
     {
+        private readonly VolumeInfoTableViewModel _viewModel;
+
         public VolumeInfoTableView()
         {
             InitializeComponent();
+
+            _viewModel =
+                new VolumeInfoTableViewModel();
+
+            DataContext =
+                _viewModel;
+        }
+
+        // ============================================================
+        // EVENT ID
+        // ============================================================
+
+        public void SetEventId(int eventId)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[VolumeInfoTableView] SetEventId = {eventId}");
+
+            _viewModel.VolumeBalanceEventId =
+                eventId;
+        }
+
+        // ============================================================
+        // CONECTAR CON VOL SYSTEM
+        // ============================================================
+
+        public void AttachVolumeSystemViewModel(
+            VolSystemViewModel volSystemViewModel)
+        {
+            if (volSystemViewModel == null)
+                return;
+
+            System.Diagnostics.Debug.WriteLine(
+                "[VolumeInfoTableView] " +
+                "Conectando VolSystemViewModel");
+
+            _viewModel.AttachVolumeSystemViewModel(
+                volSystemViewModel);
         }
     }
 }

@@ -249,5 +249,23 @@ namespace ProjectReport.Core.Data
                 });
             }
         }
+
+        public void DeleteReport(int reportId)
+        {
+            // Delete from all related tables (cascade deletes should handle this if configured, but explicit is safer)
+            string[] queries = {
+                "DELETE FROM Personnel WHERE idRep = @idRep",
+                "DELETE FROM OperationalDetail WHERE idRep = @idRep",
+                "DELETE FROM ReportPump WHERE idRep = @idRep",
+                "DELETE FROM ReportScreen WHERE idRep = @idRep",
+                "DELETE FROM WellboreGeometry WHERE idRep = @idRep",
+                "DELETE FROM Report WHERE idRep = @idRep"
+            };
+
+            foreach (var q in queries)
+            {
+                _db.ExecuteNonQuery(q, new SqlParameter("@idRep", reportId));
+            }
+        }
     }
 }

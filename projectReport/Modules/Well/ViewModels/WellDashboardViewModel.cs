@@ -2,6 +2,7 @@ using ProjectReport.Models;
 using ProjectReport.Modules.ReportDetail.ViewModels;
 using ProjectReport.Modules.ReportDetails.Views;
 using ProjectReport.Services;
+using ProjectReport.ViewModels;
 using ProjectReport.ViewModels.Geometry;
 using System;
 using System.Collections.ObjectModel;
@@ -15,6 +16,9 @@ using System.Collections.Generic;
 
 namespace ProjectReport.ViewModels
 {
+    /// <summary>
+    /// ViewModel for the Well Dashboard module, displaying well details and reports.
+    /// </>
     public class WellDashboardViewModel : BaseViewModel
     {
         private readonly Project _project;
@@ -23,7 +27,7 @@ namespace ProjectReport.ViewModels
 
         private readonly GeometryValidationService _geometryValidationService;
         private Report? _Report;
-      
+
         public Report? Report
         {
             get => _Report;
@@ -34,13 +38,12 @@ namespace ProjectReport.ViewModels
                     // Sync with Context Service for SQL persistence
                     WellContextService.Instance.CurrentReport = _Report;
 
-                    // Cada vez que cambia Report, actualizar GeometryViewModel
+                    // Update GeometryViewModel when report changes
                     if (_Report != null)
                         GeometryViewModel.LoadReport(_Report);
                 }
             }
         }
-
 
         public WellDashboardViewModel(Project project)
         {
@@ -123,6 +126,9 @@ namespace ProjectReport.ViewModels
 
         #region Load Well
 
+        /// <summary>
+        /// Loads a well and its associated data for display
+        /// </summary>
         public async Task LoadWell(Well well)
         {
             if (well == null) return;
@@ -185,13 +191,27 @@ namespace ProjectReport.ViewModels
         {
             if (reportToDelete == null || CurrentWell == null) return;
 
-            var result = System.Windows.MessageBox.Show($"Are you sure you want to delete report #{reportToDelete.ReportNumber}?", 
+            var result = System.Windows.MessageBox.Show($"Are you sure you want to delete report #{reportToDelete.ReportNumber}?",
                 "Confirm Delete", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
+                // Delete from database
+                WellContextService.Instance.DeleteReport(reportToDelete.Id);
+                
+                // Remove from in-memory collection
                 CurrentWell.Reports.Remove(reportToDelete);
-                await SaveProject();
+                
+                // Refresh the well from database to ensure consistency
+                var updatedWell = WellContextService.Instance.GetAllWells().FirstOrDefault(w => w.Id == CurrentWell.Id);
+                if (updatedWell != null)
+                {
+                    CurrentWell.Reports.Clear();
+                    foreach (var r in updatedWell.Reports) CurrentWell.Reports.Add(r);
+                }
+                
+                UpdateReportsEmpty();
+                OnPropertyChanged(nameof(Reports));
             }
         }
 

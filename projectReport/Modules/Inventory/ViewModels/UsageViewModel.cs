@@ -6,6 +6,7 @@ using System.Windows.Input;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
 using ProjectReport.Services;
+using ProjectReport.ViewModels;
 
 namespace ProjectReport.ViewModels.Inventory
 {

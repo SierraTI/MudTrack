@@ -285,7 +285,8 @@ namespace ProjectReport.Views
 
         private void NavigateToGeometry(int wellId)
         {
-            var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
+            // Load fresh well from database instead of using potentially stale in-memory data
+            var well = WellContextService.Instance.GetAllWells().FirstOrDefault(w => w.Id == wellId);
             if (well == null) return;
 
             if (_geometryView == null)
@@ -349,7 +350,8 @@ namespace ProjectReport.Views
 
         private void NavigateToRigProfile(int wellId)
         {
-            var well = CurrentProject.Wells.FirstOrDefault(w => w.Id == wellId);
+            // Load fresh well from database instead of using potentially stale in-memory data
+            var well = WellContextService.Instance.GetAllWells().FirstOrDefault(w => w.Id == wellId);
             if (well == null) return;
 
             if (_rigProfileView == null)

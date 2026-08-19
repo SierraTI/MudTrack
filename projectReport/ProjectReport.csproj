@@ -46,9 +46,9 @@
 
   <ItemGroup>
 
-    <None Remove="Data\Lista.xlsx" />
+    <None Remove="Assets\Data\Lista.xlsx" />
 
-    <None Remove="Data\ListaFluidos.xlsx" />
+    <None Remove="Assets\Data\ListaFluidos.xlsx" />
 
   </ItemGroup>
 
@@ -56,13 +56,13 @@
 
   <ItemGroup>
 
-    <Content Include="Data\Lista.xlsx">
+    <Content Include="Assets\Data\Lista.xlsx">
 
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 
     </Content>
 
-    <Content Include="Data\ListaFluidos.xlsx">
+    <Content Include="Assets\Data\ListaFluidos.xlsx">
 
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 
@@ -74,7 +74,7 @@
 
     </Content>
 
-	  <Content Include="Data\HoleSizeList.xlsx">
+	  <Content Include="Assets\Data\HoleSizeList.xlsx">
 
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 
@@ -84,7 +84,7 @@
 
 	<ItemGroup>
 
-		<Content Include="Data\PosterMapa.pdf">
+		<Content Include="Assets\Data\PosterMapa.pdf">
 
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 

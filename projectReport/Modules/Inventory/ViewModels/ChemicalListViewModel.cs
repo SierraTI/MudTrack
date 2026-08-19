@@ -9,6 +9,7 @@ using ProjectReport.Models.Inventory;
 using ProjectReport.Services;
 using ProjectReport.Services.Inventory;
 using ProjectReport.Views.Inventory;
+using ProjectReport.ViewModels;
 
 namespace ProjectReport.ViewModels.Inventory
 {

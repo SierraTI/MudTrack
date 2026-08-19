@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services.Inventory;
 using ProjectReport.Services;
+using ProjectReport.ViewModels;
 
 namespace ProjectReport.ViewModels.Inventory
 {
@@ -133,7 +134,7 @@ namespace ProjectReport.ViewModels.Inventory
             try
             {
                 // Search fluid list file in Data (accept legacy and English naming variants).
-                var dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
+                var dataDir = Path.Combine(AppContext.BaseDirectory, "Assets", "Data");
                 var candidates = new[]
                 {
                     Path.Combine(dataDir, "listFluids.xlsx"),

@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using ClosedXML.Excel;
 using ProjectReport.Models;
@@ -12,14 +13,14 @@ using ProjectReport.Models.Rig;
 using ProjectReport.Services;
 using ProjectReport.ViewModels;
 
-// Alias para evitar colisiones entre namespace y tipo
-using RigProfileClass = ProjectReport.Models.Rig.RigProfile;
-
 namespace ProjectReport.Modules.RigProfile.ViewModels
 {
+    /// <summary>
+    /// ViewModel for the Rig Profile module, managing data and operations for rig configuration.
+    /// </summary>
     public class RigProfileViewModel : BaseViewModel
     {
-        private RigProfileClass _currentRigProfile;
+        private ProjectReport.Models.Rig.RigProfile _currentRigProfile;
         private readonly WellContextService _contextService;
         private readonly HydraulicsCalculationService _hydraulicsService;
         private Well? _currentWell;
@@ -85,8 +86,8 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             new() { Model = "Gardner Denver PZ-11", PumpType = "Triplex", StrokeLength = 11, RodSize = 7, MaxStrokeRate = 115 },
             new() { Model = "Gardner Denver PZ-11 Hi-Flow", PumpType = "Triplex", StrokeLength = 11, RodSize = 8, MaxStrokeRate = 115 },
             new() { Model = "Gardner Denver PZ-1600", PumpType = "Triplex", StrokeLength = 11, MaxStrokeRate = 115 },
-            new() { Model = "Gardner Denver PZ-2000", PumpType = "Triplex", StrokeLength = 11 },
-            new() { Model = "Gardner Denver PZ-2400", PumpType = "Triplex", StrokeLength = 14 },
+            new() { Model = "Gardner Denver PZ-2000", PumpType = "Triplex", StrokeLength = 11, MaxStrokeRate = 115 },
+            new() { Model = "Gardner Denver PZ-2400", PumpType = "Triplex", StrokeLength = 14, MaxStrokeRate = 105 },
             new() { Model = "Gardner Denver PZ-7", PumpType = "Triplex", StrokeLength = 7, RodSize = 7, MaxStrokeRate = 145 },
             new() { Model = "Gardner Denver PZ-8", PumpType = "Triplex", StrokeLength = 8, RodSize = 7, MaxStrokeRate = 145 },
             new() { Model = "Gardner Denver PZ-9", PumpType = "Triplex", StrokeLength = 9, RodSize = 7, MaxStrokeRate = 130 },
@@ -117,7 +118,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             new() { Model = "Weatherford MP10", PumpType = "Triplex", StrokeLength = 10, MaxStrokeRate = 140 },
             new() { Model = "Weatherford MP13", PumpType = "Triplex", StrokeLength = 12, MaxStrokeRate = 120 },
             new() { Model = "Weatherford MP16", PumpType = "Triplex", StrokeLength = 12, RodSize = 7, MaxStrokeRate = 120 },
-            new() { Model = "Weatherford W250", PumpType = "Triplex", StrokeLength = 5, MaxStrokeRate = 310 },
+            new() { Model = "Weatherford MP250", PumpType = "Triplex", StrokeLength = 5, MaxStrokeRate = 310 },
             new() { Model = "Wheatley 7024", PumpType = "Duplex", StrokeLength = 6.125, MaxStrokeRate = 90 }
         };
 
@@ -127,7 +128,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             _hydraulicsService = new HydraulicsCalculationService();
             _contextService.WellChanged += OnWellChanged;
 
-            _currentRigProfile = new RigProfileClass();
+            _currentRigProfile = new ProjectReport.Models.Rig.RigProfile();
 
             if (_contextService.CurrentWell != null)
                 LoadRigProfile(_contextService.CurrentWell);
@@ -166,7 +167,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             ClearPumpFiltersCommand = new RelayCommand(_ => ClearPumpFilters());
             EditSelectedPumpCommand = new RelayCommand(p => EditSelectedPump(p as RigPump));
             RemoveSelectedPumpCommand = new RelayCommand(p => RemoveSelectedPump(p as RigPump));
-            AddPumpCommand = new RelayCommand(_ => AddSelectedPump(), _ => CanAddPump);
+            AddPumpCommand = new RelayCommand(_ => AddSelectedPump());
 
             // Listen for pit changes
             Pits.CollectionChanged += (s, e) => PublishPits();
@@ -177,14 +178,14 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         private void LoadRigProfile(Well well)
         {
             _currentWell = well;
-            CurrentRigProfile = well.RigProfile ?? new RigProfileClass();
+            _currentRigProfile = well.RigProfile ?? new ProjectReport.Models.Rig.RigProfile();
             InitializeSolidsControlRows();
             EnsureSurfaceDefaults();
             EnsureServiceLineDefaults();
             PublishPits();
         }
 
-        public RigProfileClass CurrentRigProfile
+        public ProjectReport.Models.Rig.RigProfile CurrentRigProfile
         {
             get => _currentRigProfile;
             set
@@ -218,11 +219,11 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         }
 
         // Collection wrappers
-        public ObservableCollection<RigSurfaceEquipment> SurfaceEquipment => CurrentRigProfile?.SurfaceEquipment ?? new ObservableCollection<RigSurfaceEquipment>();
-        public ObservableCollection<RigSurfaceEquipment> ServiceLine => CurrentRigProfile?.ServiceLine ?? new ObservableCollection<RigSurfaceEquipment>();
-        public ObservableCollection<RigPump> Pumps => CurrentRigProfile?.Pumps ?? new ObservableCollection<RigPump>();
-        public ObservableCollection<RigSolidsControl> SolidsControl => CurrentRigProfile?.SolidsControl ?? new ObservableCollection<RigSolidsControl>();
-        public ObservableCollection<RigPit> Pits => CurrentRigProfile?.Pits ?? new ObservableCollection<RigPit>();
+        public ObservableCollection<RigSurfaceEquipment> SurfaceEquipment => _currentRigProfile?.SurfaceEquipment ?? new ObservableCollection<RigSurfaceEquipment>();
+        public ObservableCollection<RigSurfaceEquipment> ServiceLine => _currentRigProfile?.ServiceLine ?? new ObservableCollection<RigSurfaceEquipment>();
+        public ObservableCollection<RigPump> Pumps => _currentRigProfile?.Pumps ?? new ObservableCollection<RigPump>();
+        public ObservableCollection<RigSolidsControl> SolidsControl => _currentRigProfile?.SolidsControl ?? new ObservableCollection<RigSolidsControl>();
+        public ObservableCollection<RigPit> Pits => _currentRigProfile?.Pits ?? new ObservableCollection<RigPit>();
         public ObservableCollection<RigPump> SelectedPumps => Pumps;
 
         private ObservableCollection<RigPump> _filteredPumpCatalog = new();
@@ -319,8 +320,8 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         public string SelectedSurfaceType
         {
             get => _selectedSurfaceType;
-            set 
-            { 
+            set
+            {
                 if (SetProperty(ref _selectedSurfaceType, value))
                 {
                     // Auto-populate surface equipment when a type is selected
@@ -338,13 +339,13 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             {
                 // Type 1: Stand Pipe(ID=3", Len=40"), Drilling Hose(ID=2", Len=45"), Swivel(ID=4", Len=2"), Kelly(ID=40", Len=2.25")
                 { "Type 1", (3, 40, 2, 45, 4, 2, 40, 2.25) },
-                
+
                 // Type 2: Stand Pipe(ID=3.5", Len=40"), Drilling Hose(ID=2.5", Len=55"), Swivel(ID=5", Len=2.25"), Kelly(ID=40", Len=3.25")
                 { "Type 2", (3.5, 40, 2.5, 55, 5, 2.25, 40, 3.25) },
-                
+
                 // Type 3: Stand Pipe(ID=4", Len=45"), Drilling Hose(ID=3", Len=55"), Swivel(ID=5", Len=2.25"), Kelly(ID=40", Len=3.25")
                 { "Type 3", (4, 45, 3, 55, 5, 2.25, 40, 3.25) },
-                
+
                 // Type 4: Stand Pipe(ID=4", Len=45"), Drilling Hose(ID=3", Len=65"), Swivel(ID=6", Len=3"), Kelly(ID=40", Len=4")
                 { "Type 4", (4, 45, 3, 65, 6, 3, 40, 4) }
             };
@@ -357,7 +358,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
             if (SurfaceEquipment == null || SurfaceEquipment.Count != 4)
                 return;
 
-            var (standPipeID, standPipeLen, drillingHoseID, drillingHoseLen, 
+            var (standPipeID, standPipeLen, drillingHoseID, drillingHoseLen,
                  swivelID, swivelLen, kellyID, kellyLen) = SurfaceTypeMapping[selectedType];
 
             // Stand Pipe - convert from inches to feet (divide by 12)
@@ -439,7 +440,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             try
             {
-                var excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Lista.xlsx");
+                var excelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "Data", "Lista.xlsx");
                 if (!File.Exists(excelPath)) { LoadDefaultCatalog(); return; }
 
                 using var wb = new XLWorkbook(excelPath);
@@ -539,7 +540,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
         private void InitializePumpCatalog()
         {
-            EditPump = new RigPump();
+            EditPump = new RigPump { MaxLinerSize = 7.0 }; // Default to 7.0
             HookEditPump();
             ApplyPumpFilters();
         }
@@ -584,14 +585,7 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         {
             var maxLiner = EditPump?.MaxLinerSize ?? 0;
             EditPump = ClonePump(selected);
-            EditPump.MaxLinerSize = maxLiner;
-        }
-
-        private void ClearPumpFilters()
-        {
-            PumpSearchText = string.Empty;
-            SelectedPumpTypeFilter = "All";
-            ApplyPumpFilters();
+            EditPump.MaxLinerSize = maxLiner > 0 ? maxLiner : 7.0; // Default to 7.0 if not set
         }
 
         private static RigPump ClonePump(RigPump source)
@@ -609,6 +603,13 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 LinerSize = source.LinerSize,
                 Efficiency = source.Efficiency
             };
+        }
+
+        private void ClearPumpFilters()
+        {
+            PumpSearchText = string.Empty;
+            SelectedPumpTypeFilter = "All";
+            ApplyPumpFilters();
         }
 
         // Defaults
@@ -678,11 +679,15 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
 
         private void AddSelectedPump()
         {
-            if (!CanAddPump)
+            if (string.IsNullOrWhiteSpace(EditPump.Model))
             {
-                PumpValidationMessage = "Max Liner Size is required.";
+                PumpValidationMessage = "Please enter or select a pump model.";
                 return;
             }
+
+            // Default MaxLinerSize if not set
+            if (EditPump.MaxLinerSize <= 0)
+                EditPump.MaxLinerSize = 7.0;
 
             int nextNo = (SelectedPumps?.Count ?? 0) + 1;
             var toAdd = ClonePump(EditPump);
@@ -778,27 +783,19 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                     ToastNotificationService.Instance.ShowWarning("Some pumps are missing efficiency values. Please complete all pump data.");
                 }
 
-                _currentWell.RigProfile = CurrentRigProfile;
+                // Update the well's rig profile
+                _currentWell.RigProfile = _currentRigProfile;
 
-                _currentWell.RigName = CurrentRigProfile.RigName;
-                _currentWell.Contractor = CurrentRigProfile.Contractor;
-                _currentWell.RigType = CurrentRigProfile.RigType;
+                // Synchronize rig profile properties to the well
+                _currentWell.RigName = _currentRigProfile.RigName;
+                _currentWell.Contractor = _currentRigProfile.Contractor;
+                _currentWell.RigType = _currentRigProfile.RigType;
 
-                // Persist rig profile to the database via WellContextService (SQLite)
-                if (_currentWell != null)
-                {
-                    // Ensure the current well contains the updated RigProfile (already set above)
-                    _currentWell.RigProfile = CurrentRigProfile;
-                    WellContextService.Instance.CurrentWell = _currentWell;
-
-                    await WellContextService.Instance.SaveCurrentWell();
-                    ToastNotificationService.Instance.ShowSuccess("Rig Profile saved to database successfully");
-                    PublishPits();
-                }
-                else
-                {
-                    ToastNotificationService.Instance.ShowWarning("No project context available. Changes may not be persisted.");
-                }
+                // Persist to database via WellContextService (SQLite)
+                WellContextService.Instance.CurrentWell = _currentWell;
+                await WellContextService.Instance.SaveCurrentWell();
+                ToastNotificationService.Instance.ShowSuccess("Rig Profile saved to database successfully");
+                PublishPits();
             }
             catch (Exception ex)
             {
@@ -858,11 +855,11 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
                 ApplySolidControlModelSelection(defaultItem);
             }
 
-            CurrentRigProfile.RigName = string.Empty;
-            CurrentRigProfile.Contractor = string.Empty;
-            CurrentRigProfile.RigType = string.Empty;
-            CurrentRigProfile.RkbElevation = 0;
-            CurrentRigProfile.CasingHeadElevation = 0;
+            _currentRigProfile.RigName = string.Empty;
+            _currentRigProfile.Contractor = string.Empty;
+            _currentRigProfile.RigType = string.Empty;
+            _currentRigProfile.RkbElevation = 0;
+            _currentRigProfile.CasingHeadElevation = 0;
 
             SelectedSurfaceType = AvailableTypes.FirstOrDefault() ?? string.Empty;
 
@@ -998,4 +995,3 @@ namespace ProjectReport.Modules.RigProfile.ViewModels
         }
     }
 }
-

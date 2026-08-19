@@ -12,6 +12,7 @@ using ProjectReport.Services;
 using ProjectReport.Services.DrillString;
 using ProjectReport.Services.Survey;
 using ProjectReport.Services.Wellbore;
+using ProjectReport.ViewModels;
 using ProjectReport.ViewModels.Geometry.ThermalGradient;
 using ProjectReport.Views.Geometry;
 using System;

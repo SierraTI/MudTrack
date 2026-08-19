@@ -11,6 +11,7 @@ using System.Timers;
 using ProjectReport.Models.Inventory;
 using ProjectReport.Services; // ServiceLocator
 using ProjectReport.Services.Inventory;
+using ProjectReport.ViewModels;
 
 namespace ProjectReport.ViewModels.Inventory
 {

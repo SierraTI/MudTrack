@@ -304,7 +304,7 @@
                                 <StackPanel>
                                     <TextBlock Text="Selection is displayed here" Opacity="0.75" Margin="0,0,0,10"/>
                                     <TextBlock Text="Model" FontWeight="SemiBold"/>
-                                    <TextBox Text="{Binding EditPump.Model}" IsReadOnly="True" MinHeight="30" Margin="0,0,0,8"/>
+                                    <TextBox Text="{Binding EditPump.Model, UpdateSourceTrigger=PropertyChanged}" MinHeight="30" Margin="0,0,0,8"/>
                                     <TextBlock Text="Pump Type" FontWeight="SemiBold"/>
                                     <TextBox Text="{Binding EditPump.PumpType}" IsReadOnly="True" MinHeight="30" Margin="0,0,0,8"/>
                                     <TextBlock Text="Stroke Length" FontWeight="SemiBold"/>
@@ -319,7 +319,7 @@
                                     <TextBox Text="{Binding EditPump.Efficiency, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ZeroToEmptyConverter}}" MinHeight="30" Margin="0,0,0,8"/>
                                     <TextBlock Text="{Binding PumpValidationMessage}" Foreground="Tomato" TextWrapping="Wrap" Margin="0,4,0,10"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Button Content="Add Pump" Padding="14,8" FontWeight="SemiBold" Command="{Binding AddPumpCommand}" IsEnabled="{Binding CanAddPump}"/>
+                                        <Button Content="Add Pump" Padding="14,8" FontWeight="SemiBold" Command="{Binding AddPumpCommand}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -406,7 +406,6 @@
                                             <DataGridTemplateColumn.CellEditingTemplate>
                                                 <DataTemplate>
                                                     <TextBox Text="{Binding DesilterNumberOfCones, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                             IsEnabled="{Binding IsDesilterStyle}"
                                                              HorizontalContentAlignment="Right"
                                                              PreviewTextInput="NumericOnly_PreviewTextInput"/>
                                                 </DataTemplate>
@@ -420,7 +419,6 @@
                                             <DataGridTemplateColumn.CellEditingTemplate>
                                                 <DataTemplate>
                                                     <TextBox Text="{Binding DesilterConeSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ZeroToEmptyConverter}}"
-                                                             IsEnabled="{Binding IsDesilterStyle}"
                                                              HorizontalContentAlignment="Right"
                                                              PreviewTextInput="NumericOnly_PreviewTextInput"/>
                                                 </DataTemplate>
@@ -436,7 +434,6 @@
                                             <DataGridTemplateColumn.CellEditingTemplate>
                                                 <DataTemplate>
                                                     <TextBox Text="{Binding NumberOfScreens, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                             IsEnabled="{Binding IsShakerStyle}"
                                                              HorizontalContentAlignment="Right"
                                                              PreviewTextInput="NumericOnly_PreviewTextInput"/>
                                                 </DataTemplate>
@@ -464,7 +461,6 @@
                                             <DataGridTemplateColumn.CellEditingTemplate>
                                                 <DataTemplate>
                                                     <TextBox Text="{Binding DesanderNumberOfCones, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                             IsEnabled="{Binding IsDesanderStyle}"
                                                              HorizontalContentAlignment="Right"
                                                              PreviewTextInput="NumericOnly_PreviewTextInput"/>
                                                 </DataTemplate>
@@ -478,7 +474,6 @@
                                             <DataGridTemplateColumn.CellEditingTemplate>
                                                 <DataTemplate>
                                                     <TextBox Text="{Binding DesanderConeSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource ZeroToEmptyConverter}}"
-                                                             IsEnabled="{Binding IsDesanderStyle}"
                                                              HorizontalContentAlignment="Right"
                                                              PreviewTextInput="NumericOnly_PreviewTextInput"/>
                                                 </DataTemplate>
